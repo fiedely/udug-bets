@@ -8,7 +8,8 @@ import {
   sendPasswordResetEmail,
   updateProfile
 } from 'firebase/auth';
-import { auth, googleProvider } from '../firebaseConfig'; // Import our services
+import { auth, googleProvider, db } from '../firebaseConfig'; // Import db
+import { doc, setDoc, getDoc } from 'firebase/firestore'; // Import Firestore functions
 
 const Login = () => {
   // State to manage the component's mode
@@ -29,10 +30,28 @@ const Login = () => {
   const handleGoogleSignIn = async () => {
     setError('');
     setMessage('');
+    setIsLoading(true);
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+
+      // Check if user document already exists in Firestore
+      const userDocRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(userDocRef);
+
+      if (!docSnap.exists()) {
+        // If user is new, create a new document for them in Firestore
+        await setDoc(userDocRef, {
+          uid: user.uid,
+          name: user.displayName,
+          email: user.email,
+          role: 'user' // Default role for all new sign-ups
+        });
+      }
     } catch (err: any) {
       setError(err.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -40,14 +59,13 @@ const Login = () => {
     e.preventDefault();
     setError('');
     setMessage('');
+    setIsLoading(true);
 
     if (isLoginMode) {
       // --- SIGN IN LOGIC ---
-      setIsLoading(true);
       try {
         await signInWithEmailAndPassword(auth, email, password);
-      } catch (err: any)
-      {
+      } catch (err: any) {
         setError('Failed to sign in. Please check your email and password.');
       } finally {
         setIsLoading(false);
@@ -56,26 +74,37 @@ const Login = () => {
       // --- SIGN UP LOGIC ---
       if (password !== reenterPassword) {
         setError('Passwords do not match.');
+        setIsLoading(false);
         return;
       }
       if (password.length < 6) {
         setError('Password should be at least 6 characters long.');
+        setIsLoading(false);
         return;
       }
       if (!agreedToTerms) {
         setError('You must agree to the Terms & Conditions to sign up.');
+        setIsLoading(false);
         return;
       }
       
-      setIsLoading(true);
       try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        if (userCredential.user) {
-          await updateProfile(userCredential.user, { displayName: name });
-        }
+        const user = userCredential.user;
+        
+        // Update the user's profile display name
+        await updateProfile(user, { displayName: name });
+
+        // Create a new document for the user in Firestore
+        await setDoc(doc(db, "users", user.uid), {
+          uid: user.uid,
+          name: name,
+          email: user.email,
+          role: 'user' // Default role
+        });
+
         setIsLoginMode(true);
         setMessage('Account created successfully! Please sign in.');
-
       } catch (err: any) {
         setError('Failed to create account. The email might already be in use.');
       } finally {
@@ -85,6 +114,7 @@ const Login = () => {
   };
   
   const handleForgotPassword = async () => {
+    // ... (rest of the function is unchanged)
     setError('');
     setMessage('');
     if (!email) {
@@ -100,6 +130,7 @@ const Login = () => {
   };
 
   const toggleMode = () => {
+    // ... (rest of the function is unchanged)
     setIsLoginMode(!isLoginMode);
     setError('');
     setMessage('');
@@ -112,6 +143,7 @@ const Login = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-slate-900 p-4">
+      {/* The rest of the JSX is unchanged... */}
       <div className="w-full max-w-sm p-8 space-y-5 bg-slate-800 border border-slate-700">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-blue-400">Udug Bets</h1>
@@ -167,8 +199,6 @@ const Login = () => {
         </form>
 
         <div className="text-center text-sm text-slate-400">{isLoginMode ? "Or sign in with" : "Or register with"}</div>
-
-        {/* Simplified Google Button for both modes */}
         <div className="flex justify-center">
           <button onClick={handleGoogleSignIn} aria-label="Sign in with Google" className="p-3 border border-slate-700 bg-slate-800 hover:bg-slate-700 transition-colors">
             <svg className="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C39.99,34.556,44,28.717,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
