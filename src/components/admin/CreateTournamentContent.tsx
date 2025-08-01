@@ -34,6 +34,7 @@ const CreateTournamentContent = ({ user, onTournamentCreated }: CreateTournament
                 creatorId: user?.uid,
                 createdAt: serverTimestamp(),
                 ticket: ticket,
+                allowGuesses: false,
             });
             onTournamentCreated(newTournamentRef.id);
         } catch (err) {

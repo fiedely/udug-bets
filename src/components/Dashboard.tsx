@@ -14,7 +14,7 @@ import MatchesContent from './views/MatchesContent';
 import LeaderboardContent from './views/LeaderboardContent';
 import CreateTournamentContent from './admin/CreateTournamentContent';
 import ListTournamentsContent from './admin/ListTournamentsContent';
-import EditTournamentContent from './admin/EditTournamentContent';
+import TournamentWizard from './admin/TournamentWizard';
 import ManageUsersContent from './admin/ManageUsersContent';
 
 
@@ -26,6 +26,7 @@ const Dashboard = () => {
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
   const [editingTournamentId, setEditingTournamentId] = useState<string | null>(null);
+  const [isEditorDirty, setIsEditorDirty] = useState(false);
 
 
   const user = auth.currentUser;
@@ -60,7 +61,17 @@ const Dashboard = () => {
     setIsAdminMenuOpen(!isAdminMenuOpen);
   };
 
+  // ENHANCED: Check for dirty state before navigating (Fixes the missing popup)
   const handleSetView = (view: View) => {
+    if (activeView === 'Edit Tournament' && isEditorDirty) {
+        const confirmLeave = window.confirm("You have unsaved changes. Are you sure you want to leave this page?");
+        if (!confirmLeave) {
+            return; // Cancel the navigation
+        }
+    }
+
+    // Proceed with navigation
+    setIsEditorDirty(false); // Reset the flag
     setActiveView(view);
     // Clear the editing ID when navigating away from the edit screen
     if (view !== 'Edit Tournament') {
@@ -83,17 +94,26 @@ const Dashboard = () => {
       )
     }
 
+    // Use the new TournamentWizard component and pass the reportDirtyState callback
     if (activeView === 'Edit Tournament' && editingTournamentId) {
-        return <EditTournamentContent tournamentId={editingTournamentId} onBackToList={() => handleSetView('List Tournaments')} />;
+        return <TournamentWizard
+                 tournamentId={editingTournamentId}
+                 onBackToList={() => handleSetView('List Tournaments')}
+                 reportDirtyState={setIsEditorDirty}
+               />;
     }
 
     switch (activeView) {
-      case 'Matches': return <MatchesContent />;
-      case 'Leaderboard': return <LeaderboardContent />;
+      case 'Matches':
+        return <MatchesContent />;
+      case 'Leaderboard':
+        return <LeaderboardContent />;
+      // FIX: Added the missing case for 'Create Tournament'
       case 'Create Tournament':
         return <CreateTournamentContent user={user} onTournamentCreated={handleEditTournament} />;
       case 'List Tournaments':
-        return <ListTournamentsContent onEditTournament={handleEditTournament} />;
+        // Pass userProfile to enable the toggle functionality
+        return <ListTournamentsContent onEditTournament={handleEditTournament} userProfile={userProfile} />;
       case 'Manage Users':
         return <ManageUsersContent userProfile={userProfile} />;
       case 'Dashboard':

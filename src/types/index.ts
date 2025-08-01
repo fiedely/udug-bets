@@ -1,6 +1,5 @@
 // src/types/index.ts
 
-// --- Type Definitions ---
 export type View = 'Dashboard' | 'Matches' | 'Leaderboard' | 'Create Tournament' | 'Manage Users' | 'List Tournaments' | 'Edit Tournament';
 
 export interface UserProfile {
@@ -13,6 +12,7 @@ export interface UserProfile {
 export interface Team {
   name: string;
   flag: string;
+  code: string;
 }
 
 export interface PointRules {
@@ -21,6 +21,25 @@ export interface PointRules {
     quarterFinal?: { correctScore: number; correctOutcome: number; };
     semiFinal?: { correctScore: number; correctOutcome: number; };
     final?: { correctScore: number; correctOutcome: number; };
+    championBonus?: number;
+}
+
+export interface Stadium {
+    name: string;
+    city: string;
+}
+
+export type MatchStage = 'Group Stage' | 'Round of 16' | 'Quarter-final' | 'Semi-final' | 'Third Place Match' | 'Final';
+
+export interface Match {
+    id: string;
+    stage: MatchStage; // NEW: To identify the stage
+    group: string; // For group stage, or e.g., "Knockout"
+    matchNumber: number;
+    team1: Team;
+    team2: Team;
+    date: string; 
+    stadium: Stadium;
 }
 
 export interface Tournament {
@@ -28,7 +47,6 @@ export interface Tournament {
     name: string;
     description?: string;
     pointRules?: PointRules;
-    // We keep Date here as the desired format, but we'll handle Firestore Timestamp conversion in the components
     startDate?: Date;
     endDate?: Date;
     creatorId: string;
@@ -36,4 +54,7 @@ export interface Tournament {
     ticket?: string;
     teams?: Team[];
     groups?: Record<string, Team[]>;
+    allowGuesses: boolean;
+    matches?: Match[]; // Group stage matches
+    knockoutMatches?: Match[]; // NEW: For knockout rounds
 }
