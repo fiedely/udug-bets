@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { db } from '../../../firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
-import type { Tournament, Match, Team, Stadium } from '../../../types';
+import type { Tournament, Match, Team } from '../../../types';
 import { STADIUMS } from '../../../data/stadiums';
 
 interface Step3MatchesProps {
@@ -70,7 +70,7 @@ const Step3Matches = ({ tournament, onNext, onBack, setIsDirty }: Step3MatchesPr
 
                 newMatches.push({
                     id: `match-group-${groupName.toLowerCase().replace(' ', '')}-${index}`,
-                    stage: 'Group Stage', // FIX: Added the missing 'stage' property
+                    stage: 'Group Stage',
                     group: groupName,
                     matchNumber: matchCounter + 1,
                     team1: pair.t1,

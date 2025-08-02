@@ -2,7 +2,7 @@
 
 import { db } from '../../../firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
-import type { Tournament, Match, Team, MatchStage } from '../../../types';
+import type { Tournament, Match, Team } from '../../../types';
 import { useState, useMemo } from 'react';
 
 interface Step5ConfirmationProps {
