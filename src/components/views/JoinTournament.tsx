@@ -119,7 +119,7 @@ const JoinTournament = ({ userProfile, setView }: JoinTournamentProps) => {
                         id="ticket-code" 
                         value={ticket}
                         onChange={(e) => setTicket(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                        placeholder="e.g., 123456"
+                        placeholder="e.g., 777777"
                         className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-slate-100 text-center text-2xl tracking-[.5em] font-mono rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400" 
                     />
                 </div>

@@ -14,7 +14,7 @@ import ManageUsersContent from './admin/ManageUsersContent';
 
 // User Components
 import JoinTournament from './views/JoinTournament'; 
-const MyTournaments = () => <div className="bg-slate-800 p-8 rounded-lg">My Tournaments View - Coming Soon!</div>;
+import MyTournaments from './views/MyTournaments'; 
 const LeaderboardContent = () => <div className="bg-slate-800 p-8 rounded-lg">Leaderboard View - Coming Soon!</div>;
 
 
@@ -100,14 +100,13 @@ const Dashboard = () => {
       case 'Manage Users':
         return <ManageUsersContent userProfile={userProfile} />;
       
-      // UPDATED: Pass the handleSetView function as a prop
       case 'Join Tournament':
         return <JoinTournament userProfile={userProfile} setView={handleSetView} />;
       case 'Leaderboard':
         return <LeaderboardContent />;
       case 'My Tournaments':
       default:
-        return <MyTournaments />;
+        return <MyTournaments userProfile={userProfile} />;
     }
   };
 
