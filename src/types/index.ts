@@ -17,9 +17,11 @@ export interface Team {
 
 export interface PointRules {
     groupStage: { correctScore: number; correctOutcome: number; };
+    round32?: { correctScore: number; correctOutcome: number; };
     round16?: { correctScore: number; correctOutcome: number; };
     quarterFinal?: { correctScore: number; correctOutcome: number; };
     semiFinal?: { correctScore: number; correctOutcome: number; };
+    thirdPlaceMatch?: { correctScore: number; correctOutcome: number; }; // NEW
     final?: { correctScore: number; correctOutcome: number; };
     championBonus?: number;
 }
@@ -29,18 +31,31 @@ export interface Stadium {
     city: string;
 }
 
-export type MatchStage = 'Group Stage' | 'Round of 16' | 'Quarter-final' | 'Semi-final' | 'Third Place Match' | 'Final';
+export type MatchStage = 'Group Stage' | 'Round of 32' | 'Round of 16' | 'Quarter-final' | 'Semi-final' | 'Third Place Match' | 'Final';
 
 export interface Match {
     id: string;
-    stage: MatchStage; // NEW: To identify the stage
-    group: string; // For group stage, or e.g., "Knockout"
+    stage: MatchStage; 
+    group: string; 
     matchNumber: number;
     team1: Team;
     team2: Team;
     date: string; 
     stadium: Stadium;
 }
+
+export interface PredictionStatus {
+    allowChampion: boolean;
+    allowGroupStage: boolean;
+    allowRoundOf32: boolean;
+    allowRoundOf16: boolean;
+    allowQuarterFinal: boolean;
+    allowSemiFinal: boolean;
+    allowFinals: boolean;
+}
+
+// UPDATED: More flexible knockout stage options
+export type KnockoutStartStage = 'Final' | 'Semi-final' | 'Quarter-final' | 'Round of 16' | 'Round of 32';
 
 export interface Tournament {
     id: string;
@@ -54,7 +69,10 @@ export interface Tournament {
     ticket?: string;
     teams?: Team[];
     groups?: Record<string, Team[]>;
-    allowGuesses: boolean;
-    matches?: Match[]; // Group stage matches
-    knockoutMatches?: Match[]; // NEW: For knockout rounds
+    matches?: Match[];
+    knockoutMatches?: Match[];
+    participants?: string[];
+    predictionStatus?: PredictionStatus; 
+    knockoutStartStage?: KnockoutStartStage; 
+    hasThirdPlaceMatch?: boolean; // NEW
 }

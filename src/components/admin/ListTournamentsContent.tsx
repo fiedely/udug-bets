@@ -1,60 +1,53 @@
 // src/components/admin/ListTournamentsContent.tsx
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { db } from '../../firebaseConfig';
 import { collection, getDocs, deleteDoc, doc, updateDoc, Timestamp } from 'firebase/firestore';
-import type { Tournament, UserProfile } from '../../types';
+import type { Tournament, UserProfile, PredictionStatus } from '../../types';
+import InviteModal from './InviteModal';
 
 interface ListTournamentsContentProps {
     onEditTournament: (id: string) => void;
     userProfile: UserProfile | null;
 }
 
+const formatDate = (date?: Date) => {
+    if (!date) return 'N/A';
+    return new Intl.DateTimeFormat('en-US').format(date);
+};
+
+const defaultPredictionStatus: PredictionStatus = {
+    allowChampion: false,
+    allowGroupStage: false,
+    allowRoundOf32: false, // NEW
+    allowRoundOf16: false,
+    allowQuarterFinal: false,
+    allowSemiFinal: false,
+    allowFinals: false,
+};
+
 const ListTournamentsContent = ({ onEditTournament, userProfile }: ListTournamentsContentProps) => {
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [deletingTournament, setDeletingTournament] = useState<Tournament | null>(null);
+    const [invitingTournament, setInvitingTournament] = useState<Tournament | null>(null);
+    const [managingPredictionsFor, setManagingPredictionsFor] = useState<string | null>(null);
+    const predictionMenuRef = useRef<HTMLDivElement>(null);
 
     const fetchTournaments = async () => {
         setIsLoading(true);
         const querySnapshot = await getDocs(collection(db, "tournaments"));
-        const now = new Date();
-
-        const tourneyList: Tournament[] = [];
-        const updates: Promise<void>[] = [];
-
-        querySnapshot.docs.forEach(docSnapshot => {
+        const tourneyList = querySnapshot.docs.map(docSnapshot => {
             const data = docSnapshot.data();
-            const startDate = data.startDate ? (data.startDate as Timestamp).toDate() : null;
-            const endDate = data.endDate ? (data.endDate as Timestamp).toDate() : null;
-
-            const tournament = {
+            return {
                 id: docSnapshot.id,
                 ...data,
-                startDate: startDate || undefined,
-                endDate: endDate || undefined,
+                startDate: data.startDate ? (data.startDate as Timestamp).toDate() : undefined,
+                endDate: data.endDate ? (data.endDate as Timestamp).toDate() : undefined,
+                participants: data.participants || [],
+                predictionStatus: { ...defaultPredictionStatus, ...(data.predictionStatus || {}) },
             } as Tournament;
-
-            let calculatedAllowGuesses = tournament.allowGuesses;
-            let needsUpdate = false;
-
-            if ((startDate && now >= startDate) || (endDate && now >= endDate)) {
-                 if (tournament.allowGuesses) {
-                    calculatedAllowGuesses = false;
-                    needsUpdate = true;
-                 }
-            }
-
-            if (needsUpdate) {
-                updates.push(updateDoc(doc(db, "tournaments", docSnapshot.id), { allowGuesses: calculatedAllowGuesses }));
-                tournament.allowGuesses = calculatedAllowGuesses;
-            }
-
-            tourneyList.push(tournament);
         });
-
-        await Promise.all(updates).catch(err => console.error("Failed to auto-update tournament status:", err));
-
         setTournaments(tourneyList);
         setIsLoading(false);
     };
@@ -63,31 +56,52 @@ const ListTournamentsContent = ({ onEditTournament, userProfile }: ListTournamen
         fetchTournaments();
     }, []);
 
-    // FIX: Re-implement the handleDelete function
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (predictionMenuRef.current && !predictionMenuRef.current.contains(event.target as Node)) {
+                setManagingPredictionsFor(null);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
     const handleDelete = async (tournamentId: string) => {
         if (!tournamentId) return;
         try {
             await deleteDoc(doc(db, "tournaments", tournamentId));
-            // Refresh the list by filtering out the deleted tournament
             setTournaments(tournaments.filter(t => t.id !== tournamentId));
         } catch (error) {
             console.error("Error deleting tournament: ", error);
         } finally {
-            // Close the modal
             setDeletingTournament(null);
         }
     };
 
-    const handleToggleAllowGuesses = async (tournamentId: string, currentValue: boolean) => {
+    const handleTogglePredictionStatus = async (tournamentId: string, stage: keyof PredictionStatus, currentValue: boolean) => {
         const isAdmin = userProfile?.role === 'admin' || userProfile?.role === 'superadmin';
         if (!isAdmin) return;
 
         const newValue = !currentValue;
+        const fieldPath = `predictionStatus.${stage}`;
+
         try {
-            await updateDoc(doc(db, "tournaments", tournamentId), { allowGuesses: newValue });
-            setTournaments(prev => prev.map(t => t.id === tournamentId ? { ...t, allowGuesses: newValue } : t));
+            await updateDoc(doc(db, "tournaments", tournamentId), { [fieldPath]: newValue });
+            setTournaments(prev => prev.map(t => {
+                if (t.id === tournamentId && t.predictionStatus) {
+                    return { ...t, predictionStatus: { ...t.predictionStatus, [stage]: newValue } };
+                }
+                return t;
+            }));
         } catch (error) {
-            console.error("Error updating allowGuesses:", error);
+            console.error(`Error updating ${stage}:`, error);
+        }
+    };
+
+    const handleParticipantsChange = (tournamentId: string, newParticipants: string[]) => {
+        setTournaments(prev => prev.map(t => t.id === tournamentId ? { ...t, participants: newParticipants } : t));
+        if (invitingTournament?.id === tournamentId) {
+            setInvitingTournament(prev => prev ? { ...prev, participants: newParticipants } : null);
         }
     };
 
@@ -97,68 +111,83 @@ const ListTournamentsContent = ({ onEditTournament, userProfile }: ListTournamen
 
     const isAdmin = userProfile?.role === 'admin' || userProfile?.role === 'superadmin';
 
+    const PredictionToggle = ({ t, stage, label }: { t: Tournament, stage: keyof PredictionStatus, label: string }) => (
+        <label className="flex justify-between items-center p-2 hover:bg-slate-600 rounded-md cursor-pointer">
+            <span className="text-sm text-slate-300">{label}</span>
+            <div className="relative inline-flex items-center">
+                <input type="checkbox" checked={t.predictionStatus?.[stage] || false} onChange={() => handleTogglePredictionStatus(t.id, stage, t.predictionStatus?.[stage] || false)} className="sr-only peer" disabled={!isAdmin || t.status === 'draft'} />
+                <div className={`w-9 h-5 bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all border-gray-600 peer-checked:bg-blue-600 ${(!isAdmin || t.status === 'draft') ? 'opacity-50' : ''}`}></div>
+            </div>
+        </label>
+    );
+
     return (
         <>
             <div className="bg-slate-800 border border-slate-700 p-8">
                 <h2 className="text-2xl font-bold text-blue-400">Your Tournaments</h2>
-                <div className="mt-4 space-y-4">
+                <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {tournaments.map(t => (
-                        <div key={t.id} className="bg-slate-900 p-4 border border-slate-700 flex flex-wrap justify-between items-center gap-4 rounded-lg shadow">
+                        <div key={t.id} className="bg-slate-900 p-4 border border-slate-700 flex flex-col gap-4 rounded-lg shadow">
                             <div className="flex-grow">
-                                <h3 className="font-semibold text-white">{t.name}</h3>
-                                <p className="text-sm text-slate-400">
-                                    Status: <span className={t.status === 'draft' ? 'text-yellow-400' : (t.status === 'active' ? 'text-green-400' : 'text-gray-400')}>{t.status}</span>
-                                </p>
+                                <h3 className="font-semibold text-white text-lg">{t.name}</h3>
+                                <p className="text-sm text-slate-400">Status: <span className={t.status === 'draft' ? 'text-yellow-400' : (t.status === 'active' ? 'text-green-400' : 'text-gray-400')}>{t.status}</span></p>
                                 <p className="text-sm text-slate-500">Ticket: {t.ticket}</p>
                             </div>
 
-                            <div className="flex items-center gap-3">
-                                <span className="text-sm text-slate-300">Allow Guesses:</span>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={t.allowGuesses || false}
-                                        onChange={() => handleToggleAllowGuesses(t.id, t.allowGuesses)}
-                                        className="sr-only peer"
-                                        disabled={!isAdmin || t.status === 'draft'}
-                                    />
-                                    <div className={`w-11 h-6 bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all border-gray-600 peer-checked:bg-blue-600 ${(!isAdmin || t.status === 'draft') ? 'opacity-50 cursor-not-allowed' : ''}`}></div>
-                                </label>
+                            <div className="text-sm text-slate-300 border-t border-b border-slate-700 py-2 space-y-1">
+                                <p><strong>Period:</strong> {formatDate(t.startDate)} - {formatDate(t.endDate)}</p>
+                                <p><strong>Participants:</strong> {t.participants?.length || 0} users</p>
                             </div>
 
-                            <div className="flex gap-2">
-                                <button onClick={() => onEditTournament(t.id)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 font-semibold text-white text-sm rounded-md">Edit</button>
-                                <button onClick={() => setDeletingTournament(t)} className="px-4 py-2 bg-red-600 hover:bg-red-500 font-semibold text-white text-sm rounded-md">Delete</button>
+                            <div className="flex flex-wrap justify-between items-center gap-4">
+                                <div className="relative">
+                                    <button onClick={() => setManagingPredictionsFor(managingPredictionsFor === t.id ? null : t.id)} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm rounded-md" disabled={!isAdmin || t.status === 'draft'}>
+                                        Manage Predictions
+                                    </button>
+                                    {managingPredictionsFor === t.id && (
+                                        <div ref={predictionMenuRef} className="absolute bottom-full mb-2 w-64 bg-slate-700 border border-slate-600 rounded-lg shadow-lg p-2 z-10">
+                                            <PredictionToggle t={t} stage="allowChampion" label="Champion" />
+                                            <PredictionToggle t={t} stage="allowGroupStage" label="Group Stage" />
+                                            <PredictionToggle t={t} stage="allowRoundOf32" label="Round of 32" />
+                                            <PredictionToggle t={t} stage="allowRoundOf16" label="Round of 16" />
+                                            <PredictionToggle t={t} stage="allowQuarterFinal" label="Quarter-finals" />
+                                            <PredictionToggle t={t} stage="allowSemiFinal" label="Semi-finals" />
+                                            <PredictionToggle t={t} stage="allowFinals" label="Finals" />
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex gap-2">
+                                    <button onClick={() => setInvitingTournament(t)} className="px-4 py-2 bg-green-600 hover:bg-green-500 font-semibold text-white text-sm rounded-md">Invite</button>
+                                    <button onClick={() => onEditTournament(t.id)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 font-semibold text-white text-sm rounded-md">Edit</button>
+                                    <button onClick={() => setDeletingTournament(t)} className="px-4 py-2 bg-red-600 hover:bg-red-500 font-semibold text-white text-sm rounded-md">Delete</button>
+                                </div>
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
-
-            {/* FIX: Add the delete confirmation modal */}
+            
+            {/* Modals are unchanged */}
             {deletingTournament && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
                     <div className="bg-slate-800 border border-slate-700 p-6 rounded-lg shadow-xl max-w-sm w-full">
                         <h3 className="text-lg font-bold text-white">Confirm Deletion</h3>
-                        <p className="mt-2 text-slate-400">
-                            Are you sure you want to delete the tournament "{deletingTournament.name}"? This action cannot be undone.
-                        </p>
+                        <p className="mt-2 text-slate-400">Are you sure you want to delete the tournament "{deletingTournament.name}"? This action cannot be undone.</p>
                         <div className="mt-6 flex justify-end gap-4">
-                            <button
-                                onClick={() => setDeletingTournament(null)}
-                                className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white rounded-md"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={() => handleDelete(deletingTournament.id)}
-                                className="px-4 py-2 bg-red-600 hover:bg-red-500 font-semibold text-white rounded-md"
-                            >
-                                Delete
-                            </button>
+                            <button onClick={() => setDeletingTournament(null)} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white rounded-md">Cancel</button>
+                            <button onClick={() => handleDelete(deletingTournament.id)} className="px-4 py-2 bg-red-600 hover:bg-red-500 font-semibold text-white rounded-md">Delete</button>
                         </div>
                     </div>
                 </div>
+            )}
+
+            {invitingTournament && (
+                <InviteModal 
+                    tournament={invitingTournament} 
+                    onClose={() => setInvitingTournament(null)}
+                    onParticipantsChange={handleParticipantsChange}
+                />
             )}
         </>
     );

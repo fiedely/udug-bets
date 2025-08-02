@@ -12,19 +12,17 @@ interface Step1DetailsProps {
     setIsDirty: (dirty: boolean) => void;
 }
 
-// Helper to format Date to datetime-local input string (handling local timezone)
 const formatDateForInput = (date?: Date) => {
     if (!date) return '';
-    const tzoffset = date.getTimezoneOffset() * 60000; //offset in milliseconds
+    const tzoffset = date.getTimezoneOffset() * 60000;
     const localISOTime = (new Date(date.getTime() - tzoffset)).toISOString().slice(0, 16);
     return localISOTime;
 };
 
-const KNOCKOUT_STAGES = ['round16', 'quarterFinal', 'semiFinal', 'final'] as const;
+const KNOCKOUT_STAGES = ['round32', 'round16', 'quarterFinal', 'semiFinal', 'thirdPlaceMatch', 'final'] as const;
 const DEFAULT_POINTS = { correctScore: 3, correctOutcome: 1 };
 
-// FIX: Define a more specific type for the stages that are objects in PointRules
-type PointRuleStage = 'groupStage' | 'round16' | 'quarterFinal' | 'semiFinal' | 'final';
+type PointRuleStage = 'groupStage' | 'round32' | 'round16' | 'quarterFinal' | 'semiFinal' | 'thirdPlaceMatch' | 'final';
 
 const Step1Details = ({ tournament, onNext, onBack, setIsDirty }: Step1DetailsProps) => {
     const [name, setName] = useState(tournament.name);
@@ -32,11 +30,13 @@ const Step1Details = ({ tournament, onNext, onBack, setIsDirty }: Step1DetailsPr
 
     const initialPointRules: PointRules = tournament.pointRules || {
         groupStage: DEFAULT_POINTS,
+        round32: DEFAULT_POINTS,
         round16: DEFAULT_POINTS,
         quarterFinal: DEFAULT_POINTS,
         semiFinal: DEFAULT_POINTS,
+        thirdPlaceMatch: DEFAULT_POINTS,
         final: DEFAULT_POINTS,
-        championBonus: 10, // Default value
+        championBonus: 10,
     };
 
     const [pointRules, setPointRules] = useState<PointRules>(initialPointRules);
@@ -58,12 +58,10 @@ const Step1Details = ({ tournament, onNext, onBack, setIsDirty }: Step1DetailsPr
 
     const markDirty = () => setIsDirty(true);
 
-    // FIX: Use the more specific PointRuleStage type for the 'stage' parameter
     const handlePointsChange = useCallback((stage: PointRuleStage, type: 'correctScore' | 'correctOutcome', value: number) => {
         markDirty();
         setPointRules(prev => {
             const newRules = { ...prev };
-            // Since stage is now guaranteed to be a key for an object, this is safe
             newRules[stage] = { ...(prev[stage] || DEFAULT_POINTS), [type]: value };
             
             if (useSamePoints && stage === 'groupStage') {
@@ -98,23 +96,13 @@ const Step1Details = ({ tournament, onNext, onBack, setIsDirty }: Step1DetailsPr
             const updatedData: Partial<Tournament> = {
                 name,
                 description,
-                pointRules: {
-                    ...pointRules,
-                    championBonus: championBonus, // Include champion bonus in the save data
-                },
+                pointRules: { ...pointRules, championBonus },
             };
 
             if (startDate) updatedData.startDate = new Date(startDate);
             if (endDate) updatedData.endDate = new Date(endDate);
-
-            if (updatedData.startDate && tournament.status !== 'draft') {
-                const now = new Date();
-                if (updatedData.startDate > now) {
-                    updatedData.allowGuesses = true;
-                }
-            }
-
-            await updateDoc(tournamentRef, updatedData);
+            
+            await updateDoc(tournamentRef, updatedData as { [x: string]: any });
             setMessage('Progress saved successfully!');
             setIsDirty(false);
 
@@ -128,6 +116,10 @@ const Step1Details = ({ tournament, onNext, onBack, setIsDirty }: Step1DetailsPr
             setIsSaving(false);
         }
     };
+    
+    const formatStageName = (stage: string) => {
+        return stage.replace(/([A-Z])/g, ' $1').replace('Match', ' Match').replace(/^./, str => str.toUpperCase());
+    }
 
     return (
         <>
@@ -136,25 +128,24 @@ const Step1Details = ({ tournament, onNext, onBack, setIsDirty }: Step1DetailsPr
             </button>
             <form className="mt-4 space-y-6 max-w-2xl" onSubmit={e => e.preventDefault()}>
                 <h2 className="text-2xl font-bold text-blue-400">Step 1: Tournament Details</h2>
-
                 <div>
                     <label htmlFor="tourney-name" className="block text-sm font-medium text-slate-300">Tournament Name</label>
                     <input type="text" id="tourney-name" value={name} onChange={e => { setName(e.target.value); markDirty(); }} className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400" />
                 </div>
                 <div>
                     <label htmlFor="tourney-desc" className="block text-sm font-medium text-slate-300">Description</label>
-                    <textarea id="tourney-desc" value={description} onChange={e => { setDescription(e.target.value); markDirty(); }} rows={3} className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                    <p className="text-xs text-slate-500 mt-1">You can write a greeting, rules, or anything else here for people to read.</p>
+                    <textarea id="tourney-desc" value={description} onChange={e => { setDescription(e.target.value); markDirty(); }} rows={5} className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                    {/* NEW: Added instruction for Markdown support */}
+                    <p className="mt-2 text-xs text-slate-400">
+                        You can use Markdown for formatting (e.g., `**bold**`, `*italic*`, `[link](url)`).
+                    </p>
                 </div>
 
                 <div className="space-y-4 p-4 border border-slate-700 rounded-lg">
                     <h3 className="text-lg font-semibold text-slate-100">Point Rules</h3>
-
-                    {/* Champion Bonus */}
                     <div>
                         <label htmlFor="champion-bonus" className="block text-sm font-medium text-slate-300">Champion Bonus Points</label>
                         <input type="number" id="champion-bonus" value={championBonus} onChange={e => { setChampionBonus(Number(e.target.value)); markDirty(); }} className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                        <p className="text-xs text-slate-500 mt-1">Bonus points for correctly guessing the tournament winner.</p>
                     </div>
 
                     <div className="flex gap-4">
@@ -177,7 +168,7 @@ const Step1Details = ({ tournament, onNext, onBack, setIsDirty }: Step1DetailsPr
                         {KNOCKOUT_STAGES.map(stage => (
                             <div key={stage} className="flex gap-4">
                                 <div className="flex-1">
-                                    <label className="block text-sm font-medium text-slate-300">{stage.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} (Correct Score)</label>
+                                    <label className="block text-sm font-medium text-slate-300">{formatStageName(stage)} (Correct Score)</label>
                                     <input
                                         type="number"
                                         value={pointRules[stage]?.correctScore || 0}
@@ -187,7 +178,7 @@ const Step1Details = ({ tournament, onNext, onBack, setIsDirty }: Step1DetailsPr
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-sm font-medium text-slate-300">{stage.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} (Win/Lose)</label>
+                                    <label className="block text-sm font-medium text-slate-300">{formatStageName(stage)} (Win/Lose)</label>
                                     <input
                                         type="number"
                                         value={pointRules[stage]?.correctOutcome || 0}
@@ -200,7 +191,6 @@ const Step1Details = ({ tournament, onNext, onBack, setIsDirty }: Step1DetailsPr
                         ))}
                     </div>
                 </div>
-
                  <div>
                     <h3 className="text-lg font-semibold text-slate-100">Date Period</h3>
                     <div className="flex gap-4">

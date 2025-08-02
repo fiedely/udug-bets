@@ -2,8 +2,9 @@
 
 import { db } from '../../../firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
-import type { Tournament, Match, Team } from '../../../types';
+import type { Tournament, Match, Team, MatchStage } from '../../../types';
 import { useState, useMemo } from 'react';
+import { marked } from 'marked';
 
 interface Step5ConfirmationProps {
     tournament: Tournament;
@@ -11,45 +12,82 @@ interface Step5ConfirmationProps {
     onFinish: () => void;
 }
 
-const PointRuleRow = ({ label, points }: { label: string, points?: { correctScore: number; correctOutcome: number; } }) => (
-    <div className="flex justify-between py-1">
-        <span className="text-slate-400">{label}:</span>
-        {points ? (
+const PointRuleRow = ({ label, points }: { label: string, points?: { correctScore: number; correctOutcome: number; } }) => {
+    if (!points) return null;
+    return (
+        <div className="flex justify-between py-1">
+            <span className="text-slate-400">{label}:</span>
             <span className="text-white font-mono">Score: {points.correctScore} / Outcome: {points.correctOutcome}</span>
-        ) : (
-            <span className="text-slate-500">Not set</span>
-        )}
-    </div>
-);
+        </div>
+    );
+};
 
-const MatchList = ({ title, matches }: { title: string, matches?: Match[] }) => {
-    const matchesByDate = useMemo(() => {
+const STAGE_ORDER: MatchStage[] = ['Round of 32', 'Round of 16', 'Quarter-final', 'Semi-final', 'Third Place Match', 'Final'];
+
+const MatchList = ({ title, matches, groupByStage = false }: { title: string, matches?: Match[], groupByStage?: boolean }) => {
+    const groupedMatches = useMemo(() => {
         if (!matches) return {};
-        return matches.reduce((acc, match) => {
-            const date = new Date(match.date).toLocaleDateString('en-CA');
-            if (!acc[date]) acc[date] = [];
-            acc[date].push(match);
-            return acc;
-        }, {} as Record<string, Match[]>);
-    }, [matches]);
+        if (groupByStage) {
+            return matches.reduce((acc, match) => {
+                const stage = match.stage;
+                const date = new Date(match.date).toLocaleDateString('en-CA');
+                if (!acc[stage]) acc[stage] = {};
+                if (!acc[stage][date]) acc[stage][date] = [];
+                acc[stage][date].push(match);
+                return acc;
+            }, {} as Record<string, Record<string, Match[]>>);
+        } else {
+            return matches.reduce((acc, match) => {
+                const date = new Date(match.date).toLocaleDateString('en-CA');
+                if (!acc[date]) acc[date] = [];
+                acc[date].push(match);
+                return acc;
+            }, {} as Record<string, Match[]>);
+        }
+    }, [matches, groupByStage]);
+
+    const sortedStageKeys = useMemo(() => {
+        return Object.keys(groupedMatches).sort((a, b) => STAGE_ORDER.indexOf(a as MatchStage) - STAGE_ORDER.indexOf(b as MatchStage));
+    }, [groupedMatches]);
 
     return (
         <div>
             <h4 className="font-semibold text-blue-400 mb-2">{title} ({matches?.length || 0} Matches)</h4>
             <div className="text-sm text-slate-300 max-h-64 overflow-y-auto pr-2 border border-slate-700 p-2 rounded-md bg-slate-800 space-y-3">
-                {Object.keys(matchesByDate).sort().map(date => (
-                    <div key={date}>
-                        <h5 className="font-bold text-slate-300 text-sm mb-1 bg-slate-700 p-1 rounded-t-md">{new Date(date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h5>
-                        {matchesByDate[date].map(match => (
-                            <div key={match.id} className="flex justify-between items-center p-1.5 hover:bg-slate-700/50 rounded-b-md">
-                                <span className="flex items-center gap-2">
-                                    {match.team1.flag} {match.team1.name} <span className="text-slate-500">vs</span> {match.team2.flag} {match.team2.name}
-                                </span>
-                                <span className="text-xs text-slate-400 text-right">{new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}<br/>@ {match.stadium.name}</span>
-                            </div>
-                        ))}
-                    </div>
-                ))}
+                {groupByStage ? (
+                    sortedStageKeys.map(stageKey => (
+                         <div key={stageKey}>
+                            <h5 className="font-bold text-blue-300 text-md mb-1 bg-slate-700 p-2 rounded-t-md">{stageKey}</h5>
+                            {Object.keys(groupedMatches[stageKey]).sort().map(dateKey => (
+                                <div key={dateKey} className="pl-2 border-l-2 border-slate-600 ml-2">
+                                    <h6 className="font-semibold text-slate-300 text-sm my-1">{new Date(dateKey).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</h6>
+                                    {(groupedMatches[stageKey] as Record<string, Match[]>)[dateKey].map(match => (
+                                        <div key={match.id} className="flex justify-between items-center p-1.5 hover:bg-slate-700/50 rounded-md">
+                                            <span className="flex items-center gap-2">
+                                                {match.team1.flag} {match.team1.name} <span className="text-slate-500">vs</span> {match.team2.flag} {match.team2.name}
+                                            </span>
+                                            <span className="text-xs text-slate-400 text-right">{new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}<br/>@ {match.stadium.name}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+                    ))
+                ) : (
+                    Object.keys(groupedMatches).sort().map(dateKey => (
+                        <div key={dateKey}>
+                            <h5 className="font-bold text-slate-300 text-sm mb-1 bg-slate-700 p-1 rounded-t-md">{new Date(dateKey).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h5>
+                            {(groupedMatches[dateKey] as Match[]).map(match => (
+                                 <div key={match.id} className="flex justify-between items-center p-1.5 hover:bg-slate-700/50 rounded-b-md">
+                                    <span className="flex items-center gap-2">
+                                        {match.team1.flag} {match.team1.name} <span className="text-slate-500">vs</span> {match.team2.flag} {match.team2.name}
+                                    </span>
+                                    <span className="text-xs text-slate-400 text-right">{new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}<br/>@ {match.stadium.name}</span>
+                                </div>
+                            ))}
+                        </div>
+                    ))
+                )}
             </div>
         </div>
     );
@@ -71,14 +109,27 @@ const Step5Confirmation = ({ tournament, onBack, onFinish }: Step5ConfirmationPr
         }
     };
 
+    // NEW: Parse the Markdown description into HTML
+    const renderedDescription = useMemo(() => {
+        if (!tournament.description) return { __html: '<p class="text-slate-400 italic">No description provided.</p>' };
+        // Using dangerouslySetInnerHTML is safe here because the content is created by a trusted admin.
+        return { __html: marked.parse(tournament.description) };
+    }, [tournament.description]);
+
     return (
         <div className="mt-4 space-y-6">
-            <h2 className="text-2xl font-bold text-blue-400">Step 5: Confirmation and Activation</h2>
+            <h2 className="text-2-xl font-bold text-blue-400">Step 5: Confirmation and Activation</h2>
             <div className="space-y-6 p-6 border border-slate-700 rounded-lg bg-slate-900/50">
                 
                 <div>
                     <h3 className="text-xl font-semibold text-white border-b border-slate-700 pb-2 mb-3">{tournament.name}</h3>
-                    <p className="text-slate-300 italic">{tournament.description || "No description provided."}</p>
+                    {/* UPDATED: Render the description from Markdown */}
+                    {/* For best results, install the Tailwind Typography plugin: npm install -D @tailwindcss/typography */}
+                    {/* Then add `require('@tailwindcss/typography')` to your tailwind.config.js plugins array. */}
+                    <div
+                        className="prose prose-sm prose-invert max-w-none"
+                        dangerouslySetInnerHTML={renderedDescription}
+                    />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -96,9 +147,11 @@ const Step5Confirmation = ({ tournament, onBack, onFinish }: Step5ConfirmationPr
                 <div className="bg-slate-800 p-3 rounded-md border border-slate-700 text-sm">
                     <h4 className="font-semibold text-blue-400 mb-2">Point Rules</h4>
                     <PointRuleRow label="Group Stage" points={tournament.pointRules?.groupStage} />
+                    <PointRuleRow label="Round of 32" points={tournament.pointRules?.round32} />
                     <PointRuleRow label="Round of 16" points={tournament.pointRules?.round16} />
                     <PointRuleRow label="Quarter Finals" points={tournament.pointRules?.quarterFinal} />
                     <PointRuleRow label="Semi Finals" points={tournament.pointRules?.semiFinal} />
+                    {tournament.hasThirdPlaceMatch && <PointRuleRow label="Third Place Match" points={tournament.pointRules?.thirdPlaceMatch} />}
                     <PointRuleRow label="Final" points={tournament.pointRules?.final} />
                     <div className="flex justify-between py-1 border-t border-slate-700 mt-1">
                         <span className="text-slate-400">Champion Bonus:</span>
@@ -122,7 +175,7 @@ const Step5Confirmation = ({ tournament, onBack, onFinish }: Step5ConfirmationPr
 
                 <div className="space-y-4">
                     <MatchList title="Group Stage Schedule" matches={tournament.matches} />
-                    <MatchList title="Knockout Stage Schedule" matches={tournament.knockoutMatches} />
+                    <MatchList title="Knockout Stage Schedule" matches={tournament.knockoutMatches} groupByStage={true} />
                 </div>
             </div>
 
