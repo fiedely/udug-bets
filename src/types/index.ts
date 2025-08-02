@@ -1,6 +1,14 @@
 // src/types/index.ts
 
-export type View = 'Dashboard' | 'Matches' | 'Leaderboard' | 'Create Tournament' | 'Manage Users' | 'List Tournaments' | 'Edit Tournament';
+// UPDATED: Added new user-facing views and removed old ones
+export type View = 
+    'My Tournaments' | 
+    'Join Tournament' | 
+    'Leaderboard' | 
+    'Create Tournament' | 
+    'Manage Users' | 
+    'List Tournaments' | 
+    'Edit Tournament';
 
 export interface UserProfile {
   uid: string;
@@ -21,7 +29,7 @@ export interface PointRules {
     round16?: { correctScore: number; correctOutcome: number; };
     quarterFinal?: { correctScore: number; correctOutcome: number; };
     semiFinal?: { correctScore: number; correctOutcome: number; };
-    thirdPlaceMatch?: { correctScore: number; correctOutcome: number; }; // NEW
+    thirdPlaceMatch?: { correctScore: number; correctOutcome: number; };
     final?: { correctScore: number; correctOutcome: number; };
     championBonus?: number;
 }
@@ -54,7 +62,6 @@ export interface PredictionStatus {
     allowFinals: boolean;
 }
 
-// UPDATED: More flexible knockout stage options
 export type KnockoutStartStage = 'Final' | 'Semi-final' | 'Quarter-final' | 'Round of 16' | 'Round of 32';
 
 export interface Tournament {
@@ -74,5 +81,19 @@ export interface Tournament {
     participants?: string[];
     predictionStatus?: PredictionStatus; 
     knockoutStartStage?: KnockoutStartStage; 
-    hasThirdPlaceMatch?: boolean; // NEW
+    hasThirdPlaceMatch?: boolean;
+}
+
+// NEW: Data structure for storing user predictions
+export interface MatchPrediction {
+    team1Score: number;
+    team2Score: number;
+}
+
+export interface UserPredictions {
+    id?: string; // Firestore document ID
+    tournamentId: string;
+    userId: string;
+    championPrediction?: string; // Team code
+    matchPredictions: Record<string, MatchPrediction>; // Key is the match ID
 }

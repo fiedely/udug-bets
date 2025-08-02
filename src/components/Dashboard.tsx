@@ -4,30 +4,28 @@ import { useState, useEffect } from 'react';
 import { auth, db } from '../firebaseConfig';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-
-// Import the centralized types (Update the path)
 import type { View, UserProfile } from '../types';
 
-// Import the extracted components
-import DashboardContent from './views/DashboardContent';
-import MatchesContent from './views/MatchesContent';
-import LeaderboardContent from './views/LeaderboardContent';
+// Admin Components
 import CreateTournamentContent from './admin/CreateTournamentContent';
 import ListTournamentsContent from './admin/ListTournamentsContent';
 import TournamentWizard from './admin/TournamentWizard';
 import ManageUsersContent from './admin/ManageUsersContent';
 
+// User Components
+import JoinTournament from './views/JoinTournament'; 
+const MyTournaments = () => <div className="bg-slate-800 p-8 rounded-lg">My Tournaments View - Coming Soon!</div>;
+const LeaderboardContent = () => <div className="bg-slate-800 p-8 rounded-lg">Leaderboard View - Coming Soon!</div>;
 
-// --- Main Dashboard Component ---
+
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeView, setActiveView] = useState<View>('Dashboard');
+  const [activeView, setActiveView] = useState<View>('My Tournaments');
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
   const [editingTournamentId, setEditingTournamentId] = useState<string | null>(null);
   const [isEditorDirty, setIsEditorDirty] = useState(false);
-
 
   const user = auth.currentUser;
 
@@ -54,26 +52,19 @@ const Dashboard = () => {
   };
 
   const handleAdminClick = () => {
-    // Ensure 'Edit Tournament' is included in the check
     if (!['Create Tournament', 'Manage Users', 'List Tournaments', 'Edit Tournament'].includes(activeView)) {
       setActiveView('List Tournaments');
     }
     setIsAdminMenuOpen(!isAdminMenuOpen);
   };
 
-  // ENHANCED: Check for dirty state before navigating (Fixes the missing popup)
   const handleSetView = (view: View) => {
     if (activeView === 'Edit Tournament' && isEditorDirty) {
         const confirmLeave = window.confirm("You have unsaved changes. Are you sure you want to leave this page?");
-        if (!confirmLeave) {
-            return; // Cancel the navigation
-        }
+        if (!confirmLeave) return;
     }
-
-    // Proceed with navigation
-    setIsEditorDirty(false); // Reset the flag
+    setIsEditorDirty(false);
     setActiveView(view);
-    // Clear the editing ID when navigating away from the edit screen
     if (view !== 'Edit Tournament') {
       setEditingTournamentId(null);
     }
@@ -91,10 +82,9 @@ const Dashboard = () => {
         <div className="flex items-center justify-center h-full">
            <svg className="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
         </div>
-      )
+      );
     }
 
-    // Use the new TournamentWizard component and pass the reportDirtyState callback
     if (activeView === 'Edit Tournament' && editingTournamentId) {
         return <TournamentWizard
                  tournamentId={editingTournamentId}
@@ -102,23 +92,22 @@ const Dashboard = () => {
                  reportDirtyState={setIsEditorDirty}
                />;
     }
-
     switch (activeView) {
-      case 'Matches':
-        return <MatchesContent />;
-      case 'Leaderboard':
-        return <LeaderboardContent />;
-      // FIX: Added the missing case for 'Create Tournament'
       case 'Create Tournament':
         return <CreateTournamentContent user={user} onTournamentCreated={handleEditTournament} />;
       case 'List Tournaments':
-        // Pass userProfile to enable the toggle functionality
         return <ListTournamentsContent onEditTournament={handleEditTournament} userProfile={userProfile} />;
       case 'Manage Users':
         return <ManageUsersContent userProfile={userProfile} />;
-      case 'Dashboard':
+      
+      // UPDATED: Pass the handleSetView function as a prop
+      case 'Join Tournament':
+        return <JoinTournament userProfile={userProfile} setView={handleSetView} />;
+      case 'Leaderboard':
+        return <LeaderboardContent />;
+      case 'My Tournaments':
       default:
-        return <DashboardContent user={user} />;
+        return <MyTournaments />;
     }
   };
 
@@ -136,21 +125,23 @@ const Dashboard = () => {
           <h2 className="text-2xl font-bold text-blue-400">Udug Bets</h2>
         </div>
         <nav className="flex-grow">
-          <button onClick={() => handleSetView('Dashboard')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'Dashboard' ? 'bg-slate-700 text-white' : ''}`}>Dashboard</button>
-          <button onClick={() => handleSetView('Matches')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'Matches' ? 'bg-slate-700 text-white' : ''}`}>Matches</button>
-          <button onClick={() => handleSetView('Leaderboard')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'Leaderboard' ? 'bg-slate-700 text-white' : ''}`}>Leaderboard</button>
+          <div className="space-y-1">
+            <button onClick={() => handleSetView('My Tournaments')} className={`w-full text-left block py-2.5 px-4 rounded-md hover:bg-slate-700 ${activeView === 'My Tournaments' ? 'bg-slate-700 text-white' : ''}`}>My Tournaments</button>
+            <button onClick={() => handleSetView('Join Tournament')} className={`w-full text-left block py-2.5 px-4 rounded-md hover:bg-slate-700 ${activeView === 'Join Tournament' ? 'bg-slate-700 text-white' : ''}`}>Join Tournament</button>
+            <button onClick={() => handleSetView('Leaderboard')} className={`w-full text-left block py-2.5 px-4 rounded-md hover:bg-slate-700 ${activeView === 'Leaderboard' ? 'bg-slate-700 text-white' : ''}`}>Leaderboard</button>
+          </div>
+          
           {(userProfile?.role === 'admin' || userProfile?.role === 'superadmin') && (
-            <div>
-              <button onClick={handleAdminClick} className="w-full text-left flex justify-between items-center py-2.5 px-4 hover:bg-slate-700">
-                <span>Admin</span>
+            <div className="mt-4 pt-4 border-t border-slate-700">
+              <button onClick={handleAdminClick} className="w-full text-left flex justify-between items-center py-2.5 px-4 rounded-md hover:bg-slate-700">
+                <span>Admin Panel</span>
                 <svg className={`w-5 h-5 transition-transform ${isAdminMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
               </button>
               {isAdminMenuOpen && (
-                <div className="pl-4">
-                  <button onClick={() => handleSetView('Create Tournament')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'Create Tournament' ? 'bg-slate-700 text-white' : ''}`}>Create Tournament</button>
-                  {/* Highlight List Tournaments if currently editing or listing */}
-                   <button onClick={() => handleSetView('List Tournaments')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${(activeView === 'List Tournaments' || activeView === 'Edit Tournament') ? 'bg-slate-700 text-white' : ''}`}>List Tournaments</button>
-                  <button onClick={() => handleSetView('Manage Users')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'Manage Users' ? 'bg-slate-700 text-white' : ''}`}>Manage Users</button>
+                <div className="pl-4 mt-2 space-y-1">
+                  <button onClick={() => handleSetView('Create Tournament')} className={`w-full text-left block py-2.5 px-4 rounded-md hover:bg-slate-700 ${activeView === 'Create Tournament' ? 'bg-slate-700 text-white' : ''}`}>Create Tournament</button>
+                   <button onClick={() => handleSetView('List Tournaments')} className={`w-full text-left block py-2.5 px-4 rounded-md hover:bg-slate-700 ${(activeView === 'List Tournaments' || activeView === 'Edit Tournament') ? 'bg-slate-700 text-white' : ''}`}>List Tournaments</button>
+                  <button onClick={() => handleSetView('Manage Users')} className={`w-full text-left block py-2.5 px-4 rounded-md hover:bg-slate-700 ${activeView === 'Manage Users' ? 'bg-slate-700 text-white' : ''}`}>Manage Users</button>
                 </div>
               )}
             </div>
@@ -167,7 +158,7 @@ const Dashboard = () => {
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
           </button>
           <div className="text-xl font-semibold text-slate-100">{activeView}</div>
-          <button onClick={handleSignOut} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm transition-colors">Sign Out</button>
+          <button onClick={handleSignOut} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm rounded-md transition-colors">Sign Out</button>
         </header>
         <main className="flex-1 p-4 md:p-8">
           {renderContent()}
