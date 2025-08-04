@@ -1,3 +1,20 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes subtle-glow {
+  0%, 100% {
+    box-shadow: 0 0 4px var(--glow-color);
+  }
+  50% {
+    box-shadow: 0 0 12px 3px var(--glow-color);
+  }
+}
+
+.glow-green {
+  --glow-color: rgba(34, 197, 94, 0.6); /* Green-500 with less opacity */
+  animation: subtle-glow 4s infinite ease-in-out; /* Slower, more subtle animation */
+}
+
+/* NOTE: The non-glowing 'light-off' state will be handled by standard Tailwind classes in the component */
+

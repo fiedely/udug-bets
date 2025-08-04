@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { auth, db } from '../firebaseConfig';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import type { View, UserProfile } from '../types';
+import type { View, UserProfile, Tournament } from '../types';
 
 // Admin Components
 import CreateTournamentContent from './admin/CreateTournamentContent';
@@ -15,6 +15,7 @@ import ManageUsersContent from './admin/ManageUsersContent';
 // User Components
 import JoinTournament from './views/JoinTournament'; 
 import MyTournaments from './views/MyTournaments'; 
+import PredictionEntry from './views/PredictionEntry'; // NEW
 const LeaderboardContent = () => <div className="bg-slate-800 p-8 rounded-lg">Leaderboard View - Coming Soon!</div>;
 
 
@@ -26,6 +27,8 @@ const Dashboard = () => {
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
   const [editingTournamentId, setEditingTournamentId] = useState<string | null>(null);
   const [isEditorDirty, setIsEditorDirty] = useState(false);
+  // NEW: State to manage which tournament is being predicted
+  const [predictingTournament, setPredictingTournament] = useState<Tournament | null>(null);
 
   const user = auth.currentUser;
 
@@ -64,6 +67,7 @@ const Dashboard = () => {
         if (!confirmLeave) return;
     }
     setIsEditorDirty(false);
+    setPredictingTournament(null); // Clear prediction view when changing main view
     setActiveView(view);
     if (view !== 'Edit Tournament') {
       setEditingTournamentId(null);
@@ -75,6 +79,11 @@ const Dashboard = () => {
     setEditingTournamentId(id);
     setActiveView('Edit Tournament');
   };
+  
+  // NEW: Function to handle navigating to the prediction entry page
+  const handleEnterPredictions = (tournament: Tournament) => {
+      setPredictingTournament(tournament);
+  };
 
   const renderContent = () => {
     if (isLoadingProfile) {
@@ -83,6 +92,15 @@ const Dashboard = () => {
            <svg className="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
         </div>
       );
+    }
+    
+    // NEW: Prioritize rendering the prediction entry view if a tournament is selected
+    if (predictingTournament) {
+        return <PredictionEntry 
+                 tournament={predictingTournament} 
+                 userProfile={userProfile} 
+                 onBack={() => setPredictingTournament(null)} 
+               />;
     }
 
     if (activeView === 'Edit Tournament' && editingTournamentId) {
@@ -106,7 +124,7 @@ const Dashboard = () => {
         return <LeaderboardContent />;
       case 'My Tournaments':
       default:
-        return <MyTournaments userProfile={userProfile} />;
+        return <MyTournaments userProfile={userProfile} onEnterPredictions={handleEnterPredictions} />;
     }
   };
 
@@ -156,7 +174,8 @@ const Dashboard = () => {
           <button className="md:hidden text-slate-300" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
           </button>
-          <div className="text-xl font-semibold text-slate-100">{activeView}</div>
+          {/* UPDATED: Show tournament name in header when predicting */}
+          <div className="text-xl font-semibold text-slate-100">{predictingTournament ? `Predict: ${predictingTournament.name}` : activeView}</div>
           <button onClick={handleSignOut} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm rounded-md transition-colors">Sign Out</button>
         </header>
         <main className="flex-1 p-4 md:p-8">
