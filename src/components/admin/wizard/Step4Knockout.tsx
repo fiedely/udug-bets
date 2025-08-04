@@ -55,6 +55,14 @@ const Step4Knockout = ({ tournament, onNext, onBack, setIsDirty }: Step4Knockout
         const startIndex = ALL_KNOCKOUT_STAGES.findIndex(s => s.stage === selectedStage);
         let relevantStages = ALL_KNOCKOUT_STAGES.slice(startIndex);
 
+        // **BUG FIX:** Manually add the Third Place Match if 'Final' is selected and it's included.
+        if (selectedStage === 'Final' && includeThirdPlace) {
+            const thirdPlaceStage = ALL_KNOCKOUT_STAGES.find(s => s.stage === 'Third Place Match');
+            if (thirdPlaceStage) {
+                relevantStages.unshift(thirdPlaceStage); // Add it to the beginning
+            }
+        }
+
         if (!includeThirdPlace) {
             relevantStages = relevantStages.filter(s => s.stage !== 'Third Place Match');
         }
