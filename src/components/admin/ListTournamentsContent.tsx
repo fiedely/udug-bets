@@ -8,6 +8,7 @@ import InviteModal from './InviteModal';
 
 interface ListTournamentsContentProps {
     onEditTournament: (id: string) => void;
+    onManageTournament: (tournament: Tournament) => void;
     userProfile: UserProfile | null;
 }
 
@@ -17,16 +18,11 @@ const formatDate = (date?: Date) => {
 };
 
 const defaultPredictionStatus: PredictionStatus = {
-    allowChampion: false,
-    allowGroupStage: false,
-    allowRoundOf32: false, // NEW
-    allowRoundOf16: false,
-    allowQuarterFinal: false,
-    allowSemiFinal: false,
-    allowFinals: false,
+    allowChampion: false, allowGroupStage: false, allowRoundOf32: false,
+    allowRoundOf16: false, allowQuarterFinal: false, allowSemiFinal: false, allowFinals: false,
 };
 
-const ListTournamentsContent = ({ onEditTournament, userProfile }: ListTournamentsContentProps) => {
+const ListTournamentsContent = ({ onEditTournament, onManageTournament, userProfile }: ListTournamentsContentProps) => {
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [deletingTournament, setDeletingTournament] = useState<Tournament | null>(null);
@@ -34,25 +30,23 @@ const ListTournamentsContent = ({ onEditTournament, userProfile }: ListTournamen
     const [managingPredictionsFor, setManagingPredictionsFor] = useState<string | null>(null);
     const predictionMenuRef = useRef<HTMLDivElement>(null);
 
-    const fetchTournaments = async () => {
-        setIsLoading(true);
-        const querySnapshot = await getDocs(collection(db, "tournaments"));
-        const tourneyList = querySnapshot.docs.map(docSnapshot => {
-            const data = docSnapshot.data();
-            return {
-                id: docSnapshot.id,
-                ...data,
-                startDate: data.startDate ? (data.startDate as Timestamp).toDate() : undefined,
-                endDate: data.endDate ? (data.endDate as Timestamp).toDate() : undefined,
-                participants: data.participants || [],
-                predictionStatus: { ...defaultPredictionStatus, ...(data.predictionStatus || {}) },
-            } as Tournament;
-        });
-        setTournaments(tourneyList);
-        setIsLoading(false);
-    };
-
     useEffect(() => {
+        const fetchTournaments = async () => {
+            setIsLoading(true);
+            const querySnapshot = await getDocs(collection(db, "tournaments"));
+            const tourneyList = querySnapshot.docs.map(docSnapshot => {
+                const data = docSnapshot.data();
+                return {
+                    id: docSnapshot.id, ...data,
+                    startDate: data.startDate ? (data.startDate as Timestamp).toDate() : undefined,
+                    endDate: data.endDate ? (data.endDate as Timestamp).toDate() : undefined,
+                    participants: data.participants || [],
+                    predictionStatus: { ...defaultPredictionStatus, ...(data.predictionStatus || {}) },
+                } as Tournament;
+            });
+            setTournaments(tourneyList);
+            setIsLoading(false);
+        };
         fetchTournaments();
     }, []);
 
@@ -81,18 +75,11 @@ const ListTournamentsContent = ({ onEditTournament, userProfile }: ListTournamen
     const handleTogglePredictionStatus = async (tournamentId: string, stage: keyof PredictionStatus, currentValue: boolean) => {
         const isAdmin = userProfile?.role === 'admin' || userProfile?.role === 'superadmin';
         if (!isAdmin) return;
-
         const newValue = !currentValue;
         const fieldPath = `predictionStatus.${stage}`;
-
         try {
             await updateDoc(doc(db, "tournaments", tournamentId), { [fieldPath]: newValue });
-            setTournaments(prev => prev.map(t => {
-                if (t.id === tournamentId && t.predictionStatus) {
-                    return { ...t, predictionStatus: { ...t.predictionStatus, [stage]: newValue } };
-                }
-                return t;
-            }));
+            setTournaments(prev => prev.map(t => t.id === tournamentId && t.predictionStatus ? { ...t, predictionStatus: { ...t.predictionStatus, [stage]: newValue } } : t));
         } catch (error) {
             console.error(`Error updating ${stage}:`, error);
         }
@@ -133,12 +120,10 @@ const ListTournamentsContent = ({ onEditTournament, userProfile }: ListTournamen
                                 <p className="text-sm text-slate-400">Status: <span className={t.status === 'draft' ? 'text-yellow-400' : (t.status === 'active' ? 'text-green-400' : 'text-gray-400')}>{t.status}</span></p>
                                 <p className="text-sm text-slate-500">Ticket: {t.ticket}</p>
                             </div>
-
                             <div className="text-sm text-slate-300 border-t border-b border-slate-700 py-2 space-y-1">
                                 <p><strong>Period:</strong> {formatDate(t.startDate)} - {formatDate(t.endDate)}</p>
                                 <p><strong>Participants:</strong> {t.participants?.length || 0} users</p>
                             </div>
-
                             <div className="flex flex-wrap justify-between items-center gap-4">
                                 <div className="relative">
                                     <button onClick={() => setManagingPredictionsFor(managingPredictionsFor === t.id ? null : t.id)} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm rounded-md" disabled={!isAdmin || t.status === 'draft'}>
@@ -156,19 +141,18 @@ const ListTournamentsContent = ({ onEditTournament, userProfile }: ListTournamen
                                         </div>
                                     )}
                                 </div>
-
-                                <div className="flex gap-2">
-                                    <button onClick={() => setInvitingTournament(t)} className="px-4 py-2 bg-green-600 hover:bg-green-500 font-semibold text-white text-sm rounded-md">Invite</button>
-                                    <button onClick={() => onEditTournament(t.id)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 font-semibold text-white text-sm rounded-md">Edit</button>
-                                    <button onClick={() => setDeletingTournament(t)} className="px-4 py-2 bg-red-600 hover:bg-red-500 font-semibold text-white text-sm rounded-md">Delete</button>
+                                {/* UPDATED: Admin now has 4 buttons */}
+                                <div className="flex flex-wrap gap-2">
+                                    <button onClick={() => setInvitingTournament(t)} className="px-3 py-2 bg-green-600 hover:bg-green-500 font-semibold text-white text-xs rounded-md">Invite</button>
+                                    <button onClick={() => onManageTournament(t)} className="px-3 py-2 bg-purple-600 hover:bg-purple-500 font-semibold text-white text-xs rounded-md" disabled={t.status === 'draft'}>Manage Scores</button>
+                                    <button onClick={() => onEditTournament(t.id)} className="px-3 py-2 bg-blue-600 hover:bg-blue-500 font-semibold text-white text-xs rounded-md">Edit</button>
+                                    <button onClick={() => setDeletingTournament(t)} className="px-3 py-2 bg-red-600 hover:bg-red-500 font-semibold text-white text-xs rounded-md">Delete</button>
                                 </div>
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
-            
-            {/* Modals are unchanged */}
             {deletingTournament && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
                     <div className="bg-slate-800 border border-slate-700 p-6 rounded-lg shadow-xl max-w-sm w-full">
@@ -181,13 +165,8 @@ const ListTournamentsContent = ({ onEditTournament, userProfile }: ListTournamen
                     </div>
                 </div>
             )}
-
             {invitingTournament && (
-                <InviteModal 
-                    tournament={invitingTournament} 
-                    onClose={() => setInvitingTournament(null)}
-                    onParticipantsChange={handleParticipantsChange}
-                />
+                <InviteModal tournament={invitingTournament} onClose={() => setInvitingTournament(null)} onParticipantsChange={handleParticipantsChange} />
             )}
         </>
     );

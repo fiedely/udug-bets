@@ -1,14 +1,6 @@
 // src/types/index.ts
 
-// UPDATED: Added new user-facing views and removed old ones
-export type View = 
-    'My Tournaments' | 
-    'Join Tournament' | 
-    'Leaderboard' | 
-    'Create Tournament' | 
-    'Manage Users' | 
-    'List Tournaments' | 
-    'Edit Tournament';
+export type View = 'My Tournaments' | 'Join Tournament' | 'Leaderboard' | 'Create Tournament' | 'Manage Users' | 'List Tournaments' | 'Edit Tournament' | 'Manage Scores';
 
 export interface UserProfile {
   uid: string;
@@ -50,6 +42,8 @@ export interface Match {
     team2: Team;
     date: string; 
     stadium: Stadium;
+    team1Score?: number;
+    team2Score?: number;
 }
 
 export interface PredictionStatus {
@@ -82,18 +76,18 @@ export interface Tournament {
     predictionStatus?: PredictionStatus; 
     knockoutStartStage?: KnockoutStartStage; 
     hasThirdPlaceMatch?: boolean;
+    champion?: string;
 }
 
-// NEW: Data structure for storing user predictions
 export interface MatchPrediction {
     team1Score: number;
     team2Score: number;
 }
 
 export interface UserPredictions {
-    id?: string; // Firestore document ID
+    id?: string;
     tournamentId: string;
     userId: string;
-    championPrediction?: string; // Team code
-    matchPredictions: Record<string, MatchPrediction>; // Key is the match ID
+    championPrediction?: string;
+    matchPredictions: Record<string, MatchPrediction>;
 }
