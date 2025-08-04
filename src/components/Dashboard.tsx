@@ -12,6 +12,7 @@ import ListTournamentsContent from './admin/ListTournamentsContent';
 import TournamentWizard from './admin/TournamentWizard';
 import ManageUsersContent from './admin/ManageUsersContent';
 import ScoreManagement from './admin/ScoreManagement';
+import TournamentLeaderboard from './admin/TournamentLeaderboard'; // Import the new component
 
 // User Components
 import JoinTournament from './views/JoinTournament'; 
@@ -30,7 +31,7 @@ const Dashboard = () => {
   const [isEditorDirty, setIsEditorDirty] = useState(false);
   const [predictingTournament, setPredictingTournament] = useState<Tournament | null>(null);
   const [managingTournament, setManagingTournament] = useState<Tournament | null>(null);
-  // NEW: State to track dirty state from the score manager
+  const [viewingLeaderboardFor, setViewingLeaderboardFor] = useState<Tournament | null>(null); // New state
   const [isScoreManagerDirty, setIsScoreManagerDirty] = useState(false);
 
   const user = auth.currentUser;
@@ -65,15 +66,15 @@ const Dashboard = () => {
   };
 
   const handleSetView = (view: View) => {
-    // UPDATED: Check dirty state from both wizard and score manager
     if ((activeView === 'Edit Tournament' && isEditorDirty) || (activeView === 'Manage Scores' && isScoreManagerDirty)) {
         const confirmLeave = window.confirm("You have unsaved changes. Are you sure you want to leave this page?");
         if (!confirmLeave) return;
     }
     setIsEditorDirty(false);
-    setIsScoreManagerDirty(false); // Reset dirty state
+    setIsScoreManagerDirty(false);
     setPredictingTournament(null);
     setManagingTournament(null);
+    setViewingLeaderboardFor(null); // Reset leaderboard view
     setActiveView(view);
     if (view !== 'Edit Tournament') {
       setEditingTournamentId(null);
@@ -95,6 +96,11 @@ const Dashboard = () => {
       setActiveView('Manage Scores');
   };
 
+  // New handler to set the leaderboard view
+  const handleViewLeaderboard = (tournament: Tournament) => {
+      setViewingLeaderboardFor(tournament);
+  };
+
   const renderContent = () => {
     if (isLoadingProfile) {
       return (
@@ -104,10 +110,13 @@ const Dashboard = () => {
       );
     }
     
+    // Render leaderboard if one is selected
+    if (viewingLeaderboardFor) {
+        return <TournamentLeaderboard tournament={viewingLeaderboardFor} onBack={() => setViewingLeaderboardFor(null)} />;
+    }
     if (predictingTournament) {
         return <PredictionEntry tournament={predictingTournament} userProfile={userProfile} onBack={() => setPredictingTournament(null)} />;
     }
-    // UPDATED: Pass the reportDirtyState function to ScoreManagement
     if (managingTournament) {
         return <ScoreManagement tournament={managingTournament} onBack={() => handleSetView('List Tournaments')} reportDirtyState={setIsScoreManagerDirty} />;
     }
@@ -119,7 +128,7 @@ const Dashboard = () => {
       case 'Create Tournament':
         return <CreateTournamentContent user={user} onTournamentCreated={handleEditTournament} />;
       case 'List Tournaments':
-        return <ListTournamentsContent onEditTournament={handleEditTournament} onManageTournament={handleManageTournament} userProfile={userProfile} />;
+        return <ListTournamentsContent onEditTournament={handleEditTournament} onManageTournament={handleManageTournament} onViewLeaderboard={handleViewLeaderboard} userProfile={userProfile} />;
       case 'Manage Users':
         return <ManageUsersContent userProfile={userProfile} />;
       case 'Join Tournament':
@@ -178,7 +187,7 @@ const Dashboard = () => {
           <button className="md:hidden text-slate-300" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
           </button>
-          <div className="text-xl font-semibold text-slate-100">{predictingTournament ? `Predict: ${predictingTournament.name}` : (managingTournament ? `Manage: ${managingTournament.name}` : activeView)}</div>
+          <div className="text-xl font-semibold text-slate-100">{viewingLeaderboardFor ? `Leaderboard: ${viewingLeaderboardFor.name}` : (predictingTournament ? `Predict: ${predictingTournament.name}` : (managingTournament ? `Manage: ${managingTournament.name}` : activeView))}</div>
           <button onClick={handleSignOut} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm transition-colors">Sign Out</button>
         </header>
         <main className="flex-1 p-4 md:p-8">

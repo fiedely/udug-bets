@@ -9,6 +9,7 @@ import InviteModal from './InviteModal';
 interface ListTournamentsContentProps {
     onEditTournament: (id: string) => void;
     onManageTournament: (tournament: Tournament) => void;
+    onViewLeaderboard: (tournament: Tournament) => void; // New prop
     userProfile: UserProfile | null;
 }
 
@@ -22,7 +23,7 @@ const defaultPredictionStatus: PredictionStatus = {
     allowRoundOf16: false, allowQuarterFinal: false, allowSemiFinal: false, allowFinals: false,
 };
 
-const ListTournamentsContent = ({ onEditTournament, onManageTournament, userProfile }: ListTournamentsContentProps) => {
+const ListTournamentsContent = ({ onEditTournament, onManageTournament, onViewLeaderboard, userProfile }: ListTournamentsContentProps) => {
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [deletingTournament, setDeletingTournament] = useState<Tournament | null>(null);
@@ -141,8 +142,8 @@ const ListTournamentsContent = ({ onEditTournament, onManageTournament, userProf
                                         </div>
                                     )}
                                 </div>
-                                {/* UPDATED: Admin now has 4 buttons */}
                                 <div className="flex flex-wrap gap-2">
+                                    <button onClick={() => onViewLeaderboard(t)} className="px-3 py-2 bg-cyan-600 hover:bg-cyan-500 font-semibold text-white text-xs" disabled={t.status === 'draft'}>Leaderboard</button>
                                     <button onClick={() => setInvitingTournament(t)} className="px-3 py-2 bg-green-600 hover:bg-green-500 font-semibold text-white text-xs">Invite</button>
                                     <button onClick={() => onManageTournament(t)} className="px-3 py-2 bg-purple-600 hover:bg-purple-500 font-semibold text-white text-xs" disabled={t.status === 'draft'}>Manage Scores</button>
                                     <button onClick={() => onEditTournament(t.id)} className="px-3 py-2 bg-blue-600 hover:bg-blue-500 font-semibold text-white text-xs">Edit</button>
