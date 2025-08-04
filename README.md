@@ -1,31 +1,57 @@
-# Udug Bets - Tournament Betting Platform
+# Udug Bets - Advanced Tournament Prediction Platform
 
-Udug Bets is a modern web application for creating and managing sports tournament betting pools. With a robust admin panel and an intuitive user dashboard, it streamlines tournament setup and participation for both organizers and players.
+Udug Bets is a comprehensive, feature-rich web application for creating and participating in sports tournament prediction pools. Built with a modern tech stack including React, TypeScript, and Firebase, it provides a robust suite of tools for administrators to meticulously set up and manage tournaments, while offering a dynamic and informative experience for users to make and track their predictions.
 
 ## Features
 
-### Admin & Superadmin
+The platform is divided into two core experiences: a powerful admin panel for complete tournament control and a user-centric dashboard for seamless participation.
 
-- **Tournament Wizard:** A 5-step guided process for creating tournaments:
-  1. **Details:** Set tournament name, description, dates, and custom point rules for each stage (including champion bonus).
-  2. **Participants:** Choose teams from any countries and organize them into groups.
-  3. **Group Matches:** Auto-generate round-robin schedules for group stages.
-  4. **Knockout Matches:** Auto-generate the knockout phase structure (Round of 16, Quarter-finals, Semi-finals, Third Place, Final).
-  5. **Confirmation:** Review all details before activating the tournament.
-- **Tournament Management:** Full CRUD (Create, Read, Update, Delete) for tournaments.
-- **Match Editing:** Edit all matches (group and knockout), including teams, date/time, and venue.
-- **User Role Management:** 
-  - **Superadmins:** Manage user roles (promote/demote admins) and edit user names.
-  - **Admins:** Manage tournaments.
-- **Prediction Control:** Enable or disable user predictions per tournament.
+### Admin & Superadmin Features
 
-### User
+- **Multi-Step Tournament Wizard:** A guided 5-step process to create highly flexible and detailed tournaments.
 
-- **Authentication:** Sign up and log in with email/password or Google.
-- **Dashboard:** View tournament info and schedules.
-- **Matches:** See all upcoming matches.
-- **Leaderboard:** Track rankings and compare with other players.
-- *(Coming Soon)* **Predictions:** Place and update match outcome predictions.
+  1. **Step 1: Details:** Define the tournament name, description (with Markdown support for rich text), start/end dates, and set custom point rules for every stage (Group Stage, Round of 32, Round of 16, Quarter-finals, Semi-finals, Third Place, and Final).
+
+  2. **Step 2:** Participants: Select participating teams from an expanded list of 77 countries and organize them into a customizable number of groups.
+
+  3. **Step 3:** Group Matches: Automatically generate a full round-robin schedule for all group stage matches, with the ability to edit any detail (teams, date, venue) after generation.
+
+  4. **Step 4:** Knockout Stage: A highly flexible knockout configurator. Admins can select the starting round (e.g., Round of 32, Round of 16, etc.) and choose whether to include a Third Place Match, adapting to any tournament format.
+
+  5. **Step 5:** Confirmation: A final review screen summarizing all tournament details—including point rules, participants, and full match schedules (both group and knockout)—before activation.
+
+- **Advanced Tournament Management:**
+  1. **Granular Prediction Control:** For each active tournament, admins can individually toggle prediction submissions on or off for each stage (Champion, Group Stage, R32, R16, etc.) via a convenient dropdown menu.
+
+  2. **User Invitation System:** Invite registered users to join a tournament via a dedicated modal that separates already-joined participants from those available to invite.
+
+  3. **Score & Seeding Management:** (Planned) A dedicated interface for admins to enter final match scores and manually seed the knockout bracket with qualifying teams.
+
+- **User Role Management:** Superadmins can manage user roles (promote/demote admins) and edit user details.
+
+### User Features
+
+- **Secure Authentication:** Seamless sign-up and login via Email/Password or Google Sign-In.
+
+- **Join Tournaments:** Users can join any active tournament by entering a unique 6-digit ticket code provided by an admin. Admins are prohibited from joining as participants.
+
+- **"My Tournaments" Dashboard:** The user's central hub, displaying a card for each joined tournament with detailed at-a-glance information:
+
+  1. Tournament status, date period, and total number of participants.
+
+  2. A detailed **Prediction Submission Status** table showing which stages are open for prediction (with a "traffic light" glowing indicator) and the user's personal submission status for each stage (Complete, Incomplete, or Not Submitted).
+
+- **Tournament Details View:** A dedicated page showing a comprehensive overview of a tournament, including the formatted description, point rules, and full match schedules.
+
+- **Prediction Entry Page:** A sophisticated interface for submitting predictions:
+
+  1. **Champion Prediction:** Select the tournament winner from a dropdown, with a trophy icon appearing upon selection.
+
+  2. **Match Predictions:** Enter scores for all matches. The UI automatically displays "WIN", "LOSE", or "DRAW" badges next to teams based on the input.
+
+  3. **Enhanced UX:** Each stage is a collapsible section, and the collapsed state is remembered in the browser. Match listings include date, time, venue, and match number.
+
+  4. **Unsaved Changes Warning:** Users are warned if they try to leave the page with unsaved predictions.
 
 ## Tech Stack
 
@@ -33,59 +59,5 @@ Udug Bets is a modern web application for creating and managing sports tournamen
 - **Language:** [TypeScript](https://www.typescriptlang.org/)
 - **Backend/Database:** [Firebase](https://firebase.google.com/)
 - **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+- **Markdown Parsing:** [Marked](https://marked.js.org/)
 - **Build Tool:** [Vite](https://vitejs.dev/)
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js (v16+)
-- npm or yarn
-
-### Installation
-
-1. **Clone the repository:**
-    ```sh
-    git clone https://your-repository-url/udug-bets.git
-    cd udug-bets
-    ```
-
-2. **Install dependencies:**
-    ```sh
-    npm install
-    ```
-
-3. **Configure Firebase:**
-    - Create a project at [Firebase Console](https://console.firebase.google.com/).
-    - Add a Web App and copy its `firebaseConfig`.
-    - Replace the placeholder in `src/firebaseConfig.ts`:
-      ```typescript
-      // src/firebaseConfig.ts
-      const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID"
-      };
-      ```
-    - Enable **Email/Password** and **Google** sign-in in **Authentication**.
-    - Create a **Firestore Database** and set development rules:
-      ```
-      rules_version = '2';
-      service cloud.firestore {
-        match /databases/{database}/documents {
-          match /{document=**} {
-            allow read, write: if true;
-          }
-        }
-      }
-      ```
-      **Note:** Use secure rules for production.
-
-4. **Start the development server:**
-    ```sh
-    npm run dev
-    ```
-    The app runs at `http://localhost:5173` (or another available port).
