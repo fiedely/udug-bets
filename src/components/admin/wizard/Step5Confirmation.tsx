@@ -53,16 +53,16 @@ const MatchList = ({ title, matches, groupByStage = false }: { title: string, ma
     return (
         <div>
             <h4 className="font-semibold text-blue-400 mb-2">{title} ({matches?.length || 0} Matches)</h4>
-            <div className="text-sm text-slate-300 max-h-64 overflow-y-auto pr-2 border border-slate-700 p-2 rounded-md bg-slate-800 space-y-3">
+            <div className="text-sm text-slate-300 max-h-64 overflow-y-auto pr-2 border border-slate-700 p-2 bg-slate-800 space-y-3">
                 {groupByStage ? (
                     sortedStageKeys.map(stageKey => (
                          <div key={stageKey}>
-                            <h5 className="font-bold text-blue-300 text-md mb-1 bg-slate-700 p-2 rounded-t-md">{stageKey}</h5>
+                            <h5 className="font-bold text-blue-300 text-md mb-1 bg-slate-700 p-2">{stageKey}</h5>
                             {Object.keys(groupedMatches[stageKey]).sort().map(dateKey => (
                                 <div key={dateKey} className="pl-2 border-l-2 border-slate-600 ml-2">
                                     <h6 className="font-semibold text-slate-300 text-sm my-1">{new Date(dateKey).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</h6>
                                     {(groupedMatches[stageKey] as Record<string, Match[]>)[dateKey].map(match => (
-                                        <div key={match.id} className="flex justify-between items-center p-1.5 hover:bg-slate-700/50 rounded-md">
+                                        <div key={match.id} className="flex justify-between items-center p-1.5 hover:bg-slate-700/50">
                                             <span className="flex items-center gap-2">
                                                 {match.team1.flag} {match.team1.name} <span className="text-slate-500">vs</span> {match.team2.flag} {match.team2.name}
                                             </span>
@@ -76,9 +76,9 @@ const MatchList = ({ title, matches, groupByStage = false }: { title: string, ma
                 ) : (
                     Object.keys(groupedMatches).sort().map(dateKey => (
                         <div key={dateKey}>
-                            <h5 className="font-bold text-slate-300 text-sm mb-1 bg-slate-700 p-1 rounded-t-md">{new Date(dateKey).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h5>
+                            <h5 className="font-bold text-slate-300 text-sm mb-1 bg-slate-700 p-1">{new Date(dateKey).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h5>
                             {(groupedMatches[dateKey] as Match[]).map(match => (
-                                 <div key={match.id} className="flex justify-between items-center p-1.5 hover:bg-slate-700/50 rounded-b-md">
+                                 <div key={match.id} className="flex justify-between items-center p-1.5 hover:bg-slate-700/50">
                                     <span className="flex items-center gap-2">
                                         {match.team1.flag} {match.team1.name} <span className="text-slate-500">vs</span> {match.team2.flag} {match.team2.name}
                                     </span>
@@ -119,7 +119,7 @@ const Step5Confirmation = ({ tournament, onBack, onFinish }: Step5ConfirmationPr
     return (
         <div className="mt-4 space-y-6">
             <h2 className="text-2-xl font-bold text-blue-400">Step 5: Confirmation and Activation</h2>
-            <div className="space-y-6 p-6 border border-slate-700 rounded-lg bg-slate-900/50">
+            <div className="space-y-6 p-6 border border-slate-700 bg-slate-900/50">
                 
                 <div>
                     <h3 className="text-xl font-semibold text-white border-b border-slate-700 pb-2 mb-3">{tournament.name}</h3>
@@ -133,18 +133,18 @@ const Step5Confirmation = ({ tournament, onBack, onFinish }: Step5ConfirmationPr
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div className="bg-slate-800 p-3 rounded-md border border-slate-700">
+                    <div className="bg-slate-800 p-3 border border-slate-700">
                         <h4 className="font-semibold text-blue-400 mb-1">Tournament Period</h4>
                         <p className="text-slate-300">Start: {tournament.startDate ? new Date(tournament.startDate).toLocaleString() : 'Not set'}</p>
                         <p className="text-slate-300">End: {tournament.endDate ? new Date(tournament.endDate).toLocaleString() : 'Not set'}</p>
                     </div>
-                     <div className="bg-slate-800 p-3 rounded-md border border-slate-700">
+                     <div className="bg-slate-800 p-3 border border-slate-700">
                         <h4 className="font-semibold text-blue-400 mb-1">Invitation Ticket</h4>
                         <p className="text-slate-300 font-mono text-lg">{tournament.ticket}</p>
                     </div>
                 </div>
 
-                <div className="bg-slate-800 p-3 rounded-md border border-slate-700 text-sm">
+                <div className="bg-slate-800 p-3 border border-slate-700 text-sm">
                     <h4 className="font-semibold text-blue-400 mb-2">Point Rules</h4>
                     <PointRuleRow label="Group Stage" points={tournament.pointRules?.groupStage} />
                     <PointRuleRow label="Round of 32" points={tournament.pointRules?.round32} />
@@ -163,7 +163,7 @@ const Step5Confirmation = ({ tournament, onBack, onFinish }: Step5ConfirmationPr
                     <h4 className="font-semibold text-blue-400 mb-2">Groups & Participants ({tournament.teams?.length || 0} teams)</h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {tournament.groups && Object.entries(tournament.groups).sort(([a], [b]) => a.localeCompare(b)).map(([groupName, teams]) => (
-                            <div key={groupName} className="bg-slate-800 p-3 rounded-md border border-slate-700">
+                            <div key={groupName} className="bg-slate-800 p-3 border border-slate-700">
                                 <h5 className="font-bold text-slate-300 text-sm mb-1">{groupName}</h5>
                                 <ul className="space-y-1 text-xs text-slate-400">
                                     {teams.map((team: Team) => <li key={team.code}>{team.flag} {team.name}</li>)}
@@ -180,19 +180,19 @@ const Step5Confirmation = ({ tournament, onBack, onFinish }: Step5ConfirmationPr
             </div>
 
             {tournament.status === 'draft' && (
-                <div className="p-4 bg-yellow-900 border border-yellow-700 text-yellow-100 text-sm rounded-lg">
+                <div className="p-4 bg-yellow-900 border border-yellow-700 text-yellow-100 text-sm">
                     <strong>Final Step:</strong> Activating the tournament will make it visible to users and lock most settings. Please review all details carefully.
                 </div>
             )}
 
             <div className="flex gap-4 pt-4 border-t border-slate-700">
-                <button type="button" onClick={onBack} className="w-1/3 px-4 py-3 bg-slate-700 hover:bg-slate-600 font-semibold text-white rounded-md transition-colors">Back</button>
+                <button type="button" onClick={onBack} className="w-1/3 px-4 py-3 bg-slate-700 hover:bg-slate-600 font-semibold text-white transition-colors">Back</button>
                 {tournament.status === 'draft' ? (
-                     <button type="button" onClick={handleActivate} disabled={isActivating} className="w-full px-4 py-3 bg-green-600 hover:bg-green-500 font-semibold text-white disabled:bg-green-800 disabled:cursor-not-allowed rounded-md transition-colors">
+                     <button type="button" onClick={handleActivate} disabled={isActivating} className="w-full px-4 py-3 bg-green-600 hover:bg-green-500 font-semibold text-white disabled:bg-green-800 disabled:cursor-not-allowed transition-colors">
                         {isActivating ? 'Activating...' : 'Confirm & Activate Tournament'}
                     </button>
                 ) : (
-                    <button type="button" onClick={onFinish} className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-white rounded-md transition-colors">
+                    <button type="button" onClick={onFinish} className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-white transition-colors">
                         Finish Editing
                     </button>
                 )}

@@ -137,25 +137,25 @@ const Step4Knockout = ({ tournament, onNext, onBack, setIsDirty }: Step4Knockout
             <div className="mt-4 space-y-6">
                  <div className="flex justify-between items-center">
                     <h2 className="text-2xl font-bold text-blue-400">Step 4: Knockout Round Matches</h2>
-                    <button onClick={handleClearAndReselect} className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white text-sm font-semibold rounded-md">
+                    <button onClick={handleClearAndReselect} className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white text-sm font-semibold">
                         Clear & Choose Again
                     </button>
                 </div>
                 <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
                     {Object.keys(matchesByStage).map(stage => (
                         <div key={stage}>
-                            <h3 className="text-lg font-semibold text-blue-300 mb-2 p-2 bg-slate-700/50 rounded-t-md">{stage}</h3>
+                            <h3 className="text-lg font-semibold text-blue-300 mb-2 p-2 bg-slate-700/50">{stage}</h3>
                             <div className="space-y-2">
                                 {matchesByStage[stage as MatchStage].map(match => (
-                                    <div key={match.id} className="p-3 bg-slate-900/50 border border-slate-700 rounded-b-md grid grid-cols-1 md:grid-cols-3 gap-4 text-sm items-center">
+                                    <div key={match.id} className="p-3 bg-slate-900/50 border border-slate-700 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm items-center">
                                        <div className="md:col-span-1">
                                             <label className="block text-xs font-medium text-slate-400">Match Participants</label>
                                             <div className="flex items-center gap-2 mt-1">
-                                                <select value={match.team1.code} onChange={e => handleMatchChange(match.id, 'team1', e.target.value)} className="w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100 rounded-md">
+                                                <select value={match.team1.code} onChange={e => handleMatchChange(match.id, 'team1', e.target.value)} className="w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100">
                                                     {allTeams.map(t => <option key={t.code} value={t.code}>{t.flag} {t.name}</option>)}
                                                 </select>
                                                 <span className="text-slate-400">vs</span>
-                                                <select value={match.team2.code} onChange={e => handleMatchChange(match.id, 'team2', e.target.value)} className="w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100 rounded-md">
+                                                <select value={match.team2.code} onChange={e => handleMatchChange(match.id, 'team2', e.target.value)} className="w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100">
                                                     {allTeams.map(t => <option key={t.code} value={t.code}>{t.flag} {t.name}</option>)}
                                                 </select>
                                             </div>
@@ -163,11 +163,11 @@ const Step4Knockout = ({ tournament, onNext, onBack, setIsDirty }: Step4Knockout
                                        <div className="md:col-span-2 grid grid-cols-2 gap-4 items-center">
                                            <div>
                                                 <label className="block text-xs font-medium text-slate-400">Date & Time</label>
-                                                <input type="datetime-local" value={new Date(new Date(match.date).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)} onChange={e => handleMatchChange(match.id, 'date', new Date(e.target.value).toISOString())} className="mt-1 w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100 rounded-md" />
+                                                <input type="datetime-local" value={new Date(new Date(match.date).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)} onChange={e => handleMatchChange(match.id, 'date', new Date(e.target.value).toISOString())} className="mt-1 w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100" />
                                            </div>
                                            <div>
                                                 <label className="block text-xs font-medium text-slate-400">Venue</label>
-                                               <select value={match.stadium.name} onChange={e => handleMatchChange(match.id, 'stadium', STADIUMS.find(s => s.name === e.target.value))} className="mt-1 w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100 rounded-md">
+                                               <select value={match.stadium.name} onChange={e => handleMatchChange(match.id, 'stadium', STADIUMS.find(s => s.name === e.target.value))} className="mt-1 w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100">
                                                     {STADIUMS.map(s => <option key={s.name} value={s.name}>{s.name}, {s.city}</option>)}
                                                 </select>
                                            </div>
@@ -180,9 +180,9 @@ const Step4Knockout = ({ tournament, onNext, onBack, setIsDirty }: Step4Knockout
                 </div>
                 {message && <p className="text-green-400 text-sm text-center">{message}</p>}
                 <div className="flex gap-4 pt-4 mt-6 border-t border-slate-700">
-                    <button type="button" onClick={onBack} className="w-1/4 px-4 py-3 bg-slate-700 hover:bg-slate-600 font-semibold text-white rounded-md">Back</button>
-                    <button type="button" onClick={() => handleSave(false)} disabled={isSaving} className="w-full px-4 py-3 bg-slate-600 hover:bg-slate-500 font-semibold text-white transition-colors disabled:bg-slate-700 disabled:cursor-not-allowed rounded-md">Save Progress</button>
-                    <button type="button" onClick={() => handleSave(true)} disabled={isSaving} className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-white disabled:bg-blue-800 disabled:cursor-not-allowed transition-colors rounded-md">Save & Continue</button>
+                    <button type="button" onClick={onBack} className="w-1/4 px-4 py-3 bg-slate-700 hover:bg-slate-600 font-semibold text-white">Back</button>
+                    <button type="button" onClick={() => handleSave(false)} disabled={isSaving} className="w-full px-4 py-3 bg-slate-600 hover:bg-slate-500 font-semibold text-white transition-colors disabled:bg-slate-700 disabled:cursor-not-allowed">Save Progress</button>
+                    <button type="button" onClick={() => handleSave(true)} disabled={isSaving} className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-white disabled:bg-blue-800 disabled:cursor-not-allowed transition-colors">Save & Continue</button>
                 </div>
             </div>
         );
@@ -191,11 +191,11 @@ const Step4Knockout = ({ tournament, onNext, onBack, setIsDirty }: Step4Knockout
     return (
         <div className="mt-4 space-y-6 text-center max-w-2xl mx-auto">
             <h2 className="text-2xl font-bold text-blue-400">Step 4: Configure Knockout Stage</h2>
-            <div className="p-6 bg-slate-900/50 border border-slate-700 rounded-lg">
+            <div className="p-6 bg-slate-900/50 border border-slate-700">
                 <p className="text-slate-300 mb-4">What is the first round after the group stage?</p>
                 <div className="flex justify-center flex-wrap gap-4">
                     {START_STAGE_OPTIONS.map(stage => (
-                         <label key={stage} className="flex items-center gap-2 text-white p-3 border border-slate-600 rounded-md cursor-pointer hover:bg-slate-700">
+                         <label key={stage} className="flex items-center gap-2 text-white p-3 border border-slate-600 cursor-pointer hover:bg-slate-700">
                             <input type="radio" name="startStage" value={stage} checked={selectedStage === stage} onChange={() => setSelectedStage(stage)} className="h-4 w-4 bg-slate-800 border-slate-500 text-blue-600 focus:ring-blue-500" />
                             {stage}
                         </label>
@@ -209,8 +209,8 @@ const Step4Knockout = ({ tournament, onNext, onBack, setIsDirty }: Step4Knockout
                 </div>
             </div>
             <div className="flex gap-4 pt-4 mt-6 border-t border-slate-700">
-                <button type="button" onClick={onBack} className="w-1/3 px-4 py-3 bg-slate-700 hover:bg-slate-600 font-semibold text-white rounded-md">Back</button>
-                <button type="button" onClick={generateSkeletalMatches} disabled={!selectedStage} className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-white disabled:bg-blue-800 disabled:cursor-not-allowed rounded-md">
+                <button type="button" onClick={onBack} className="w-1/3 px-4 py-3 bg-slate-700 hover:bg-slate-600 font-semibold text-white">Back</button>
+                <button type="button" onClick={generateSkeletalMatches} disabled={!selectedStage} className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-white disabled:bg-blue-800 disabled:cursor-not-allowed">
                     Generate Knockout Skeleton
                 </button>
             </div>
@@ -219,4 +219,3 @@ const Step4Knockout = ({ tournament, onNext, onBack, setIsDirty }: Step4Knockout
 };
 
 export default Step4Knockout;
-

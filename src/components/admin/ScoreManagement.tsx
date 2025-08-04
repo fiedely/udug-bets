@@ -15,7 +15,7 @@ const STAGE_ORDER: MatchStage[] = ['Group Stage', 'Round of 32', 'Round of 16', 
 
 const OutcomeBadge = ({ outcome }: { outcome: 'WIN' | 'LOSE' | 'DRAW' | null }) => {
     if (!outcome) return null;
-    const baseClasses = "text-xs font-bold px-2 py-0.5 rounded-full";
+    const baseClasses = "text-xs font-bold px-2 py-0.5";
     switch (outcome) {
         case 'WIN': return <span className={`${baseClasses} bg-green-500 text-white`}>WIN</span>;
         case 'LOSE': return <span className={`${baseClasses} bg-red-500 text-white`}>LOSE</span>;
@@ -110,7 +110,7 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
     };
 
     return (
-        <div className="bg-slate-800 border border-slate-700 p-6 md:p-8 rounded-lg">
+        <div className="bg-slate-800 border border-slate-700 p-6 md:p-8">
             <div className="flex justify-between items-start mb-6">
                 <div>
                     <h2 className="text-2xl font-bold text-white">{tournament.name}</h2>
@@ -123,9 +123,9 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
             </div>
 
             <div className="space-y-8">
-                <div className="bg-slate-900/50 p-4 rounded-lg border border-slate-700">
+                <div className="bg-slate-900/50 p-4 border border-slate-700">
                     <label htmlFor="champion-select" className="block text-lg font-semibold text-slate-100 mb-2">🏆 Official Tournament Champion</label>
-                    <select id="champion-select" value={champion} onChange={e => handleChampionChange(e.target.value)} className="w-full md:w-1/2 px-4 py-2 bg-slate-800 border border-slate-600 text-slate-100 rounded-md">
+                    <select id="champion-select" value={champion} onChange={e => handleChampionChange(e.target.value)} className="w-full md:w-1/2 px-4 py-2 bg-slate-800 border border-slate-600 text-slate-100">
                         <option value="">-- Select a Champion --</option>
                         {allTeams.map(team => (
                             <option key={team.code} value={team.code}>{team.flag} {team.name}</option>
@@ -135,7 +135,7 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
 
                 {sortedStageKeys.map(stage => (
                     <div key={stage}>
-                        <button onClick={() => toggleStageCollapse(stage)} className="w-full flex justify-between items-center text-xl font-semibold text-blue-300 mb-3 p-2 bg-slate-700/50 rounded-t-md hover:bg-slate-700">
+                        <button onClick={() => toggleStageCollapse(stage)} className="w-full flex justify-between items-center text-xl font-semibold text-blue-300 mb-3 p-2 bg-slate-700/50 hover:bg-slate-700">
                             <span>{stage}</span>
                             <svg className={`w-5 h-5 transition-transform ${collapsedStages[stage] ? 'rotate-0' : 'rotate-180'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
@@ -156,12 +156,12 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
                                                 }
 
                                                 return (
-                                                    <div key={match.id} className="p-3 rounded-md bg-slate-900/50 space-y-2">
+                                                    <div key={match.id} className="p-3 bg-slate-900/50 space-y-2">
                                                         <div className="grid grid-cols-12 gap-2 items-center text-sm">
                                                             <div className="col-span-5 flex items-center justify-end gap-2">
                                                                 <OutcomeBadge outcome={team1Outcome} />
                                                                 {isKnockout ? (
-                                                                    <select value={match.team1.code} onChange={e => handleTeamChange(match.id, 'team1', e.target.value)} className="w-full bg-slate-800 border border-slate-600 text-white rounded-md p-1 text-xs">
+                                                                    <select value={match.team1.code} onChange={e => handleTeamChange(match.id, 'team1', e.target.value)} className="w-full bg-slate-800 border border-slate-600 text-white p-1 text-xs">
                                                                         {selectableTeams.map(t => <option key={`t1-${match.id}-${t.code}`} value={t.code}>{t.flag} {t.name}</option>)}
                                                                     </select>
                                                                 ) : (
@@ -169,13 +169,13 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
                                                                 )}
                                                             </div>
                                                             <div className="col-span-2 flex items-center justify-center gap-1">
-                                                                <input type="number" min="0" value={match.team1Score ?? ''} onChange={e => handleScoreChange(match.id, isKnockout, 'team1Score', e.target.value)} className="w-10 text-center bg-slate-800 border border-slate-600 text-white font-bold rounded-md" />
+                                                                <input type="number" min="0" value={match.team1Score ?? ''} onChange={e => handleScoreChange(match.id, isKnockout, 'team1Score', e.target.value)} className="w-10 text-center bg-slate-800 border border-slate-600 text-white font-bold" />
                                                                 <span className="text-slate-500">-</span>
-                                                                <input type="number" min="0" value={match.team2Score ?? ''} onChange={e => handleScoreChange(match.id, isKnockout, 'team2Score', e.target.value)} className="w-10 text-center bg-slate-800 border border-slate-600 text-white font-bold rounded-md" />
+                                                                <input type="number" min="0" value={match.team2Score ?? ''} onChange={e => handleScoreChange(match.id, isKnockout, 'team2Score', e.target.value)} className="w-10 text-center bg-slate-800 border border-slate-600 text-white font-bold" />
                                                             </div>
                                                             <div className="col-span-5 flex items-center gap-2">
                                                                 {isKnockout ? (
-                                                                    <select value={match.team2.code} onChange={e => handleTeamChange(match.id, 'team2', e.target.value)} className="w-full bg-slate-800 border border-slate-600 text-white rounded-md p-1 text-xs">
+                                                                    <select value={match.team2.code} onChange={e => handleTeamChange(match.id, 'team2', e.target.value)} className="w-full bg-slate-800 border border-slate-600 text-white p-1 text-xs">
                                                                         {selectableTeams.map(t => <option key={`t2-${match.id}-${t.code}`} value={t.code}>{t.flag} {t.name}</option>)}
                                                                     </select>
                                                                 ) : (
@@ -205,7 +205,7 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
             
             <div className="mt-8 pt-6 border-t border-slate-700 flex justify-end items-center gap-4">
                 {message && <p className="text-green-400 text-sm">{message}</p>}
-                <button onClick={handleSave} disabled={isSaving} className="px-6 py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-white rounded-md transition-colors disabled:bg-blue-800 disabled:cursor-not-allowed">
+                <button onClick={handleSave} disabled={isSaving} className="px-6 py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-white transition-colors disabled:bg-blue-800 disabled:cursor-not-allowed">
                     {isSaving ? 'Saving...' : 'Save Results & Seeding'}
                 </button>
             </div>

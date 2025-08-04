@@ -24,7 +24,7 @@ const StatusLight = ({ isApplicable, isOn }: { isApplicable: boolean, isOn: bool
     } else if (!isApplicable) {
         lightClass = "bg-slate-700"; // "Not Applicable" state
     }
-    return <span className={`w-3 h-3 rounded-full ${lightClass}`}></span>;
+    return <span className={`w-3 h-3 ${lightClass}`}></span>;
 };
 
 // UPDATED: Component to calculate and display submission status
@@ -130,7 +130,7 @@ const MyTournaments = ({ userProfile, onEnterPredictions }: MyTournamentsProps) 
     return (
         <div>
             {joinedTournaments.length === 0 ? (
-                <div className="bg-slate-800 border border-slate-700 p-8 rounded-lg text-center">
+                <div className="bg-slate-800 border border-slate-700 p-8 text-center">
                     <h2 className="text-xl font-bold text-white">No Tournaments Joined Yet</h2>
                     <p className="mt-2 text-slate-400">Use the "Join Tournament" menu to enter a ticket code and get started!</p>
                 </div>
@@ -142,7 +142,7 @@ const MyTournaments = ({ userProfile, onEnterPredictions }: MyTournamentsProps) 
                         if (tournament.hasThirdPlaceMatch) applicableStages.add('Third Place Match');
 
                         return (
-                            <div key={tournament.id} className="bg-slate-800 border border-slate-700 rounded-lg shadow-lg flex flex-col">
+                            <div key={tournament.id} className="bg-slate-800 border border-slate-700 shadow-lg flex flex-col">
                                 <div className="p-6 flex-grow space-y-4 text-slate-300">
                                     <h3 className="text-xl font-bold text-blue-400">{tournament.name}</h3>
                                     <div className="text-sm space-y-2">
@@ -188,9 +188,9 @@ const MyTournaments = ({ userProfile, onEnterPredictions }: MyTournamentsProps) 
                                         </table>
                                     </div>
                                 </div>
-                                <div className="p-4 bg-slate-900/50 rounded-b-lg flex gap-4">
-                                    <button onClick={() => setViewingTournament(tournament)} className="w-full px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm rounded-md">Check Details</button>
-                                    <button onClick={() => onEnterPredictions(tournament)} className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-500 font-semibold text-white text-sm rounded-md">Enter Predictions</button>
+                                <div className="p-4 bg-slate-900/50 flex gap-4">
+                                    <button onClick={() => setViewingTournament(tournament)} className="w-full px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm">Check Details</button>
+                                    <button onClick={() => onEnterPredictions(tournament)} className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-500 font-semibold text-white text-sm">Enter Predictions</button>
                                 </div>
                             </div>
                         );

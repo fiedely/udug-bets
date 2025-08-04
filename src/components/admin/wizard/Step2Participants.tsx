@@ -127,14 +127,14 @@ const Step2Participants = ({ tournament, onNext, onBack, setIsDirty }: Step2Part
         <div className="mt-4 space-y-6">
             <h2 className="text-2xl font-bold text-blue-400">Step 2: Participants and Groups</h2>
 
-            <div className="flex gap-4 mb-6 p-4 border border-slate-700 bg-slate-900/50 rounded-lg">
+            <div className="flex gap-4 mb-6 p-4 border border-slate-700 bg-slate-900/50">
                 <div>
                     <label className="block text-sm font-medium text-slate-300">Number of Groups</label>
-                    <input type="number" min="1" max="16" value={numGroups} onChange={e => setNumGroups(Number(e.target.value))} className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-slate-100 rounded-md" />
+                    <input type="number" min="1" max="16" value={numGroups} onChange={e => setNumGroups(Number(e.target.value))} className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-slate-100" />
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-slate-300">Max Teams per Group</label>
-                    <input type="number" min="2" max="8" value={teamsPerGroup} onChange={e => {setTeamsPerGroup(Number(e.target.value)); markDirty();}} className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-slate-100 rounded-md" />
+                    <input type="number" min="2" max="8" value={teamsPerGroup} onChange={e => {setTeamsPerGroup(Number(e.target.value)); markDirty();}} className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-slate-100" />
                 </div>
                 <div className="pt-6 text-slate-400">
                     Total Teams Recommended: {numGroups * teamsPerGroup}
@@ -145,9 +145,9 @@ const Step2Participants = ({ tournament, onNext, onBack, setIsDirty }: Step2Part
 
                 <div className="col-span-1">
                     <h3 className="text-lg font-semibold text-slate-100 mb-2">Select Teams ({selectedTeams.length} selected)</h3>
-                    <div className="h-96 overflow-y-auto border border-slate-700 p-2 space-y-1 rounded-md bg-slate-900">
+                    <div className="h-96 overflow-y-auto border border-slate-700 p-2 space-y-1 bg-slate-900">
                         {FIFA_COUNTRIES.map(country => (
-                            <div key={country.code} className="flex items-center justify-between p-2 hover:bg-slate-700 cursor-pointer rounded-md" onClick={() => handleTeamSelect(country)}>
+                            <div key={country.code} className="flex items-center justify-between p-2 hover:bg-slate-700 cursor-pointer" onClick={() => handleTeamSelect(country)}>
                                 {/* FIX: Added text-slate-100 to make font visible */}
                                 <span className="text-sm text-slate-100">{country.flag} {country.name}</span>
                                 <input type="checkbox" checked={selectedTeams.some(t => t.code === country.code)} readOnly className="h-4 w-4 bg-slate-700 border-slate-600 text-blue-600" />
@@ -158,13 +158,13 @@ const Step2Participants = ({ tournament, onNext, onBack, setIsDirty }: Step2Part
 
                 <div className="col-span-1">
                     <h3 className="text-lg font-semibold text-slate-100 mb-2">Available Pool (Drag to Group)</h3>
-                    <div className="h-96 overflow-y-auto border border-dashed border-slate-500 p-2 space-y-2 rounded-md bg-slate-900">
+                    <div className="h-96 overflow-y-auto border border-dashed border-slate-500 p-2 space-y-2 bg-slate-900">
                         {availableTeams.map(team => (
                             <div
                                 key={team.code}
                                 draggable
                                 onDragStart={(e) => e.dataTransfer.setData("team", JSON.stringify(team))}
-                                className="p-2 bg-blue-700 hover:bg-blue-600 cursor-grab text-white text-sm shadow-md rounded-md"
+                                className="p-2 bg-blue-700 hover:bg-blue-600 cursor-grab text-white text-sm shadow-md"
                             >
                                 {team.flag} {team.name}
                             </div>
@@ -178,14 +178,14 @@ const Step2Participants = ({ tournament, onNext, onBack, setIsDirty }: Step2Part
                         {Object.keys(groups).sort().map(groupName => (
                             <div
                                 key={groupName}
-                                className="border border-blue-500 p-3 bg-slate-700/50 rounded-md"
+                                className="border border-blue-500 p-3 bg-slate-700/50"
                                 onDragOver={(e) => e.preventDefault()}
                                 onDrop={(e) => handleDropInGroup(groupName, e)}
                             >
                                 <h4 className="font-medium text-blue-400 mb-2">{groupName} ({groups[groupName].length}/{teamsPerGroup})</h4>
                                 <div className="space-y-1 min-h-[2rem]">
                                     {groups[groupName].map(team => (
-                                        <div key={team.code} className="flex justify-between items-center text-sm text-white p-1 bg-slate-900 rounded-md">
+                                        <div key={team.code} className="flex justify-between items-center text-sm text-white p-1 bg-slate-900">
                                             <span>{team.flag} {team.name}</span>
                                             <button onClick={() => removeTeamFromGroup(groupName, team.code)} className="text-red-500 hover:text-red-300 ml-2 px-2">X</button>
                                         </div>

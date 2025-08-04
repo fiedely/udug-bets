@@ -134,7 +134,7 @@ const Step3Matches = ({ tournament, onNext, onBack, setIsDirty }: Step3MatchesPr
             <h2 className="text-2xl font-bold text-blue-400">Step 3: Group Stage Matches</h2>
             
             {isGenerating && (
-                <div className="flex items-center justify-center p-8 bg-slate-800 border border-slate-700 rounded-lg">
+                <div className="flex items-center justify-center p-8 bg-slate-800 border border-slate-700">
                     <svg className="animate-spin h-6 w-6 text-blue-500 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                     <span className="text-slate-300">Generating matches...</span>
                 </div>
@@ -143,14 +143,14 @@ const Step3Matches = ({ tournament, onNext, onBack, setIsDirty }: Step3MatchesPr
             {matches.length > 0 && (
                  <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                     {matches.map(match => (
-                        <div key={match.id} className="p-4 bg-slate-900/50 border border-slate-700 rounded-lg grid grid-cols-1 md:grid-cols-3 gap-4 text-sm items-center">
+                        <div key={match.id} className="p-4 bg-slate-900/50 border border-slate-700 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm items-center">
                            <div className="md:col-span-1">
                                 <label className="block text-xs font-medium text-slate-400">Match Participants</label>
                                 <div className="flex items-center gap-2 mt-1">
                                     <select
                                         value={match.team1.code}
                                         onChange={e => handleMatchChange(match.id, 'team1', e.target.value)}
-                                        className="w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100 rounded-md"
+                                        className="w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100"
                                     >
                                         {allTeams.map((t: Team) => <option key={t.code} value={t.code}>{t.flag} {t.name}</option>)}
                                     </select>
@@ -158,7 +158,7 @@ const Step3Matches = ({ tournament, onNext, onBack, setIsDirty }: Step3MatchesPr
                                     <select
                                         value={match.team2.code}
                                         onChange={e => handleMatchChange(match.id, 'team2', e.target.value)}
-                                        className="w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100 rounded-md"
+                                        className="w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100"
                                     >
                                         {allTeams.map((t: Team) => <option key={t.code} value={t.code}>{t.flag} {t.name}</option>)}
                                     </select>
@@ -172,7 +172,7 @@ const Step3Matches = ({ tournament, onNext, onBack, setIsDirty }: Step3MatchesPr
                                         type="datetime-local"
                                         value={new Date(new Date(match.date).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
                                         onChange={e => handleMatchChange(match.id, 'date', new Date(e.target.value).toISOString())}
-                                        className="mt-1 w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100 rounded-md"
+                                        className="mt-1 w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100"
                                     />
                                </div>
                                <div>
@@ -180,13 +180,13 @@ const Step3Matches = ({ tournament, onNext, onBack, setIsDirty }: Step3MatchesPr
                                    <select
                                         value={match.stadium.name}
                                         onChange={e => handleMatchChange(match.id, 'stadium', STADIUMS.find((s) => s.name === e.target.value))}
-                                        className="mt-1 w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100 rounded-md"
+                                        className="mt-1 w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100"
                                     >
                                         {STADIUMS.map((s) => <option key={s.name} value={s.name}>{s.name}, {s.city}</option>)}
                                     </select>
                                </div>
                                <div className="text-right">
-                                    <button onClick={() => handleDeleteMatch(match.id)} className="px-3 py-2 bg-red-800 hover:bg-red-700 text-white text-xs font-semibold rounded-md transition-colors">
+                                    <button onClick={() => handleDeleteMatch(match.id)} className="px-3 py-2 bg-red-800 hover:bg-red-700 text-white text-xs font-semibold transition-colors">
                                         Delete
                                     </button>
                                </div>
@@ -199,9 +199,9 @@ const Step3Matches = ({ tournament, onNext, onBack, setIsDirty }: Step3MatchesPr
             {message && <p className="text-green-400 text-sm text-center">{message}</p>}
 
             <div className="flex gap-4 pt-4 mt-6 border-t border-slate-700">
-                <button type="button" onClick={onBack} className="w-1/4 px-4 py-3 bg-slate-700 hover:bg-slate-600 font-semibold text-white transition-colors rounded-md">Back</button>
-                <button type="button" onClick={() => handleSave(false)} disabled={isSaving} className="w-full px-4 py-3 bg-slate-600 hover:bg-slate-500 font-semibold text-white transition-colors disabled:bg-slate-700 disabled:cursor-not-allowed rounded-md">Save Progress</button>
-                <button type="button" onClick={() => handleSave(true)} disabled={isSaving || matches.length === 0} className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-white disabled:bg-blue-800 disabled:cursor-not-allowed transition-colors rounded-md">Save & Continue</button>
+                <button type="button" onClick={onBack} className="w-1/4 px-4 py-3 bg-slate-700 hover:bg-slate-600 font-semibold text-white transition-colors">Back</button>
+                <button type="button" onClick={() => handleSave(false)} disabled={isSaving} className="w-full px-4 py-3 bg-slate-600 hover:bg-slate-500 font-semibold text-white transition-colors disabled:bg-slate-700 disabled:cursor-not-allowed">Save Progress</button>
+                <button type="button" onClick={() => handleSave(true)} disabled={isSaving || matches.length === 0} className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-white disabled:bg-blue-800 disabled:cursor-not-allowed transition-colors">Save & Continue</button>
             </div>
         </div>
     );

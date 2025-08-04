@@ -99,11 +99,11 @@ const ListTournamentsContent = ({ onEditTournament, onManageTournament, userProf
     const isAdmin = userProfile?.role === 'admin' || userProfile?.role === 'superadmin';
 
     const PredictionToggle = ({ t, stage, label }: { t: Tournament, stage: keyof PredictionStatus, label: string }) => (
-        <label className="flex justify-between items-center p-2 hover:bg-slate-600 rounded-md cursor-pointer">
+        <label className="flex justify-between items-center p-2 hover:bg-slate-600 cursor-pointer">
             <span className="text-sm text-slate-300">{label}</span>
             <div className="relative inline-flex items-center">
                 <input type="checkbox" checked={t.predictionStatus?.[stage] || false} onChange={() => handleTogglePredictionStatus(t.id, stage, t.predictionStatus?.[stage] || false)} className="sr-only peer" disabled={!isAdmin || t.status === 'draft'} />
-                <div className={`w-9 h-5 bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all border-gray-600 peer-checked:bg-blue-600 ${(!isAdmin || t.status === 'draft') ? 'opacity-50' : ''}`}></div>
+                <div className={`w-9 h-5 bg-gray-700 peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:h-4 after:w-4 after:transition-all border-gray-600 peer-checked:bg-blue-600 ${(!isAdmin || t.status === 'draft') ? 'opacity-50' : ''}`}></div>
             </div>
         </label>
     );
@@ -114,7 +114,7 @@ const ListTournamentsContent = ({ onEditTournament, onManageTournament, userProf
                 <h2 className="text-2xl font-bold text-blue-400">Your Tournaments</h2>
                 <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {tournaments.map(t => (
-                        <div key={t.id} className="bg-slate-900 p-4 border border-slate-700 flex flex-col gap-4 rounded-lg shadow">
+                        <div key={t.id} className="bg-slate-900 p-4 border border-slate-700 flex flex-col gap-4 shadow">
                             <div className="flex-grow">
                                 <h3 className="font-semibold text-white text-lg">{t.name}</h3>
                                 <p className="text-sm text-slate-400">Status: <span className={t.status === 'draft' ? 'text-yellow-400' : (t.status === 'active' ? 'text-green-400' : 'text-gray-400')}>{t.status}</span></p>
@@ -126,11 +126,11 @@ const ListTournamentsContent = ({ onEditTournament, onManageTournament, userProf
                             </div>
                             <div className="flex flex-wrap justify-between items-center gap-4">
                                 <div className="relative">
-                                    <button onClick={() => setManagingPredictionsFor(managingPredictionsFor === t.id ? null : t.id)} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm rounded-md" disabled={!isAdmin || t.status === 'draft'}>
+                                    <button onClick={() => setManagingPredictionsFor(managingPredictionsFor === t.id ? null : t.id)} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm" disabled={!isAdmin || t.status === 'draft'}>
                                         Manage Predictions
                                     </button>
                                     {managingPredictionsFor === t.id && (
-                                        <div ref={predictionMenuRef} className="absolute bottom-full mb-2 w-64 bg-slate-700 border border-slate-600 rounded-lg shadow-lg p-2 z-10">
+                                        <div ref={predictionMenuRef} className="absolute bottom-full mb-2 w-64 bg-slate-700 border border-slate-600 shadow-lg p-2 z-10">
                                             <PredictionToggle t={t} stage="allowChampion" label="Champion" />
                                             <PredictionToggle t={t} stage="allowGroupStage" label="Group Stage" />
                                             <PredictionToggle t={t} stage="allowRoundOf32" label="Round of 32" />
@@ -143,10 +143,10 @@ const ListTournamentsContent = ({ onEditTournament, onManageTournament, userProf
                                 </div>
                                 {/* UPDATED: Admin now has 4 buttons */}
                                 <div className="flex flex-wrap gap-2">
-                                    <button onClick={() => setInvitingTournament(t)} className="px-3 py-2 bg-green-600 hover:bg-green-500 font-semibold text-white text-xs rounded-md">Invite</button>
-                                    <button onClick={() => onManageTournament(t)} className="px-3 py-2 bg-purple-600 hover:bg-purple-500 font-semibold text-white text-xs rounded-md" disabled={t.status === 'draft'}>Manage Scores</button>
-                                    <button onClick={() => onEditTournament(t.id)} className="px-3 py-2 bg-blue-600 hover:bg-blue-500 font-semibold text-white text-xs rounded-md">Edit</button>
-                                    <button onClick={() => setDeletingTournament(t)} className="px-3 py-2 bg-red-600 hover:bg-red-500 font-semibold text-white text-xs rounded-md">Delete</button>
+                                    <button onClick={() => setInvitingTournament(t)} className="px-3 py-2 bg-green-600 hover:bg-green-500 font-semibold text-white text-xs">Invite</button>
+                                    <button onClick={() => onManageTournament(t)} className="px-3 py-2 bg-purple-600 hover:bg-purple-500 font-semibold text-white text-xs" disabled={t.status === 'draft'}>Manage Scores</button>
+                                    <button onClick={() => onEditTournament(t.id)} className="px-3 py-2 bg-blue-600 hover:bg-blue-500 font-semibold text-white text-xs">Edit</button>
+                                    <button onClick={() => setDeletingTournament(t)} className="px-3 py-2 bg-red-600 hover:bg-red-500 font-semibold text-white text-xs">Delete</button>
                                 </div>
                             </div>
                         </div>
@@ -155,12 +155,12 @@ const ListTournamentsContent = ({ onEditTournament, onManageTournament, userProf
             </div>
             {deletingTournament && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-                    <div className="bg-slate-800 border border-slate-700 p-6 rounded-lg shadow-xl max-w-sm w-full">
+                    <div className="bg-slate-800 border border-slate-700 p-6 shadow-xl max-w-sm w-full">
                         <h3 className="text-lg font-bold text-white">Confirm Deletion</h3>
                         <p className="mt-2 text-slate-400">Are you sure you want to delete the tournament "{deletingTournament.name}"? This action cannot be undone.</p>
                         <div className="mt-6 flex justify-end gap-4">
-                            <button onClick={() => setDeletingTournament(null)} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white rounded-md">Cancel</button>
-                            <button onClick={() => handleDelete(deletingTournament.id)} className="px-4 py-2 bg-red-600 hover:bg-red-500 font-semibold text-white rounded-md">Delete</button>
+                            <button onClick={() => setDeletingTournament(null)} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white">Cancel</button>
+                            <button onClick={() => handleDelete(deletingTournament.id)} className="px-4 py-2 bg-red-600 hover:bg-red-500 font-semibold text-white">Delete</button>
                         </div>
                     </div>
                 </div>

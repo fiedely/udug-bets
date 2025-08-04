@@ -141,7 +141,7 @@ const Step1Details = ({ tournament, onNext, onBack, setIsDirty }: Step1DetailsPr
                     </p>
                 </div>
 
-                <div className="space-y-4 p-4 border border-slate-700 rounded-lg">
+                <div className="space-y-4 p-4 border border-slate-700">
                     <h3 className="text-lg font-semibold text-slate-100">Point Rules</h3>
                     <div>
                         <label htmlFor="champion-bonus" className="block text-sm font-medium text-slate-300">Champion Bonus Points</label>

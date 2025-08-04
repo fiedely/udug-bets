@@ -107,7 +107,7 @@ const JoinTournament = ({ userProfile, setView }: JoinTournamentProps) => {
     };
 
     return (
-        <div className="bg-slate-800 border border-slate-700 p-8 rounded-lg max-w-lg mx-auto">
+        <div className="bg-slate-800 border border-slate-700 p-8 max-w-lg mx-auto">
             <h2 className="text-2xl font-bold text-blue-400 mb-1">Join a Tournament</h2>
             <p className="text-slate-400 text-sm mb-6">Enter the 6-digit ticket code you received from the tournament administrator.</p>
             
@@ -120,14 +120,14 @@ const JoinTournament = ({ userProfile, setView }: JoinTournamentProps) => {
                         value={ticket}
                         onChange={(e) => setTicket(e.target.value.replace(/\D/g, '').slice(0, 6))}
                         placeholder="e.g., 777777"
-                        className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-slate-100 text-center text-2xl tracking-[.5em] font-mono rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400" 
+                        className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-slate-100 text-center text-2xl tracking-[.5em] font-mono focus:outline-none focus:ring-2 focus:ring-blue-400" 
                     />
                 </div>
 
                 {error && <p className="text-red-400 text-sm text-center pt-1">{error}</p>}
                 {success && <div className="text-green-400 text-sm text-center pt-1 leading-relaxed">{success}</div>}
 
-                <button type="submit" disabled={isLoading} className="w-full flex justify-center items-center px-4 py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-white transition-colors disabled:bg-blue-800 disabled:cursor-not-allowed rounded-md">
+                <button type="submit" disabled={isLoading} className="w-full flex justify-center items-center px-4 py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-white transition-colors disabled:bg-blue-800 disabled:cursor-not-allowed">
                     {isLoading ? (
                         <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

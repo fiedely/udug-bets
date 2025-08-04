@@ -17,7 +17,7 @@ import ScoreManagement from './admin/ScoreManagement';
 import JoinTournament from './views/JoinTournament'; 
 import MyTournaments from './views/MyTournaments'; 
 import PredictionEntry from './views/PredictionEntry';
-const LeaderboardContent = () => <div className="bg-slate-800 p-8 rounded-lg">Leaderboard View - Coming Soon!</div>;
+const LeaderboardContent = () => <div className="bg-slate-800 p-8">Leaderboard View - Coming Soon!</div>;
 
 
 const Dashboard = () => {
@@ -147,22 +147,22 @@ const Dashboard = () => {
         </div>
         <nav className="flex-grow">
           <div className="space-y-1">
-            <button onClick={() => handleSetView('My Tournaments')} className={`w-full text-left block py-2.5 px-4 rounded-md hover:bg-slate-700 ${activeView === 'My Tournaments' ? 'bg-slate-700 text-white' : ''}`}>My Tournaments</button>
-            <button onClick={() => handleSetView('Join Tournament')} className={`w-full text-left block py-2.5 px-4 rounded-md hover:bg-slate-700 ${activeView === 'Join Tournament' ? 'bg-slate-700 text-white' : ''}`}>Join Tournament</button>
-            <button onClick={() => handleSetView('Leaderboard')} className={`w-full text-left block py-2.5 px-4 rounded-md hover:bg-slate-700 ${activeView === 'Leaderboard' ? 'bg-slate-700 text-white' : ''}`}>Leaderboard</button>
+            <button onClick={() => handleSetView('My Tournaments')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'My Tournaments' ? 'bg-slate-700 text-white' : ''}`}>My Tournaments</button>
+            <button onClick={() => handleSetView('Join Tournament')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'Join Tournament' ? 'bg-slate-700 text-white' : ''}`}>Join Tournament</button>
+            <button onClick={() => handleSetView('Leaderboard')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'Leaderboard' ? 'bg-slate-700 text-white' : ''}`}>Leaderboard</button>
           </div>
           
           {(userProfile?.role === 'admin' || userProfile?.role === 'superadmin') && (
             <div className="mt-4 pt-4 border-t border-slate-700">
-              <button onClick={handleAdminClick} className="w-full text-left flex justify-between items-center py-2.5 px-4 rounded-md hover:bg-slate-700">
+              <button onClick={handleAdminClick} className="w-full text-left flex justify-between items-center py-2.5 px-4 hover:bg-slate-700">
                 <span>Admin Panel</span>
                 <svg className={`w-5 h-5 transition-transform ${isAdminMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
               </button>
               {isAdminMenuOpen && (
                 <div className="pl-4 mt-2 space-y-1">
-                  <button onClick={() => handleSetView('Create Tournament')} className={`w-full text-left block py-2.5 px-4 rounded-md hover:bg-slate-700 ${activeView === 'Create Tournament' ? 'bg-slate-700 text-white' : ''}`}>Create Tournament</button>
-                   <button onClick={() => handleSetView('List Tournaments')} className={`w-full text-left block py-2.5 px-4 rounded-md hover:bg-slate-700 ${(activeView === 'List Tournaments' || activeView === 'Edit Tournament' || activeView === 'Manage Scores') ? 'bg-slate-700 text-white' : ''}`}>List Tournaments</button>
-                  <button onClick={() => handleSetView('Manage Users')} className={`w-full text-left block py-2.5 px-4 rounded-md hover:bg-slate-700 ${activeView === 'Manage Users' ? 'bg-slate-700 text-white' : ''}`}>Manage Users</button>
+                  <button onClick={() => handleSetView('Create Tournament')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'Create Tournament' ? 'bg-slate-700 text-white' : ''}`}>Create Tournament</button>
+                   <button onClick={() => handleSetView('List Tournaments')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${(activeView === 'List Tournaments' || activeView === 'Edit Tournament' || activeView === 'Manage Scores') ? 'bg-slate-700 text-white' : ''}`}>List Tournaments</button>
+                  <button onClick={() => handleSetView('Manage Users')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'Manage Users' ? 'bg-slate-700 text-white' : ''}`}>Manage Users</button>
                 </div>
               )}
             </div>
@@ -179,7 +179,7 @@ const Dashboard = () => {
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
           </button>
           <div className="text-xl font-semibold text-slate-100">{predictingTournament ? `Predict: ${predictingTournament.name}` : (managingTournament ? `Manage: ${managingTournament.name}` : activeView)}</div>
-          <button onClick={handleSignOut} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm rounded-md transition-colors">Sign Out</button>
+          <button onClick={handleSignOut} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm transition-colors">Sign Out</button>
         </header>
         <main className="flex-1 p-4 md:p-8">
           {renderContent()}
