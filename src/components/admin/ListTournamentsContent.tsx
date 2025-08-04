@@ -9,7 +9,8 @@ import InviteModal from './InviteModal';
 interface ListTournamentsContentProps {
     onEditTournament: (id: string) => void;
     onManageTournament: (tournament: Tournament) => void;
-    onViewLeaderboard: (tournament: Tournament) => void; // New prop
+    onViewLeaderboard: (tournament: Tournament) => void;
+    onViewAllPredictions: (tournament: Tournament) => void; // New prop
     userProfile: UserProfile | null;
 }
 
@@ -23,7 +24,7 @@ const defaultPredictionStatus: PredictionStatus = {
     allowRoundOf16: false, allowQuarterFinal: false, allowSemiFinal: false, allowFinals: false,
 };
 
-const ListTournamentsContent = ({ onEditTournament, onManageTournament, onViewLeaderboard, userProfile }: ListTournamentsContentProps) => {
+const ListTournamentsContent = ({ onEditTournament, onManageTournament, onViewLeaderboard, onViewAllPredictions, userProfile }: ListTournamentsContentProps) => {
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [deletingTournament, setDeletingTournament] = useState<Tournament | null>(null);
@@ -144,6 +145,7 @@ const ListTournamentsContent = ({ onEditTournament, onManageTournament, onViewLe
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                     <button onClick={() => onViewLeaderboard(t)} className="px-3 py-2 bg-cyan-600 hover:bg-cyan-500 font-semibold text-white text-xs" disabled={t.status === 'draft'}>Leaderboard</button>
+                                    <button onClick={() => onViewAllPredictions(t)} className="px-3 py-2 bg-gray-500 hover:bg-gray-400 font-semibold text-white text-xs" disabled={t.status === 'draft'}>All Predictions</button>
                                     <button onClick={() => setInvitingTournament(t)} className="px-3 py-2 bg-green-600 hover:bg-green-500 font-semibold text-white text-xs">Invite</button>
                                     <button onClick={() => onManageTournament(t)} className="px-3 py-2 bg-purple-600 hover:bg-purple-500 font-semibold text-white text-xs" disabled={t.status === 'draft'}>Manage Scores</button>
                                     <button onClick={() => onEditTournament(t.id)} className="px-3 py-2 bg-blue-600 hover:bg-blue-500 font-semibold text-white text-xs">Edit</button>

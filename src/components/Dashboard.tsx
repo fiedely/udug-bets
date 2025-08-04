@@ -12,7 +12,8 @@ import ListTournamentsContent from './admin/ListTournamentsContent';
 import TournamentWizard from './admin/TournamentWizard';
 import ManageUsersContent from './admin/ManageUsersContent';
 import ScoreManagement from './admin/ScoreManagement';
-import TournamentLeaderboard from './admin/TournamentLeaderboard'; // Import the new component
+import TournamentLeaderboard from './admin/TournamentLeaderboard';
+import AllPredictionsView from './admin/AllPredictionsView'; // Import the new component
 
 // User Components
 import JoinTournament from './views/JoinTournament'; 
@@ -31,7 +32,8 @@ const Dashboard = () => {
   const [isEditorDirty, setIsEditorDirty] = useState(false);
   const [predictingTournament, setPredictingTournament] = useState<Tournament | null>(null);
   const [managingTournament, setManagingTournament] = useState<Tournament | null>(null);
-  const [viewingLeaderboardFor, setViewingLeaderboardFor] = useState<Tournament | null>(null); // New state
+  const [viewingLeaderboardFor, setViewingLeaderboardFor] = useState<Tournament | null>(null);
+  const [viewingAllPredictionsFor, setViewingAllPredictionsFor] = useState<Tournament | null>(null); // New state
   const [isScoreManagerDirty, setIsScoreManagerDirty] = useState(false);
 
   const user = auth.currentUser;
@@ -74,7 +76,8 @@ const Dashboard = () => {
     setIsScoreManagerDirty(false);
     setPredictingTournament(null);
     setManagingTournament(null);
-    setViewingLeaderboardFor(null); // Reset leaderboard view
+    setViewingLeaderboardFor(null);
+    setViewingAllPredictionsFor(null); // Reset all predictions view
     setActiveView(view);
     if (view !== 'Edit Tournament') {
       setEditingTournamentId(null);
@@ -96,9 +99,13 @@ const Dashboard = () => {
       setActiveView('Manage Scores');
   };
 
-  // New handler to set the leaderboard view
   const handleViewLeaderboard = (tournament: Tournament) => {
       setViewingLeaderboardFor(tournament);
+  };
+
+  // New handler to set the all predictions view
+  const handleViewAllPredictions = (tournament: Tournament) => {
+      setViewingAllPredictionsFor(tournament);
   };
 
   const renderContent = () => {
@@ -110,7 +117,10 @@ const Dashboard = () => {
       );
     }
     
-    // Render leaderboard if one is selected
+    // Render special views first
+    if (viewingAllPredictionsFor) {
+        return <AllPredictionsView tournament={viewingAllPredictionsFor} onBack={() => setViewingAllPredictionsFor(null)} />;
+    }
     if (viewingLeaderboardFor) {
         return <TournamentLeaderboard tournament={viewingLeaderboardFor} onBack={() => setViewingLeaderboardFor(null)} />;
     }
@@ -128,7 +138,13 @@ const Dashboard = () => {
       case 'Create Tournament':
         return <CreateTournamentContent user={user} onTournamentCreated={handleEditTournament} />;
       case 'List Tournaments':
-        return <ListTournamentsContent onEditTournament={handleEditTournament} onManageTournament={handleManageTournament} onViewLeaderboard={handleViewLeaderboard} userProfile={userProfile} />;
+        return <ListTournamentsContent 
+                    onEditTournament={handleEditTournament} 
+                    onManageTournament={handleManageTournament} 
+                    onViewLeaderboard={handleViewLeaderboard}
+                    onViewAllPredictions={handleViewAllPredictions}
+                    userProfile={userProfile} 
+                />;
       case 'Manage Users':
         return <ManageUsersContent userProfile={userProfile} />;
       case 'Join Tournament':
@@ -140,6 +156,15 @@ const Dashboard = () => {
         return <MyTournaments userProfile={userProfile} onEnterPredictions={handleEnterPredictions} />;
     }
   };
+
+  // Determine the header title based on the current view state
+  const getHeaderTitle = () => {
+    if (viewingAllPredictionsFor) return `All Predictions: ${viewingAllPredictionsFor.name}`;
+    if (viewingLeaderboardFor) return `Leaderboard: ${viewingLeaderboardFor.name}`;
+    if (predictingTournament) return `Predict: ${predictingTournament.name}`;
+    if (managingTournament) return `Manage: ${managingTournament.name}`;
+    return activeView;
+  }
 
   return (
     <div className="relative min-h-screen md:flex bg-slate-900">
@@ -187,7 +212,7 @@ const Dashboard = () => {
           <button className="md:hidden text-slate-300" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
           </button>
-          <div className="text-xl font-semibold text-slate-100">{viewingLeaderboardFor ? `Leaderboard: ${viewingLeaderboardFor.name}` : (predictingTournament ? `Predict: ${predictingTournament.name}` : (managingTournament ? `Manage: ${managingTournament.name}` : activeView))}</div>
+          <div className="text-xl font-semibold text-slate-100">{getHeaderTitle()}</div>
           <button onClick={handleSignOut} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm transition-colors">Sign Out</button>
         </header>
         <main className="flex-1 p-4 md:p-8">

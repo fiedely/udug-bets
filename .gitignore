@@ -23,4 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 seed.js
+seedTeams.js
+seedTournament.js
 serviceAccountKey.json

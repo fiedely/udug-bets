@@ -3,7 +3,7 @@
 import { db } from '../../../firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
 import type { Tournament, Match, Team, MatchStage } from '../../../types';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { marked } from 'marked';
 
 interface Step5ConfirmationProps {
@@ -96,6 +96,7 @@ const MatchList = ({ title, matches, groupByStage = false }: { title: string, ma
 
 const Step5Confirmation = ({ tournament, onBack, onFinish }: Step5ConfirmationProps) => {
     const [isActivating, setIsActivating] = useState(false);
+    const [renderedDescription, setRenderedDescription] = useState('');
 
     const handleActivate = async () => {
         setIsActivating(true);
@@ -109,11 +110,21 @@ const Step5Confirmation = ({ tournament, onBack, onFinish }: Step5ConfirmationPr
         }
     };
 
-    // NEW: Parse the Markdown description into HTML
-    const renderedDescription = useMemo(() => {
-        if (!tournament.description) return { __html: '<p class="text-slate-400 italic">No description provided.</p>' };
-        // Using dangerouslySetInnerHTML is safe here because the content is created by a trusted admin.
-        return { __html: marked.parse(tournament.description) };
+    useEffect(() => {
+        const parseDescription = async () => {
+            if (!tournament.description) {
+                setRenderedDescription('<p class="text-slate-400 italic">No description provided.</p>');
+                return;
+            }
+            try {
+                const html = await marked.parse(tournament.description);
+                setRenderedDescription(html);
+            } catch (e) {
+                console.error("Error parsing markdown:", e);
+                setRenderedDescription("<p>Error parsing description.</p>");
+            }
+        };
+        parseDescription();
     }, [tournament.description]);
 
     return (
@@ -123,12 +134,9 @@ const Step5Confirmation = ({ tournament, onBack, onFinish }: Step5ConfirmationPr
                 
                 <div>
                     <h3 className="text-xl font-semibold text-white border-b border-slate-700 pb-2 mb-3">{tournament.name}</h3>
-                    {/* UPDATED: Render the description from Markdown */}
-                    {/* For best results, install the Tailwind Typography plugin: npm install -D @tailwindcss/typography */}
-                    {/* Then add `require('@tailwindcss/typography')` to your tailwind.config.js plugins array. */}
                     <div
                         className="prose prose-sm prose-invert max-w-none"
-                        dangerouslySetInnerHTML={renderedDescription}
+                        dangerouslySetInnerHTML={{ __html: renderedDescription }}
                     />
                 </div>
 

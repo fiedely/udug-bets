@@ -1,7 +1,7 @@
 // src/components/views/TournamentDetails.tsx
 
 import type { Tournament, Match, MatchStage } from '../../types';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { marked } from 'marked';
 
 interface TournamentDetailsProps {
@@ -91,9 +91,23 @@ const MatchList = ({ title, matches, groupByStage = false }: { title: string, ma
 };
 
 const TournamentDetails = ({ tournament, onBack }: TournamentDetailsProps) => {
-    const renderedDescription = useMemo(() => {
-        if (!tournament.description) return { __html: '<p class="text-slate-400 italic">No description provided.</p>' };
-        return { __html: marked.parse(tournament.description) };
+    const [renderedDescription, setRenderedDescription] = useState('');
+
+    useEffect(() => {
+        const parseDescription = async () => {
+            if (!tournament.description) {
+                setRenderedDescription('<p class="text-slate-400 italic">No description provided.</p>');
+                return;
+            }
+            try {
+                const html = await marked.parse(tournament.description);
+                setRenderedDescription(html);
+            } catch (e) {
+                console.error("Error parsing markdown:", e);
+                setRenderedDescription("<p>Error parsing description.</p>");
+            }
+        };
+        parseDescription();
     }, [tournament.description]);
 
     return (
@@ -106,7 +120,7 @@ const TournamentDetails = ({ tournament, onBack }: TournamentDetailsProps) => {
                     <h3 className="text-2xl font-bold text-white border-b border-slate-700 pb-2 mb-3">{tournament.name}</h3>
                     <div
                         className="prose prose-sm prose-invert max-w-none"
-                        dangerouslySetInnerHTML={renderedDescription}
+                        dangerouslySetInnerHTML={{ __html: renderedDescription }}
                     />
                 </div>
 
