@@ -1,7 +1,6 @@
 // src/App.tsx
 
 import { useState, useEffect } from 'react';
-// Correctly import the 'User' type from Firebase
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth } from './firebaseConfig';
 import Login from './components/Login';
@@ -12,17 +11,14 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // This listener from Firebase checks for login/logout events in real-time
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setIsLoading(false);
     });
 
-    // This is a cleanup function that removes the listener when the app closes
     return () => unsubscribe();
-  }, []); // The empty array [] ensures this effect runs only once on startup
+  }, []);
 
-  // While we're checking the user's status, show our standard loading indicator
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-900">
@@ -34,9 +30,6 @@ function App() {
     );
   }
 
-  // This is the core logic:
-  // If a 'user' object exists, show the Dashboard.
-  // Otherwise, show the Login page.
   return user ? <Dashboard /> : <Login />;
 }
 
