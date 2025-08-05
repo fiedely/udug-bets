@@ -1,12 +1,10 @@
 // src/firebaseConfig.ts
 
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getFunctions } from "firebase/functions"; // Import getFunctions
 
-// Your web app's Firebase configuration
-// PASTE THE CONFIG OBJECT YOU COPIED FROM THE FIREBASE CONSOLE HERE
 const firebaseConfig = {
   apiKey: "AIzaSyDoW8Uush95DDGmFXzg7LISq7ePIVFyiuQ",
   authDomain: "udug-bets.firebaseapp.com",
@@ -17,10 +15,9 @@ const firebaseConfig = {
   measurementId: "G-CESVTKW675"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize and export the services we'll use throughout the app
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const db = getFirestore(app);
+export const functions = getFunctions(app); // Initialize and export functions

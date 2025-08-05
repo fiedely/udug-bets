@@ -5,6 +5,7 @@ import { db } from '../../firebaseConfig';
 import { collection, query, where, getDocs, Timestamp, doc, getDoc } from 'firebase/firestore';
 import type { Tournament, UserProfile, UserPredictions, MatchStage } from '../../types';
 import TournamentDetails from './TournamentDetails';
+import AllPredictionsView from '../admin/AllPredictionsView';
 
 interface MyTournamentsProps {
     userProfile: UserProfile | null;
@@ -16,24 +17,21 @@ const formatDate = (date?: Date) => {
     return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
 };
 
-// UPDATED: Component for the status light
 const StatusLight = ({ isApplicable, isOn }: { isApplicable: boolean, isOn: boolean }) => {
-    let lightClass = "bg-slate-600"; // Default "off" state
+    let lightClass = "bg-slate-600";
     if (isApplicable && isOn) {
         lightClass = "bg-green-500 glow-green";
     } else if (!isApplicable) {
-        lightClass = "bg-slate-700"; // "Not Applicable" state
+        lightClass = "bg-slate-700";
     }
     return <span className={`w-3 h-3 ${lightClass}`}></span>;
 };
 
-// UPDATED: Component to calculate and display submission status
 const SubmissionStatus = ({ tournament, predictions, stage, isApplicable }: { tournament: Tournament, predictions: UserPredictions | null, stage: MatchStage | 'Champion', isApplicable: boolean }) => {
     if (!isApplicable) {
         return <span className="text-xs text-slate-500">N/A</span>;
     }
     
-    // Handle Champion prediction status
     if (stage === 'Champion') {
         const status = predictions?.championPrediction ? 'Complete' : 'Not Submitted';
         const color = status === 'Complete' ? 'text-green-400' : 'text-slate-500';
@@ -70,6 +68,7 @@ const MyTournaments = ({ userProfile, onEnterPredictions }: MyTournamentsProps) 
     const [userPredictions, setUserPredictions] = useState<Record<string, UserPredictions>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [viewingTournament, setViewingTournament] = useState<Tournament | null>(null);
+    const [viewingAllPredictionsFor, setViewingAllPredictionsFor] = useState<Tournament | null>(null);
 
     useEffect(() => {
         const fetchAllData = async () => {
@@ -112,6 +111,10 @@ const MyTournaments = ({ userProfile, onEnterPredictions }: MyTournamentsProps) 
             </div>
         );
     }
+    
+    if (viewingAllPredictionsFor) {
+        return <AllPredictionsView tournament={viewingAllPredictionsFor} onBack={() => setViewingAllPredictionsFor(null)} />;
+    }
 
     if (viewingTournament) {
         return <TournamentDetails tournament={viewingTournament} onBack={() => setViewingTournament(null)} />;
@@ -141,6 +144,18 @@ const MyTournaments = ({ userProfile, onEnterPredictions }: MyTournamentsProps) 
                         const applicableStages = new Set(allMatches.map(m => m.stage));
                         if (tournament.hasThirdPlaceMatch) applicableStages.add('Third Place Match');
 
+                        // --- NEW: Logic to check if all prediction windows are closed ---
+                        const predStatus = tournament.predictionStatus;
+                        const areSubmissionsClosed = predStatus ?
+                            !predStatus.allowChampion &&
+                            !predStatus.allowGroupStage &&
+                            !predStatus.allowRoundOf32 &&
+                            !predStatus.allowRoundOf16 &&
+                            !predStatus.allowQuarterFinal &&
+                            !predStatus.allowSemiFinal &&
+                            !predStatus.allowFinals
+                            : true; // Default to true (closed) if status object doesn't exist for safety.
+
                         return (
                             <div key={tournament.id} className="bg-slate-800 border border-slate-700 shadow-lg flex flex-col">
                                 <div className="p-6 flex-grow space-y-4 text-slate-300">
@@ -152,7 +167,6 @@ const MyTournaments = ({ userProfile, onEnterPredictions }: MyTournamentsProps) 
                                     </div>
                                     <div className="pt-4 border-t border-slate-700">
                                         <h4 className="font-semibold text-slate-200 mb-2 text-sm">Prediction Submission Status</h4>
-                                        {/* UPDATED: Revamped to a table-style layout */}
                                         <table className="w-full text-xs">
                                             <thead>
                                                 <tr className="text-left text-slate-500">
@@ -164,17 +178,17 @@ const MyTournaments = ({ userProfile, onEnterPredictions }: MyTournamentsProps) 
                                             <tbody>
                                                 {STAGES_TO_DISPLAY.map(({ stage, label }) => {
                                                     const isApplicable = stage === 'Champion' || applicableStages.has(stage) || (stage === 'Final' && applicableStages.has('Third Place Match'));
-                                                    if (!isApplicable && stage !== 'Round of 32' && stage !== 'Round of 16') return null; // Hide non-applicable stages except R32/R16
+                                                    if (!isApplicable && stage !== 'Round of 32' && stage !== 'Round of 16') return null;
 
-                                                    const predStatus = tournament.predictionStatus;
+                                                    const currentPredStatus = tournament.predictionStatus;
                                                     let isOpen = false;
-                                                    if (stage === 'Champion') isOpen = predStatus?.allowChampion || false;
-                                                    else if (stage === 'Group Stage') isOpen = predStatus?.allowGroupStage || false;
-                                                    else if (stage === 'Round of 32') isOpen = predStatus?.allowRoundOf32 || false;
-                                                    else if (stage === 'Round of 16') isOpen = predStatus?.allowRoundOf16 || false;
-                                                    else if (stage === 'Quarter-final') isOpen = predStatus?.allowQuarterFinal || false;
-                                                    else if (stage === 'Semi-final') isOpen = predStatus?.allowSemiFinal || false;
-                                                    else if (stage === 'Final') isOpen = predStatus?.allowFinals || false;
+                                                    if (stage === 'Champion') isOpen = currentPredStatus?.allowChampion || false;
+                                                    else if (stage === 'Group Stage') isOpen = currentPredStatus?.allowGroupStage || false;
+                                                    else if (stage === 'Round of 32') isOpen = currentPredStatus?.allowRoundOf32 || false;
+                                                    else if (stage === 'Round of 16') isOpen = currentPredStatus?.allowRoundOf16 || false;
+                                                    else if (stage === 'Quarter-final') isOpen = currentPredStatus?.allowQuarterFinal || false;
+                                                    else if (stage === 'Semi-final') isOpen = currentPredStatus?.allowSemiFinal || false;
+                                                    else if (stage === 'Final') isOpen = currentPredStatus?.allowFinals || false;
 
                                                     return (
                                                         <tr key={stage} className="border-t border-slate-700/50">
@@ -188,9 +202,18 @@ const MyTournaments = ({ userProfile, onEnterPredictions }: MyTournamentsProps) 
                                         </table>
                                     </div>
                                 </div>
-                                <div className="p-4 bg-slate-900/50 flex gap-4">
-                                    <button onClick={() => setViewingTournament(tournament)} className="w-full px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm">Check Details</button>
-                                    <button onClick={() => onEnterPredictions(tournament)} className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-500 font-semibold text-white text-sm">Enter Predictions</button>
+                                <div className="p-4 bg-slate-900/50 grid grid-cols-3 gap-4">
+                                    <button onClick={() => setViewingTournament(tournament)} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm">Details</button>
+                                    {/* --- UPDATED: Button is now conditionally disabled --- */}
+                                    <button 
+                                        onClick={() => setViewingAllPredictionsFor(tournament)} 
+                                        className="px-4 py-2 bg-gray-500 hover:bg-gray-400 font-semibold text-white text-sm disabled:bg-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
+                                        disabled={!areSubmissionsClosed}
+                                        title={!areSubmissionsClosed ? "Available after all prediction windows close" : "View all predictions"}
+                                    >
+                                        Predictions
+                                    </button>
+                                    <button onClick={() => onEnterPredictions(tournament)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 font-semibold text-white text-sm">Enter/Edit</button>
                                 </div>
                             </div>
                         );
