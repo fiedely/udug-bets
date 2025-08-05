@@ -13,7 +13,6 @@ interface WidgetConfigModalProps {
     onSave: (widget: Partial<Widget>) => void;
 }
 
-// --- NEW: Color palette for widget headers ---
 const HEADER_COLORS = [
     { name: 'Default', class: 'bg-slate-700/50' },
     { name: 'Red', class: 'bg-red-900' },
@@ -31,13 +30,15 @@ const WidgetConfigModal = ({ isOpen, widget, userProfile, onClose, onSave }: Wid
     const [title, setTitle] = useState('');
     const [headerColor, setHeaderColor] = useState(HEADER_COLORS[0].class);
 
+    const defaultTitle = widget?.type === 'predictionChart' ? 'Prediction Chart' : 'Leaderboard';
+
     useEffect(() => {
         if (widget) {
             setSelectedTournamentId(widget.props?.tournamentId || '');
-            setTitle(widget.title || 'Leaderboard');
+            setTitle(widget.title || defaultTitle);
             setHeaderColor(widget.headerColor || HEADER_COLORS[0].class);
         }
-    }, [widget]);
+    }, [widget, defaultTitle]);
 
     useEffect(() => {
         const fetchTournaments = async () => {
@@ -66,7 +67,7 @@ const WidgetConfigModal = ({ isOpen, widget, userProfile, onClose, onSave }: Wid
         if (widget) {
             onSave({
                 ...widget,
-                title: title.trim() || 'Leaderboard',
+                title: title.trim() || defaultTitle,
                 headerColor: headerColor,
                 props: {
                     ...widget.props,
@@ -107,7 +108,7 @@ const WidgetConfigModal = ({ isOpen, widget, userProfile, onClose, onSave }: Wid
                         </div>
                     </div>
                     <div>
-                        <label htmlFor="tournament-select" className="block text-sm font-medium text-slate-300">Show Leaderboard For:</label>
+                        <label htmlFor="tournament-select" className="block text-sm font-medium text-slate-300">Select Tournament</label>
                         <select
                             id="tournament-select"
                             value={selectedTournamentId}

@@ -3,17 +3,15 @@
 import { useState, useEffect, useRef, Fragment } from 'react';
 import { db } from '../../firebaseConfig';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import type { Tournament, UserProfile, UserPredictions, Match, Team } from '../../types';
+import type { Tournament, UserProfile, UserPredictions, Match, Team, PointRule, PointRules, MatchStage } from '../../types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-// Props for our component
 interface AllPredictionsViewProps {
     tournament: Tournament;
     onBack: () => void;
 }
 
-// A helper type for our combined data structure
 interface EnrichedMatch extends Match {
     participantPredictions: {
         userId: string;
@@ -22,7 +20,6 @@ interface EnrichedMatch extends Match {
     }[];
 }
 
-// A small component to render the prediction cell with color coding
 const PredictionCell = ({ actual, prediction }: { actual?: number, prediction?: number }) => {
     if (typeof prediction !== 'number' || prediction < 0) {
         return <span className="text-slate-500">-</span>;
@@ -32,6 +29,16 @@ const PredictionCell = ({ actual, prediction }: { actual?: number, prediction?: 
         return <span className={isCorrect ? 'text-green-400 font-bold' : ''}>{prediction}</span>;
     }
     return <span>{prediction}</span>;
+};
+
+const stageToRuleKeyMap: { [key in MatchStage]?: keyof PointRules } = {
+    "Group Stage": "groupStage",
+    "Round of 32": "round32",
+    "Round of 16": "round16",
+    "Quarter-final": "quarterFinal",
+    "Semi-final": "semiFinal",
+    "Third Place Match": "thirdPlaceMatch",
+    "Final": "final",
 };
 
 
@@ -51,13 +58,11 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                 return;
             }
 
-            // 1. Fetch User Profiles
             const usersQuery = query(collection(db, 'users'), where('uid', 'in', tournament.participants));
             const usersSnap = await getDocs(usersQuery);
             const participantProfiles = usersSnap.docs.map(doc => doc.data() as UserProfile).sort((a, b) => a.name.localeCompare(b.name));
             setParticipants(participantProfiles);
 
-            // 2. Fetch all prediction documents for this tournament
             const predictionsQuery = query(collection(db, 'predictions'), where('tournamentId', '==', tournament.id));
             const predictionsSnap = await getDocs(predictionsQuery);
             const userPredictionsMap = new Map<string, UserPredictions>();
@@ -66,7 +71,6 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                 userPredictionsMap.set(data.userId, data);
             });
 
-            // 3. Process and enrich the data
             const allMatches = [...(tournament.matches || []), ...(tournament.knockoutMatches || [])];
             const pointRules = tournament.pointRules;
 
@@ -80,14 +84,17 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                         const actualOutcome = Math.sign(match.team1Score - match.team2Score);
                         const predictedOutcome = Math.sign(prediction.team1Score - prediction.team2Score);
                         
-                        const stageKey = match.stage.replace(/ /g, "").replace("-", "") as keyof typeof pointRules;
-                        const rules = (pointRules as any)[stageKey] || pointRules.groupStage;
-
-                        if (match.team1Score === prediction.team1Score && match.team2Score === prediction.team2Score) {
-                            points = rules.correctScore;
-                        } else if (actualOutcome === predictedOutcome) {
-                            points = rules.correctOutcome;
+                        const stageKey = stageToRuleKeyMap[match.stage];
+                        const rules = (stageKey && pointRules?.[stageKey]) ? (pointRules[stageKey] as PointRule) : pointRules.groupStage;
+                        
+                        // --- FIX: Changed point calculation to be additive ---
+                        if (actualOutcome === predictedOutcome) {
+                            points += rules.correctOutcome;
+                            if (match.team1Score === prediction.team1Score && match.team2Score === prediction.team2Score) {
+                                points += rules.correctScore;
+                            }
                         }
+                        // --- END FIX ---
                     }
 
                     return { userId: participant.uid, prediction, points };
@@ -97,7 +104,6 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
 
             setEnrichedMatches(enriched);
 
-            // 4. Process Champion Predictions
             const champPredictions = participantProfiles.map(p => {
                 const predictionDoc = userPredictionsMap.get(p.uid);
                 const championCode = predictionDoc?.championPrediction;
@@ -116,48 +122,39 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
         fetchAllData();
     }, [tournament]);
 
-    // --- ENHANCEMENT 2: Multi-page PDF Export ---
     const handleExportPDF = async () => {
         const table = tableRef.current;
         if (!table) return;
 
         setIsGeneratingPdf(true);
 
-        // Capture the entire table as a single, high-quality canvas image.
         const canvas = await html2canvas(table, { scale: 1.5 });
         const imgData = canvas.toDataURL('image/png');
         const imgWidth = canvas.width;
         const imgHeight = canvas.height;
 
-        // Set up a standard A4 landscape PDF with margins.
         const pdf = new jsPDF({ orientation: 'l', unit: 'pt', format: 'a4' });
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
         const margin = 40;
         const contentWidth = pdfWidth - margin * 2;
-        const contentHeight = pdfHeight - margin * 2;
-
-        // Calculate the scaled height of the image to fit the PDF width.
         const ratio = contentWidth / imgWidth;
         const totalPDFHeight = imgHeight * ratio;
 
         let heightLeft = totalPDFHeight;
-        let position = 0; // Tracks the vertical position of the image slice.
+        let position = 0;
 
-        // Add the title to the first page.
         pdf.setFontSize(20);
         pdf.text(`${tournament.name} - All Predictions`, margin, margin);
 
-        // Add the first chunk of the image to the first page.
         pdf.addImage(imgData, 'PNG', margin, 60, contentWidth, totalPDFHeight, undefined, 'MEDIUM');
-        heightLeft -= contentHeight;
+        heightLeft -= (pdfHeight - 60 - margin);
 
-        // Loop through the remaining height of the image, adding new pages as needed.
         while (heightLeft > 0) {
-            position = heightLeft - totalPDFHeight + 60; // Calculate the negative offset for the next slice.
+            position -= (pdfHeight - margin * 2);
             pdf.addPage();
             pdf.addImage(imgData, 'PNG', margin, position, contentWidth, totalPDFHeight, undefined, 'MEDIUM');
-            heightLeft -= contentHeight;
+            heightLeft -= (pdfHeight - margin * 2);
         }
         
         pdf.save(`${tournament.name.replace(/ /g, '_')}_predictions.pdf`);
@@ -193,7 +190,6 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                         <thead className="sticky top-0 z-20">
                             <tr>
                                 <th scope="col" className="p-3 font-semibold text-slate-300 sticky left-0 bg-slate-700 z-30 w-48">Match</th>
-                                {/* --- ENHANCEMENT 1: Table Borders --- */}
                                 {participants.map(p => (
                                     <th key={p.uid} scope="col" colSpan={2} className="p-3 font-semibold text-center w-32 bg-slate-700 border-l border-slate-600">{p.name}</th>
                                 ))}
@@ -202,7 +198,6 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                                 <th scope="col" className="p-2 text-xs text-slate-400 sticky left-0 bg-slate-700 z-30 w-48"></th>
                                 {participants.map(p => (
                                     <Fragment key={p.uid}>
-                                        {/* --- ENHANCEMENT 1: Table Borders --- */}
                                         <th scope="col" className="p-2 text-xs text-slate-400 text-center font-normal bg-slate-700 border-l border-slate-600">Prediction</th>
                                         <th scope="col" className="p-2 text-xs text-slate-400 text-center font-normal w-12 bg-slate-700">Points</th>
                                     </Fragment>
@@ -218,7 +213,6 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                                     </td>
                                     {match.participantPredictions.map(p => (
                                         <Fragment key={p.userId}>
-                                            {/* --- ENHANCEMENT 1: Table Borders --- */}
                                             <td className="p-3 text-center font-mono border-l border-slate-700">
                                                 <PredictionCell actual={match.team1Score} prediction={p.prediction?.team1Score} />
                                                 {' - '}
@@ -236,7 +230,6 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                                 </td>
                                 {championPredictions.map(p => (
                                     <Fragment key={p.userId}>
-                                        {/* --- ENHANCEMENT 1: Table Borders --- */}
                                         <td className="p-3 text-center text-xs border-l border-slate-600">
                                             {p.team ? `${p.team.flag} ${p.team.name}` : <span className="text-slate-500">-</span>}
                                         </td>

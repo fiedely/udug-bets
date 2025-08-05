@@ -8,6 +8,7 @@ import type { UserProfile, Widget, WidgetType } from '../../types';
 import { db } from '../../firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import LeaderboardWidget from './widgets/LeaderboardWidget';
+import PredictionChartWidget from './widgets/PredictionChartWidget';
 import WidgetConfigModal from './WidgetConfigModal';
 import AddWidgetModal from './AddWidgetModal';
 
@@ -57,45 +58,27 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
         await setDoc(layoutDocRef, { widgets: newWidgets });
     };
 
-    // --- FIX: Rewrote onLayoutChange to prevent race conditions ---
-    const onLayoutChange = (layout: ReactGridLayout.Layout[]) => {
-        // isMounted prevents saving on the initial render before widgets are loaded.
+    // --- FIX: Simplified the handler to only take the layout argument ---
+    const handleLayoutChange = (layout: ReactGridLayout.Layout[]) => {
         if (!isMounted) return;
-
         setWidgets(currentWidgets => {
-            // If there are no widgets, no need to do anything.
             if (currentWidgets.length === 0) return currentWidgets;
-
             const layoutMap = new Map(layout.map(item => [item.i, item]));
             let hasChanges = false;
-
             const updatedWidgets = currentWidgets.map(w => {
                 const newLayout = layoutMap.get(w.i);
-                if (!newLayout) return w; // Should not happen, but good practice.
-
-                // Check if any layout property has actually changed.
+                if (!newLayout) return w;
                 if (w.x !== newLayout.x || w.y !== newLayout.y || w.w !== newLayout.w || w.h !== newLayout.h) {
                     hasChanges = true;
-                    // Return a new object with all original props plus updated layout properties.
-                    return {
-                        ...w,
-                        x: newLayout.x,
-                        y: newLayout.y,
-                        w: newLayout.w,
-                        h: newLayout.h,
-                    };
+                    return { ...w, x: newLayout.x, y: newLayout.y, w: newLayout.w, h: newLayout.h };
                 }
-                // If no change, return the original widget object to avoid unnecessary re-renders.
                 return w;
             });
-
-            // Only update state and save to Firestore if there was a meaningful change.
             if (hasChanges) {
                 saveLayout(updatedWidgets);
                 return updatedWidgets;
             }
-            
-            return currentWidgets; // No changes, return the original state.
+            return currentWidgets;
         });
     };
 
@@ -104,9 +87,15 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
         const newWidget: Partial<Widget> = {
             i: `${type}-${new Date().getTime()}`,
             type: type,
-            title: 'New Leaderboard',
+            title: type === 'leaderboard' ? 'New Leaderboard' : 'New Prediction Chart',
             x: (widgets.length * 4) % 12, y: Infinity,
-            w: 4, h: 10, minW: 3, minH: 6,
+            w: type === 'leaderboard' ? 4 : 6,
+            h: 10, 
+            minW: type === 'leaderboard' ? 3 : 5,
+            minH: 8,
+            props: {
+                currentMatchIndex: 0
+            }
         };
         setEditingWidget(newWidget);
         setIsConfigModalOpen(true);
@@ -141,6 +130,23 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
         setIsConfigModalOpen(false);
         setEditingWidget(null);
     };
+
+    const handleWidgetPropChange = (widgetId: string, propName: string, value: any) => {
+        const newWidgets = widgets.map(w => {
+            if (w.i === widgetId) {
+                return {
+                    ...w,
+                    props: {
+                        ...w.props,
+                        [propName]: value,
+                    }
+                };
+            }
+            return w;
+        });
+        setWidgets(newWidgets);
+        saveLayout(newWidgets);
+    };
     
     const refreshFuncs = useRef(new Map<string, () => void>()).current;
 
@@ -150,6 +156,13 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
                 return <LeaderboardWidget
                     userProfile={userProfile}
                     tournamentId={widget.props?.tournamentId}
+                    setRefreshFunc={(func) => refreshFuncs.set(widget.i, func)}
+                />;
+            case 'predictionChart':
+                return <PredictionChartWidget
+                    tournamentId={widget.props?.tournamentId}
+                    currentMatchIndex={widget.props?.currentMatchIndex || 0}
+                    onMatchIndexChange={(index) => handleWidgetPropChange(widget.i, 'currentMatchIndex', index)}
                     setRefreshFunc={(func) => refreshFuncs.set(widget.i, func)}
                 />;
             default:
@@ -175,7 +188,8 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
 
             <ResponsiveGridLayout
                 layouts={{ lg: widgets }}
-                onLayoutChange={onLayoutChange}
+                // --- FIX: Replaced onDragStop and onResizeStop with the correct prop ---
+                onLayoutChange={handleLayoutChange}
                 className="layout"
                 draggableHandle=".widget-header"
                 draggableCancel=".widget-menu-button"

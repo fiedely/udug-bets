@@ -1,10 +1,16 @@
 // src/types/index.ts
 
+// --- NEW: Defined and exported the PointRule type ---
+export interface PointRule {
+  correctScore: number;
+  correctOutcome: number;
+}
+
 export interface Widget {
-  i: string; // Unique ID
+  i: string;
   type: WidgetType;
   title?: string;
-  headerColor?: string; // NEW: Holds the Tailwind CSS class for the header bg
+  headerColor?: string;
   x: number;
   y: number;
   w: number;
@@ -13,10 +19,11 @@ export interface Widget {
   minH?: number;
   props?: {
     tournamentId?: string;
+    currentMatchIndex?: number;
   };
 }
 
-export type WidgetType = 'leaderboard' | 'predictionChart' | 'answerChart' | 'pointProgression' | 'championChart';
+export type WidgetType = 'leaderboard' | 'predictionChart';
 
 export type View = 'User Dashboard' | 'My Tournaments' | 'Join Tournament' | 'Leaderboard' | 'Create Tournament' | 'Manage Users' | 'List Tournaments' | 'Edit Tournament' | 'Manage Scores' | 'Debug';
 
@@ -33,14 +40,15 @@ export interface Team {
   code: string;
 }
 
+// --- UPDATED: This interface now uses the exported PointRule type ---
 export interface PointRules {
-    groupStage: { correctScore: number; correctOutcome: number; };
-    round32?: { correctScore: number; correctOutcome: number; };
-    round16?: { correctScore: number; correctOutcome: number; };
-    quarterFinal?: { correctScore: number; correctOutcome: number; };
-    semiFinal?: { correctScore: number; correctOutcome: number; };
-    thirdPlaceMatch?: { correctScore: number; correctOutcome: number; };
-    final?: { correctScore: number; correctOutcome: number; };
+    groupStage: PointRule;
+    round32?: PointRule;
+    round16?: PointRule;
+    quarterFinal?: PointRule;
+    semiFinal?: PointRule;
+    thirdPlaceMatch?: PointRule;
+    final?: PointRule;
     championBonus?: number;
 }
 

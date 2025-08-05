@@ -1,5 +1,5 @@
 import * as logger from "firebase-functions/logger";
-import { onDocumentUpdated } from "firebase-functions/v2/firestore";
+import { onDocumentUpdated, onDocumentWritten } from "firebase-functions/v2/firestore";
 import { initializeApp }from "firebase-admin/app";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
 
@@ -80,8 +80,7 @@ interface LeaderboardEntry {
 }
 
 
-// --- CLOUD FUNCTION ---
-// Helper map to safely convert match stage names to PointRules keys
+// --- REUSABLE LEADERBOARD CALCULATION LOGIC ---
 const stageToRuleKeyMap: { [key in MatchStage]?: keyof PointRules } = {
     "Group Stage": "groupStage",
     "Round of 32": "round32",
@@ -92,39 +91,25 @@ const stageToRuleKeyMap: { [key in MatchStage]?: keyof PointRules } = {
     "Final": "final",
 };
 
-export const updateLeaderboard = onDocumentUpdated("tournaments/{tournamentId}", async (event) => {
-    const beforeData = event.data?.before.data() as Tournament | undefined;
-    const afterData = event.data?.after.data() as Tournament | undefined;
+async function recalculateLeaderboard(tournamentId: string) {
+    logger.info(`Recalculating leaderboard for tournament: ${tournamentId}`);
 
-    if (!beforeData || !afterData) {
-        logger.info("No data found in event, skipping leaderboard update.");
+    const tournamentRef = db.collection("tournaments").doc(tournamentId);
+    const tournamentDoc = await tournamentRef.get();
+
+    if (!tournamentDoc.exists) {
+        logger.error(`Tournament ${tournamentId} not found for recalculation.`);
         return;
     }
-
-    // --- FIX: Check if score-relevant data has actually changed ---
-    const scoresChanged = JSON.stringify(beforeData.matches) !== JSON.stringify(afterData.matches) ||
-                          JSON.stringify(beforeData.knockoutMatches) !== JSON.stringify(afterData.knockoutMatches);
-    const championChanged = beforeData.champion !== afterData.champion;
-    const participantsChanged = JSON.stringify(beforeData.participants) !== JSON.stringify(afterData.participants);
-
-    if (!scoresChanged && !championChanged && !participantsChanged) {
-        logger.info(`Tournament '${afterData.name}' updated, but no score-relevant data changed. Skipping leaderboard recalculation.`);
-        return; // Exit the function early if only metadata like 'name' changed
-    }
-    // --- END FIX ---
-
-    logger.info(`Score-relevant data for tournament ${event.params.tournamentId} updated, recalculating leaderboard.`);
-    
-    const tournamentData = afterData;
+    const tournamentData = tournamentDoc.data() as Tournament;
 
     if (!tournamentData.participants || tournamentData.participants.length === 0 || !tournamentData.pointRules) {
-        logger.info("Tournament has no participants or point rules. Skipping leaderboard update.");
+        logger.info("Tournament has no participants or point rules. Skipping.");
         return;
     }
 
-    // 1. Fetch all predictions and user profiles
     const predictionsPromises = tournamentData.participants.map(userId => 
-        db.collection("predictions").doc(`${event.params.tournamentId}_${userId}`).get()
+        db.collection("predictions").doc(`${tournamentId}_${userId}`).get()
     );
     const usersPromises = tournamentData.participants.map(userId => 
         db.collection("users").doc(userId).get()
@@ -151,41 +136,38 @@ export const updateLeaderboard = onDocumentUpdated("tournaments/{tournamentId}",
         }
     });
 
-    // 2. Calculate points for each user
     const allMatches = [...(tournamentData.matches || []), ...(tournamentData.knockoutMatches || [])];
     const leaderboardData: Omit<LeaderboardEntry, 'rank' | 'previousRank' | 'rankChange'>[] = [];
 
     for (const userId of tournamentData.participants) {
-        const predictions = userPredictionsMap.get(userId);
+        const predictions = userPredictionsMap.get(userId) || {
+            tournamentId: tournamentId,
+            userId: userId,
+            matchPredictions: {},
+        };
         const userProfile = userProfilesMap.get(userId);
-        if (!predictions || !userProfile) continue;
+        if (!userProfile) continue;
 
         let totalPoints = 0;
-
-        // Calculate match points
         for (const match of allMatches) {
-            if (typeof match.team1Score !== "number" || typeof match.team2Score !== "number") {
-                continue; // Skip matches without scores
-            }
+            if (typeof match.team1Score !== "number" || typeof match.team2Score !== "number") continue;
+            
             const prediction = predictions.matchPredictions[match.id];
-            if (!prediction || prediction.team1Score < 0 || prediction.team2Score < 0) {
-                continue; // Skip un-predicted matches
-            }
+            if (!prediction || prediction.team1Score < 0 || prediction.team2Score < 0) continue;
 
             const actualOutcome = Math.sign(match.team1Score - match.team2Score);
             const predictedOutcome = Math.sign(prediction.team1Score - prediction.team2Score);
-            
             const stageKey = stageToRuleKeyMap[match.stage];
             const rules = (stageKey && tournamentData.pointRules?.[stageKey]) ? (tournamentData.pointRules[stageKey] as PointRule) : tournamentData.pointRules.groupStage;
 
-            if (match.team1Score === prediction.team1Score && match.team2Score === prediction.team2Score) {
-                totalPoints += rules.correctScore;
-            } else if (actualOutcome === predictedOutcome) {
+            if (actualOutcome === predictedOutcome) {
                 totalPoints += rules.correctOutcome;
+                if (match.team1Score === prediction.team1Score && match.team2Score === prediction.team2Score) {
+                    totalPoints += rules.correctScore;
+                }
             }
         }
 
-        // Calculate champion bonus points
         if (tournamentData.champion && tournamentData.champion === predictions.championPrediction) {
             totalPoints += tournamentData.pointRules.championBonus || 0;
         }
@@ -193,38 +175,70 @@ export const updateLeaderboard = onDocumentUpdated("tournaments/{tournamentId}",
         leaderboardData.push({ userId, userName: userProfile.name, totalPoints });
     }
 
-    // 3. Fetch old leaderboard to calculate rank changes
-    const oldLeaderboardSnap = await db.collection("leaderboards").doc(event.params.tournamentId).get();
+    const oldLeaderboardSnap = await db.collection("leaderboards").doc(tournamentId).get();
     const oldLeaderboardEntries: LeaderboardEntry[] = oldLeaderboardSnap.exists ? oldLeaderboardSnap.data()?.entries || [] : [];
     const oldRanksMap = new Map<string, number>();
     oldLeaderboardEntries.forEach(entry => oldRanksMap.set(entry.userId, entry.rank));
 
-    // 4. Sort, rank, and determine rank changes
     leaderboardData.sort((a, b) => b.totalPoints - a.totalPoints);
 
     const newLeaderboard: LeaderboardEntry[] = leaderboardData.map((data, index) => {
         const rank = index + 1;
         const previousRank = oldRanksMap.get(data.userId);
         let rankChange: "up" | "down" | "same" = "same";
-
         if (typeof previousRank === 'number') {
             if (rank < previousRank) rankChange = "up";
             else if (rank > previousRank) rankChange = "down";
         }
-
-        return {
-            ...data,
-            rank,
-            previousRank: previousRank ?? null,
-            rankChange,
-        };
+        return { ...data, rank, previousRank: previousRank ?? null, rankChange };
     });
 
-    // 5. Save the new leaderboard
-    await db.collection("leaderboards").doc(event.params.tournamentId).set({
+    await db.collection("leaderboards").doc(tournamentId).set({
         entries: newLeaderboard,
         lastUpdated: Timestamp.now(),
     });
 
-    logger.info(`Leaderboard for tournament ${event.params.tournamentId} successfully updated.`);
+    logger.info(`Leaderboard for tournament ${tournamentId} successfully updated.`);
+}
+
+
+// --- CLOUD FUNCTION TRIGGERS ---
+
+/**
+ * Triggered when an admin updates a tournament's scores, champion, or participants.
+ */
+export const onTournamentUpdate = onDocumentUpdated("tournaments/{tournamentId}", async (event) => {
+    const beforeData = event.data?.before.data() as Tournament | undefined;
+    const afterData = event.data?.after.data() as Tournament | undefined;
+
+    if (!beforeData || !afterData) return;
+
+    const scoresChanged = JSON.stringify(beforeData.matches) !== JSON.stringify(afterData.matches) ||
+                          JSON.stringify(beforeData.knockoutMatches) !== JSON.stringify(afterData.knockoutMatches);
+    const championChanged = beforeData.champion !== afterData.champion;
+    const participantsChanged = JSON.stringify(beforeData.participants) !== JSON.stringify(afterData.participants);
+
+    if (scoresChanged || championChanged || participantsChanged) {
+        await recalculateLeaderboard(event.params.tournamentId);
+    }
+});
+
+/**
+ * Triggered when a user creates, updates, or deletes their predictions.
+ */
+export const onPredictionWrite = onDocumentWritten("predictions/{predictionId}", async (event) => {
+    // A prediction document was either created, updated, or deleted.
+    // We need to get the tournamentId from the data to trigger the right leaderboard recalc.
+    const predictionData = event.data?.after.data() as UserPredictions | undefined;
+    
+    // If the document was deleted, the data will be on `event.data.before`
+    const oldPredictionData = event.data?.before.data() as UserPredictions | undefined;
+
+    const tournamentId = predictionData?.tournamentId || oldPredictionData?.tournamentId;
+
+    if (tournamentId) {
+        await recalculateLeaderboard(tournamentId);
+    } else {
+        logger.warn(`Could not find tournamentId for prediction document ${event.params.predictionId}`);
+    }
 });
