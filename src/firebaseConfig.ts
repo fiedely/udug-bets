@@ -3,7 +3,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getFunctions } from "firebase/functions"; // Import getFunctions
+import { getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDoW8Uush95DDGmFXzg7LISq7ePIVFyiuQ",
@@ -20,4 +20,4 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const db = getFirestore(app);
-export const functions = getFunctions(app); // Initialize and export functions
+export const functions = getFunctions(app, 'asia-southeast2');

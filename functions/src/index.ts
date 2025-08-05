@@ -1,3 +1,6 @@
+import { setGlobalOptions } from "firebase-functions/v2";
+setGlobalOptions({ region: "asia-southeast2" });
+
 import * as logger from "firebase-functions/logger";
 import { onDocumentUpdated, onDocumentWritten } from "firebase-functions/v2/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https"; // Import onCall and HttpsError
