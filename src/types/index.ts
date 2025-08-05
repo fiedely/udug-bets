@@ -1,5 +1,23 @@
 // src/types/index.ts
 
+export interface Widget {
+  i: string; // Unique ID
+  type: WidgetType;
+  title?: string;
+  headerColor?: string; // NEW: Holds the Tailwind CSS class for the header bg
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  minW?: number;
+  minH?: number;
+  props?: {
+    tournamentId?: string;
+  };
+}
+
+export type WidgetType = 'leaderboard' | 'predictionChart' | 'answerChart' | 'pointProgression' | 'championChart';
+
 export type View = 'User Dashboard' | 'My Tournaments' | 'Join Tournament' | 'Leaderboard' | 'Create Tournament' | 'Manage Users' | 'List Tournaments' | 'Edit Tournament' | 'Manage Scores' | 'Debug';
 
 export interface UserProfile {

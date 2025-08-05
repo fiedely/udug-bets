@@ -1,13 +1,15 @@
 // src/components/views/UserDashboard.tsx
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-import type { UserProfile } from '../../types';
+import type { UserProfile, Widget, WidgetType } from '../../types';
 import { db } from '../../firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import LeaderboardWidget from './widgets/LeaderboardWidget'; 
+import LeaderboardWidget from './widgets/LeaderboardWidget';
+import WidgetConfigModal from './WidgetConfigModal';
+import AddWidgetModal from './AddWidgetModal';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -15,79 +17,141 @@ interface UserDashboardProps {
     userProfile: UserProfile;
 }
 
-// Define a type for our widgets for easier management
-type WidgetType = 'leaderboard' | 'predictionChart' | 'answerChart' | 'pointProgression' | 'championChart';
-
 const UserDashboard = ({ userProfile }: UserDashboardProps) => {
-    const [layouts, setLayouts] = useState<ReactGridLayout.Layouts>({});
-    // **NEW:** This state will now be the single source of truth for which widgets are on the dashboard.
-    const [widgets, setWidgets] = useState<ReactGridLayout.Layout[]>([]);
+    const [widgets, setWidgets] = useState<Widget[]>([]);
     const [isMounted, setIsMounted] = useState(false);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+    const [editingWidget, setEditingWidget] = useState<Partial<Widget> | null>(null);
+    const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+    
+    const dropdownRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
     useEffect(() => {
         const fetchLayout = async () => {
             const layoutDocRef = doc(db, "dashboardLayouts", userProfile.uid);
             const docSnap = await getDoc(layoutDocRef);
             if (docSnap.exists() && docSnap.data().widgets) {
-                const savedWidgets = docSnap.data().widgets;
-                setWidgets(savedWidgets);
-                // The layout is derived from the widgets array
-                setLayouts({ lg: savedWidgets });
+                setWidgets(docSnap.data().widgets);
             } else {
-                // Define a default layout with one leaderboard widget
-                const defaultWidgets = [
-                    { i: `leaderboard-${new Date().getTime()}`, x: 0, y: 0, w: 4, h: 10, minW: 3, minH: 6 },
-                ];
-                setWidgets(defaultWidgets);
-                setLayouts({ lg: defaultWidgets });
+                setWidgets([]);
             }
-            setIsMounted(true); 
+            setIsMounted(true);
         };
         fetchLayout();
     }, [userProfile.uid]);
 
-    // **UPDATED:** This function now updates our main `widgets` state with new positions/sizes
-    const onLayoutChange = async (layout: ReactGridLayout.Layout[]) => {
-        if (isMounted && layout.length > 0) {
-            // Create a map of the new layout for easy lookup
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const activeDropdownRef = dropdownRefs.current.get(activeDropdown || '');
+            if (activeDropdownRef && !activeDropdownRef.contains(event.target as Node)) {
+                setActiveDropdown(null);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [activeDropdown]);
+
+    const saveLayout = async (newWidgets: Widget[]) => {
+        const layoutDocRef = doc(db, "dashboardLayouts", userProfile.uid);
+        await setDoc(layoutDocRef, { widgets: newWidgets });
+    };
+
+    // --- FIX: Rewrote onLayoutChange to prevent race conditions ---
+    const onLayoutChange = (layout: ReactGridLayout.Layout[]) => {
+        // isMounted prevents saving on the initial render before widgets are loaded.
+        if (!isMounted) return;
+
+        setWidgets(currentWidgets => {
+            // If there are no widgets, no need to do anything.
+            if (currentWidgets.length === 0) return currentWidgets;
+
             const layoutMap = new Map(layout.map(item => [item.i, item]));
-            // Update our widgets state with the new layout properties
-            const updatedWidgets = widgets.map(w => ({ ...w, ...layoutMap.get(w.i) }));
+            let hasChanges = false;
+
+            const updatedWidgets = currentWidgets.map(w => {
+                const newLayout = layoutMap.get(w.i);
+                if (!newLayout) return w; // Should not happen, but good practice.
+
+                // Check if any layout property has actually changed.
+                if (w.x !== newLayout.x || w.y !== newLayout.y || w.w !== newLayout.w || w.h !== newLayout.h) {
+                    hasChanges = true;
+                    // Return a new object with all original props plus updated layout properties.
+                    return {
+                        ...w,
+                        x: newLayout.x,
+                        y: newLayout.y,
+                        w: newLayout.w,
+                        h: newLayout.h,
+                    };
+                }
+                // If no change, return the original widget object to avoid unnecessary re-renders.
+                return w;
+            });
+
+            // Only update state and save to Firestore if there was a meaningful change.
+            if (hasChanges) {
+                saveLayout(updatedWidgets);
+                return updatedWidgets;
+            }
             
-            setWidgets(updatedWidgets);
-            const layoutDocRef = doc(db, "dashboardLayouts", userProfile.uid);
-            await setDoc(layoutDocRef, { widgets: updatedWidgets });
+            return currentWidgets; // No changes, return the original state.
+        });
+    };
+
+    const handleSelectWidgetType = (type: WidgetType) => {
+        setIsAddModalOpen(false);
+        const newWidget: Partial<Widget> = {
+            i: `${type}-${new Date().getTime()}`,
+            type: type,
+            title: 'New Leaderboard',
+            x: (widgets.length * 4) % 12, y: Infinity,
+            w: 4, h: 10, minW: 3, minH: 6,
+        };
+        setEditingWidget(newWidget);
+        setIsConfigModalOpen(true);
+    };
+
+    const handleEditWidget = (widgetId: string) => {
+        const widgetToEdit = widgets.find(w => w.i === widgetId);
+        if (widgetToEdit) {
+            setEditingWidget(widgetToEdit);
+            setIsConfigModalOpen(true);
+            setActiveDropdown(null);
         }
     };
 
-    // **NEW:** Function to add a new widget
-    const onAddWidget = (type: WidgetType) => {
-        const newItem: ReactGridLayout.Layout = {
-            i: `${type}-${new Date().getTime()}`, // Unique ID for each widget instance
-            x: (widgets.length * 4) % 12, // Basic logic to place new widget
-            y: Infinity, // This tells react-grid-layout to place it at the bottom
-            w: 4,
-            h: 10,
-            minW: 3,
-            minH: 6,
-        };
-        setWidgets([...widgets, newItem]);
-    };
-
-    // **NEW:** Function to remove a widget
     const onRemoveWidget = (widgetId: string) => {
         const newWidgets = widgets.filter(w => w.i !== widgetId);
         setWidgets(newWidgets);
-        const layoutDocRef = doc(db, "dashboardLayouts", userProfile.uid);
-        setDoc(layoutDocRef, { widgets: newWidgets });
+        saveLayout(newWidgets);
+        setActiveDropdown(null);
     };
+    
+    const handleSaveWidgetConfig = (configuredWidget: Partial<Widget>) => {
+        const existingIndex = widgets.findIndex(w => w.i === configuredWidget.i);
+        let newWidgets;
+        if (existingIndex > -1) {
+            newWidgets = widgets.map(w => w.i === configuredWidget.i ? configuredWidget as Widget : w);
+        } else {
+            newWidgets = [...widgets, configuredWidget as Widget];
+        }
+        setWidgets(newWidgets);
+        saveLayout(newWidgets);
+        setIsConfigModalOpen(false);
+        setEditingWidget(null);
+    };
+    
+    const refreshFuncs = useRef(new Map<string, () => void>()).current;
 
-    // **NEW:** Helper to render the correct widget component based on its ID
-    const renderWidget = (widget: ReactGridLayout.Layout) => {
-        const type = widget.i.split('-')[0]; // Get type from ID like 'leaderboard-123'
-        switch (type) {
+    const renderWidgetContent = (widget: Widget) => {
+        switch (widget.type) {
             case 'leaderboard':
-                return <LeaderboardWidget userProfile={userProfile} />;
+                return <LeaderboardWidget
+                    userProfile={userProfile}
+                    tournamentId={widget.props?.tournamentId}
+                    setRefreshFunc={(func) => refreshFuncs.set(widget.i, func)}
+                />;
             default:
                 return <div className="p-4 text-slate-400">Unknown Widget</div>;
         }
@@ -99,42 +163,48 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
 
     return (
         <div>
+            <AddWidgetModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSelect={handleSelectWidgetType} />
+            <WidgetConfigModal isOpen={isConfigModalOpen} widget={editingWidget} userProfile={userProfile} onClose={() => setIsConfigModalOpen(false)} onSave={handleSaveWidgetConfig} />
+
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl font-bold text-blue-400">My Dashboard</h1>
-                {/* For now, this button only adds a leaderboard. We can add a modal later. */}
-                <button 
-                    onClick={() => onAddWidget('leaderboard')}
-                    className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm"
-                >
-                    Add Leaderboard Widget
+                <button onClick={() => setIsAddModalOpen(true)} className="px-3 py-1 bg-slate-600 hover:bg-slate-500 font-bold text-white text-xl" title="Add Widget">
+                    +
                 </button>
             </div>
 
             <ResponsiveGridLayout
-                // By using the widgets array as the source for the layout, we ensure they are in sync
                 layouts={{ lg: widgets }}
-                onLayoutChange={(layout) => onLayoutChange(layout)}
+                onLayoutChange={onLayoutChange}
                 className="layout"
+                draggableHandle=".widget-header"
+                draggableCancel=".widget-menu-button"
                 breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
                 cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
                 rowHeight={30}
-                isDraggable
-                isResizable
             >
                 {widgets.map(widget => (
-                    <div key={widget.i} className="bg-slate-800 border border-slate-700 p-2 overflow-hidden flex flex-col">
-                        {/* This is the content of the widget */}
-                        <div className="flex-grow overflow-hidden">
-                            {renderWidget(widget)}
+                    <div key={widget.i} className="bg-slate-800 border border-slate-700 flex flex-col">
+                        <div className={`widget-header flex justify-between items-center p-2 cursor-move ${widget.headerColor || 'bg-slate-700/50'}`}>
+                            <h4 className="text-sm font-bold text-white truncate">{widget.title || 'Widget'}</h4>
+                            <div className="relative widget-menu-button" ref={ref => { dropdownRefs.current.set(widget.i, ref); }}>
+                                <button onClick={() => setActiveDropdown(activeDropdown === widget.i ? null : widget.i)} className="p-1">
+                                    <svg className="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path>
+                                    </svg>
+                                </button>
+                                {activeDropdown === widget.i && (
+                                    <div className="absolute right-0 mt-2 w-32 bg-slate-900 border border-slate-600 shadow-lg z-20">
+                                        <button onClick={() => handleEditWidget(widget.i)} className="block w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700">Edit</button>
+                                        <button onClick={() => { refreshFuncs.get(widget.i)?.(); setActiveDropdown(null); }} className="block w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700">Refresh</button>
+                                        <button onClick={() => onRemoveWidget(widget.i)} className="block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-slate-700">Delete</button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                        {/* This is the remove button */}
-                        <button 
-                            className="absolute top-1 right-1 w-5 h-5 bg-red-800 text-white text-xs font-bold hover:bg-red-600 flex items-center justify-center z-10"
-                            onClick={() => onRemoveWidget(widget.i)}
-                            title="Remove Widget"
-                        >
-                            &times;
-                        </button>
+                        <div className="flex-grow overflow-hidden p-2">
+                            {renderWidgetContent(widget)}
+                        </div>
                     </div>
                 ))}
             </ResponsiveGridLayout>

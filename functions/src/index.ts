@@ -8,7 +8,6 @@ initializeApp();
 const db = getFirestore();
 
 // --- TYPE DEFINITIONS ---
-// These types should mirror the ones in your frontend `src/types/index.ts`
 interface Team {
   name: string;
   flag: string;
@@ -65,9 +64,10 @@ interface UserPredictions {
 }
 
 interface UserProfile {
-    uid: string;
-    name: string;
-    email: string;
+  uid: string;
+  name: string;
+  email: string;
+  role: 'user' | 'admin' | 'superadmin';
 }
 
 interface LeaderboardEntry {
@@ -75,14 +75,14 @@ interface LeaderboardEntry {
     userName: string;
     totalPoints: number;
     rank: number;
-    previousRank?: number | null; // Allow null
+    previousRank?: number | null;
     rankChange: "up" | "down" | "same";
 }
 
-// --- CLOUD FUNCTION ---
 
+// --- CLOUD FUNCTION ---
 // Helper map to safely convert match stage names to PointRules keys
-const stageToRuleKeyMap: Record<MatchStage, keyof Omit<PointRules, "championBonus">> = {
+const stageToRuleKeyMap: { [key in MatchStage]?: keyof PointRules } = {
     "Group Stage": "groupStage",
     "Round of 32": "round32",
     "Round of 16": "round16",
@@ -93,25 +93,40 @@ const stageToRuleKeyMap: Record<MatchStage, keyof Omit<PointRules, "championBonu
 };
 
 export const updateLeaderboard = onDocumentUpdated("tournaments/{tournamentId}", async (event) => {
-    logger.info(`Tournament ${event.params.tournamentId} updated, recalculating leaderboard.`);
+    const beforeData = event.data?.before.data() as Tournament | undefined;
+    const afterData = event.data?.after.data() as Tournament | undefined;
 
-    const tournamentData = event.data?.after.data() as Tournament | undefined;
-    if (!tournamentData) {
-        logger.error("No tournament data found after update.");
+    if (!beforeData || !afterData) {
+        logger.info("No data found in event, skipping leaderboard update.");
         return;
     }
 
-    const { participants, pointRules } = tournamentData;
-    if (!participants || participants.length === 0 || !pointRules) {
+    // --- FIX: Check if score-relevant data has actually changed ---
+    const scoresChanged = JSON.stringify(beforeData.matches) !== JSON.stringify(afterData.matches) ||
+                          JSON.stringify(beforeData.knockoutMatches) !== JSON.stringify(afterData.knockoutMatches);
+    const championChanged = beforeData.champion !== afterData.champion;
+    const participantsChanged = JSON.stringify(beforeData.participants) !== JSON.stringify(afterData.participants);
+
+    if (!scoresChanged && !championChanged && !participantsChanged) {
+        logger.info(`Tournament '${afterData.name}' updated, but no score-relevant data changed. Skipping leaderboard recalculation.`);
+        return; // Exit the function early if only metadata like 'name' changed
+    }
+    // --- END FIX ---
+
+    logger.info(`Score-relevant data for tournament ${event.params.tournamentId} updated, recalculating leaderboard.`);
+    
+    const tournamentData = afterData;
+
+    if (!tournamentData.participants || tournamentData.participants.length === 0 || !tournamentData.pointRules) {
         logger.info("Tournament has no participants or point rules. Skipping leaderboard update.");
         return;
     }
 
     // 1. Fetch all predictions and user profiles
-    const predictionsPromises = participants.map(userId =>
+    const predictionsPromises = tournamentData.participants.map(userId => 
         db.collection("predictions").doc(`${event.params.tournamentId}_${userId}`).get()
     );
-    const usersPromises = participants.map(userId =>
+    const usersPromises = tournamentData.participants.map(userId => 
         db.collection("users").doc(userId).get()
     );
 
@@ -138,9 +153,9 @@ export const updateLeaderboard = onDocumentUpdated("tournaments/{tournamentId}",
 
     // 2. Calculate points for each user
     const allMatches = [...(tournamentData.matches || []), ...(tournamentData.knockoutMatches || [])];
-    const leaderboardData: Omit<LeaderboardEntry, "rank" | "previousRank" | "rankChange">[] = [];
+    const leaderboardData: Omit<LeaderboardEntry, 'rank' | 'previousRank' | 'rankChange'>[] = [];
 
-    for (const userId of participants) {
+    for (const userId of tournamentData.participants) {
         const predictions = userPredictionsMap.get(userId);
         const userProfile = userProfilesMap.get(userId);
         if (!predictions || !userProfile) continue;
@@ -152,7 +167,6 @@ export const updateLeaderboard = onDocumentUpdated("tournaments/{tournamentId}",
             if (typeof match.team1Score !== "number" || typeof match.team2Score !== "number") {
                 continue; // Skip matches without scores
             }
-
             const prediction = predictions.matchPredictions[match.id];
             if (!prediction || prediction.team1Score < 0 || prediction.team2Score < 0) {
                 continue; // Skip un-predicted matches
@@ -162,7 +176,7 @@ export const updateLeaderboard = onDocumentUpdated("tournaments/{tournamentId}",
             const predictedOutcome = Math.sign(prediction.team1Score - prediction.team2Score);
             
             const stageKey = stageToRuleKeyMap[match.stage];
-            const rules = pointRules[stageKey] || pointRules.groupStage;
+            const rules = (stageKey && tournamentData.pointRules?.[stageKey]) ? (tournamentData.pointRules[stageKey] as PointRule) : tournamentData.pointRules.groupStage;
 
             if (match.team1Score === prediction.team1Score && match.team2Score === prediction.team2Score) {
                 totalPoints += rules.correctScore;
@@ -173,7 +187,7 @@ export const updateLeaderboard = onDocumentUpdated("tournaments/{tournamentId}",
 
         // Calculate champion bonus points
         if (tournamentData.champion && tournamentData.champion === predictions.championPrediction) {
-            totalPoints += pointRules.championBonus || 0;
+            totalPoints += tournamentData.pointRules.championBonus || 0;
         }
 
         leaderboardData.push({ userId, userName: userProfile.name, totalPoints });
@@ -201,7 +215,6 @@ export const updateLeaderboard = onDocumentUpdated("tournaments/{tournamentId}",
         return {
             ...data,
             rank,
-            // **FIX:** Coalesce undefined to null to prevent Firestore error
             previousRank: previousRank ?? null,
             rankChange,
         };
