@@ -1,6 +1,6 @@
 // src/types/index.ts
 
-export type View = 'My Tournaments' | 'Join Tournament' | 'Leaderboard' | 'Create Tournament' | 'Manage Users' | 'List Tournaments' | 'Edit Tournament' | 'Manage Scores';
+export type View = 'User Dashboard' | 'My Tournaments' | 'Join Tournament' | 'Leaderboard' | 'Create Tournament' | 'Manage Users' | 'List Tournaments' | 'Edit Tournament' | 'Manage Scores' | 'Debug';
 
 export interface UserProfile {
   uid: string;
@@ -85,7 +85,6 @@ export interface MatchPrediction {
 }
 
 export interface UserPredictions {
-    id?: string;
     tournamentId: string;
     userId: string;
     championPrediction?: string;

@@ -1,6 +1,6 @@
 // src/components/admin/AllPredictionsView.tsx
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Fragment } from 'react';
 import { db } from '../../firebaseConfig';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import type { Tournament, UserProfile, UserPredictions, Match, Team } from '../../types';
@@ -24,11 +24,14 @@ interface EnrichedMatch extends Match {
 
 // A small component to render the prediction cell with color coding
 const PredictionCell = ({ actual, prediction }: { actual?: number, prediction?: number }) => {
-    if (typeof actual !== 'number' || typeof prediction !== 'number' || prediction < 0) {
+    if (typeof prediction !== 'number' || prediction < 0) {
         return <span className="text-slate-500">-</span>;
     }
-    const isCorrect = actual === prediction;
-    return <span className={isCorrect ? 'text-green-400 font-bold' : ''}>{prediction}</span>;
+    if (typeof actual === 'number') {
+        const isCorrect = actual === prediction;
+        return <span className={isCorrect ? 'text-green-400 font-bold' : ''}>{prediction}</span>;
+    }
+    return <span>{prediction}</span>;
 };
 
 
@@ -38,7 +41,8 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
     const [enrichedMatches, setEnrichedMatches] = useState<EnrichedMatch[]>([]);
     const [participants, setParticipants] = useState<UserProfile[]>([]);
     const [championPredictions, setChampionPredictions] = useState<{ userId: string; team?: Team; points: number }[]>([]);
-    const tableRef = useRef<HTMLDivElement>(null);
+    const tableRef = useRef<HTMLTableElement>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const fetchAllData = async () => {
@@ -112,60 +116,95 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
         fetchAllData();
     }, [tournament]);
 
-    const handleExportPDF = () => {
-        if (!tableRef.current) return;
+    // --- ENHANCEMENT 2: Multi-page PDF Export ---
+    const handleExportPDF = async () => {
+        const table = tableRef.current;
+        if (!table) return;
+
         setIsGeneratingPdf(true);
 
-        html2canvas(tableRef.current, { scale: 2 }).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF({
-                orientation: 'landscape',
-                unit: 'pt',
-                format: [canvas.width, canvas.height]
-            });
-            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-            pdf.save(`${tournament.name.replace(/ /g, '_')}_predictions.pdf`);
-            setIsGeneratingPdf(false);
-        });
+        // Capture the entire table as a single, high-quality canvas image.
+        const canvas = await html2canvas(table, { scale: 1.5 });
+        const imgData = canvas.toDataURL('image/png');
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+
+        // Set up a standard A4 landscape PDF with margins.
+        const pdf = new jsPDF({ orientation: 'l', unit: 'pt', format: 'a4' });
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const margin = 40;
+        const contentWidth = pdfWidth - margin * 2;
+        const contentHeight = pdfHeight - margin * 2;
+
+        // Calculate the scaled height of the image to fit the PDF width.
+        const ratio = contentWidth / imgWidth;
+        const totalPDFHeight = imgHeight * ratio;
+
+        let heightLeft = totalPDFHeight;
+        let position = 0; // Tracks the vertical position of the image slice.
+
+        // Add the title to the first page.
+        pdf.setFontSize(20);
+        pdf.text(`${tournament.name} - All Predictions`, margin, margin);
+
+        // Add the first chunk of the image to the first page.
+        pdf.addImage(imgData, 'PNG', margin, 60, contentWidth, totalPDFHeight, undefined, 'MEDIUM');
+        heightLeft -= contentHeight;
+
+        // Loop through the remaining height of the image, adding new pages as needed.
+        while (heightLeft > 0) {
+            position = heightLeft - totalPDFHeight + 60; // Calculate the negative offset for the next slice.
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', margin, position, contentWidth, totalPDFHeight, undefined, 'MEDIUM');
+            heightLeft -= contentHeight;
+        }
+        
+        pdf.save(`${tournament.name.replace(/ /g, '_')}_predictions.pdf`);
+        setIsGeneratingPdf(false);
     };
 
     return (
-        <div className="bg-slate-800 border border-slate-700 p-6 md:p-8">
-            <div className="flex justify-between items-start mb-4">
-                <div>
-                    <h2 className="text-2xl font-bold text-white">{tournament.name}</h2>
-                    <p className="text-blue-400">All Participant Predictions</p>
-                </div>
-                <div className="flex gap-4">
-                    <button onClick={handleExportPDF} disabled={isGeneratingPdf} className="px-4 py-2 bg-green-600 hover:bg-green-500 font-semibold text-white text-sm disabled:bg-green-800 disabled:cursor-not-allowed">
-                        {isGeneratingPdf ? 'Generating...' : 'Download as PDF'}
-                    </button>
-                    <button onClick={onBack} className="text-sm text-blue-400 hover:text-blue-300 flex items-center whitespace-nowrap">
-                        &larr; Back to Tournaments List
-                    </button>
+        <div className="bg-slate-800 border border-slate-700 p-6 md:p-8 flex flex-col h-[85vh] w-full">
+            <div className="flex-shrink-0">
+                <div className="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 className="text-2xl font-bold text-white">{tournament.name}</h2>
+                        <p className="text-blue-400">All Participant Predictions</p>
+                    </div>
+                    <div className="flex gap-4">
+                        <button onClick={handleExportPDF} disabled={isGeneratingPdf} className="px-4 py-2 bg-green-600 hover:bg-green-500 font-semibold text-white text-sm disabled:bg-green-800 disabled:cursor-not-allowed">
+                            {isGeneratingPdf ? 'Generating...' : 'Download as PDF'}
+                        </button>
+                        <button onClick={onBack} className="text-sm text-blue-400 hover:text-blue-300 flex items-center whitespace-nowrap">
+                            &larr; Back to Tournaments List
+                        </button>
+                    </div>
                 </div>
             </div>
 
             {isLoading ? (
-                 <div className="text-center p-8"><svg className="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>
+                 <div className="flex-grow flex items-center justify-center"><svg className="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>
             ) : participants.length === 0 ? (
                 <div className="text-center p-8 bg-slate-900/50 border border-slate-700"><p className="text-slate-300">This tournament has no participants.</p></div>
             ) : (
-                <div ref={tableRef} className="overflow-x-auto p-4 bg-slate-900">
-                    <table className="w-full text-sm text-left text-slate-300 border-collapse">
-                        <thead>
-                            <tr className="bg-slate-700">
-                                <th scope="col" className="p-3 font-semibold text-slate-300 sticky left-0 bg-slate-700 z-10 w-48">Match</th>
+                <div ref={scrollContainerRef} className="overflow-auto border border-slate-700 flex-grow min-h-0">
+                    <table ref={tableRef} className="w-full text-sm text-left text-slate-300 border-collapse min-w-[1200px]">
+                        <thead className="sticky top-0 z-20">
+                            <tr>
+                                <th scope="col" className="p-3 font-semibold text-slate-300 sticky left-0 bg-slate-700 z-30 w-48">Match</th>
+                                {/* --- ENHANCEMENT 1: Table Borders --- */}
                                 {participants.map(p => (
-                                    <th key={p.uid} scope="col" colSpan={2} className="p-3 font-semibold text-center w-32">{p.name}</th>
+                                    <th key={p.uid} scope="col" colSpan={2} className="p-3 font-semibold text-center w-32 bg-slate-700 border-l border-slate-600">{p.name}</th>
                                 ))}
                             </tr>
-                            <tr className="bg-slate-700/50">
-                                <th scope="col" className="p-2 text-xs text-slate-400 sticky left-0 bg-slate-700/50 z-10 w-48"></th>
+                            <tr>
+                                <th scope="col" className="p-2 text-xs text-slate-400 sticky left-0 bg-slate-700 z-30 w-48"></th>
                                 {participants.map(p => (
                                     <Fragment key={p.uid}>
-                                        <th scope="col" className="p-2 text-xs text-slate-400 text-center font-normal">Prediction</th>
-                                        <th scope="col" className="p-2 text-xs text-slate-400 text-center font-normal w-12">Points</th>
+                                        {/* --- ENHANCEMENT 1: Table Borders --- */}
+                                        <th scope="col" className="p-2 text-xs text-slate-400 text-center font-normal bg-slate-700 border-l border-slate-600">Prediction</th>
+                                        <th scope="col" className="p-2 text-xs text-slate-400 text-center font-normal w-12 bg-slate-700">Points</th>
                                     </Fragment>
                                 ))}
                             </tr>
@@ -179,7 +218,8 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                                     </td>
                                     {match.participantPredictions.map(p => (
                                         <Fragment key={p.userId}>
-                                            <td className="p-3 text-center font-mono">
+                                            {/* --- ENHANCEMENT 1: Table Borders --- */}
+                                            <td className="p-3 text-center font-mono border-l border-slate-700">
                                                 <PredictionCell actual={match.team1Score} prediction={p.prediction?.team1Score} />
                                                 {' - '}
                                                 <PredictionCell actual={match.team2Score} prediction={p.prediction?.team2Score} />
@@ -189,7 +229,6 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                                     ))}
                                 </tr>
                             ))}
-                             {/* Champion Row */}
                             <tr className="border-t-2 border-blue-500 bg-slate-700">
                                 <td className="p-3 font-bold text-white sticky left-0 bg-slate-700 z-10 w-48">
                                     Champion
@@ -197,7 +236,8 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                                 </td>
                                 {championPredictions.map(p => (
                                     <Fragment key={p.userId}>
-                                        <td className="p-3 text-center text-xs">
+                                        {/* --- ENHANCEMENT 1: Table Borders --- */}
+                                        <td className="p-3 text-center text-xs border-l border-slate-600">
                                             {p.team ? `${p.team.flag} ${p.team.name}` : <span className="text-slate-500">-</span>}
                                         </td>
                                         <td className="p-3 text-center font-mono text-blue-400 w-12">{p.points}</td>
@@ -211,8 +251,5 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
         </div>
     );
 };
-
-// React.Fragment is not defined, so we'll just use the short syntax <>
-const Fragment = ({ children }: { children: React.ReactNode }) => <>{children}</>;
 
 export default AllPredictionsView;

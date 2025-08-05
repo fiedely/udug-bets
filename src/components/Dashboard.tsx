@@ -13,27 +13,29 @@ import TournamentWizard from './admin/TournamentWizard';
 import ManageUsersContent from './admin/ManageUsersContent';
 import ScoreManagement from './admin/ScoreManagement';
 import TournamentLeaderboard from './admin/TournamentLeaderboard';
-import AllPredictionsView from './admin/AllPredictionsView'; // Import the new component
+import AllPredictionsView from './admin/AllPredictionsView';
+import DebugSeeder from './admin/DebugSeeder';
 
 // User Components
 import JoinTournament from './views/JoinTournament'; 
 import MyTournaments from './views/MyTournaments'; 
 import PredictionEntry from './views/PredictionEntry';
+import UserDashboard from './views/UserDashboard';
 const LeaderboardContent = () => <div className="bg-slate-800 p-8">Leaderboard View - Coming Soon!</div>;
 
 
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeView, setActiveView] = useState<View>('My Tournaments');
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
+  const [activeView, setActiveView] = useState<View>('User Dashboard');
   const [editingTournamentId, setEditingTournamentId] = useState<string | null>(null);
   const [isEditorDirty, setIsEditorDirty] = useState(false);
   const [predictingTournament, setPredictingTournament] = useState<Tournament | null>(null);
   const [managingTournament, setManagingTournament] = useState<Tournament | null>(null);
   const [viewingLeaderboardFor, setViewingLeaderboardFor] = useState<Tournament | null>(null);
-  const [viewingAllPredictionsFor, setViewingAllPredictionsFor] = useState<Tournament | null>(null); // New state
+  const [viewingAllPredictionsFor, setViewingAllPredictionsFor] = useState<Tournament | null>(null);
   const [isScoreManagerDirty, setIsScoreManagerDirty] = useState(false);
 
   const user = auth.currentUser;
@@ -61,7 +63,7 @@ const Dashboard = () => {
   };
 
   const handleAdminClick = () => {
-    if (!['Create Tournament', 'Manage Users', 'List Tournaments', 'Edit Tournament', 'Manage Scores'].includes(activeView)) {
+    if (!['Create Tournament', 'Manage Users', 'List Tournaments', 'Edit Tournament', 'Manage Scores', 'Debug'].includes(activeView)) {
       setActiveView('List Tournaments');
     }
     setIsAdminMenuOpen(!isAdminMenuOpen);
@@ -77,7 +79,7 @@ const Dashboard = () => {
     setPredictingTournament(null);
     setManagingTournament(null);
     setViewingLeaderboardFor(null);
-    setViewingAllPredictionsFor(null); // Reset all predictions view
+    setViewingAllPredictionsFor(null);
     setActiveView(view);
     if (view !== 'Edit Tournament') {
       setEditingTournamentId(null);
@@ -103,21 +105,19 @@ const Dashboard = () => {
       setViewingLeaderboardFor(tournament);
   };
 
-  // New handler to set the all predictions view
   const handleViewAllPredictions = (tournament: Tournament) => {
       setViewingAllPredictionsFor(tournament);
   };
 
   const renderContent = () => {
-    if (isLoadingProfile) {
+    if (isLoadingProfile || !userProfile) {
       return (
         <div className="flex items-center justify-center h-full">
-           <svg className="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+           <svg className="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
         </div>
       );
     }
     
-    // Render special views first
     if (viewingAllPredictionsFor) {
         return <AllPredictionsView tournament={viewingAllPredictionsFor} onBack={() => setViewingAllPredictionsFor(null)} />;
     }
@@ -135,6 +135,8 @@ const Dashboard = () => {
     }
 
     switch (activeView) {
+      case 'User Dashboard':
+        return <UserDashboard userProfile={userProfile} />;
       case 'Create Tournament':
         return <CreateTournamentContent user={user} onTournamentCreated={handleEditTournament} />;
       case 'List Tournaments':
@@ -151,13 +153,14 @@ const Dashboard = () => {
         return <JoinTournament userProfile={userProfile} setView={handleSetView} />;
       case 'Leaderboard':
         return <LeaderboardContent />;
+      case 'Debug':
+        return <DebugSeeder />;
       case 'My Tournaments':
       default:
         return <MyTournaments userProfile={userProfile} onEnterPredictions={handleEnterPredictions} />;
     }
   };
 
-  // Determine the header title based on the current view state
   const getHeaderTitle = () => {
     if (viewingAllPredictionsFor) return `All Predictions: ${viewingAllPredictionsFor.name}`;
     if (viewingLeaderboardFor) return `Leaderboard: ${viewingLeaderboardFor.name}`;
@@ -167,23 +170,26 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="relative min-h-screen md:flex bg-slate-900">
+    <div className="relative min-h-screen flex bg-slate-900">
+      {/* --- ENHANCEMENT 1: Sidebar Behavior --- */}
       <aside
         className={`
           bg-slate-800 border-r border-slate-700 text-slate-300 w-64 space-y-2 py-7 px-2
           absolute inset-y-0 left-0 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          md:relative md:translate-x-0 transition-transform duration-200 ease-in-out
+          transition-transform duration-200 ease-in-out
           flex flex-col z-30
         `}
+        // This event handler closes the sidebar when the mouse leaves its area
+        onMouseLeave={() => setIsSidebarOpen(false)}
       >
         <div className="px-4">
           <h2 className="text-2xl font-bold text-blue-400">Udug Bets</h2>
         </div>
         <nav className="flex-grow">
           <div className="space-y-1">
+            <button onClick={() => handleSetView('User Dashboard')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'User Dashboard' ? 'bg-slate-700 text-white' : ''}`}>Dashboard</button>
             <button onClick={() => handleSetView('My Tournaments')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'My Tournaments' ? 'bg-slate-700 text-white' : ''}`}>My Tournaments</button>
             <button onClick={() => handleSetView('Join Tournament')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'Join Tournament' ? 'bg-slate-700 text-white' : ''}`}>Join Tournament</button>
-            <button onClick={() => handleSetView('Leaderboard')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'Leaderboard' ? 'bg-slate-700 text-white' : ''}`}>Leaderboard</button>
           </div>
           
           {(userProfile?.role === 'admin' || userProfile?.role === 'superadmin') && (
@@ -197,6 +203,9 @@ const Dashboard = () => {
                   <button onClick={() => handleSetView('Create Tournament')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'Create Tournament' ? 'bg-slate-700 text-white' : ''}`}>Create Tournament</button>
                    <button onClick={() => handleSetView('List Tournaments')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${(activeView === 'List Tournaments' || activeView === 'Edit Tournament' || activeView === 'Manage Scores') ? 'bg-slate-700 text-white' : ''}`}>List Tournaments</button>
                   <button onClick={() => handleSetView('Manage Users')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'Manage Users' ? 'bg-slate-700 text-white' : ''}`}>Manage Users</button>
+                  {userProfile.role === 'superadmin' && (
+                    <button onClick={() => handleSetView('Debug')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'Debug' ? 'bg-slate-700 text-white' : ''}`}>Debug</button>
+                  )}
                 </div>
               )}
             </div>
@@ -207,15 +216,18 @@ const Dashboard = () => {
           <p className="text-xs text-slate-400">{user?.email}</p>
         </div>
       </aside>
-      <div className="flex-1 flex flex-col">
+      
+      {/* --- ENHANCEMENT 2: Table Scroll Fix --- */}
+      <div className="flex-1 flex flex-col min-w-0">
         <header className="bg-slate-800 border-b border-slate-700 p-4 flex justify-between items-center">
-          <button className="md:hidden text-slate-300" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+          {/* The hamburger button is now always visible */}
+          <button className="text-slate-300" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
           </button>
           <div className="text-xl font-semibold text-slate-100">{getHeaderTitle()}</div>
           <button onClick={handleSignOut} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm transition-colors">Sign Out</button>
         </header>
-        <main className="flex-1 p-4 md:p-8">
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
           {renderContent()}
         </main>
       </div>
