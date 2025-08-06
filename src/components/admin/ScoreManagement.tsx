@@ -49,7 +49,8 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
 
     const handleScoreChange = (matchId: string, isKnockout: boolean, team: 'team1Score' | 'team2Score', value: string) => {
         setIsDirty(true);
-        const score = value === '' ? undefined : parseInt(value, 10);
+        // --- FIX: Use null instead of undefined for empty values ---
+        const score = value === '' ? null : parseInt(value, 10);
         const updater = isKnockout ? setKnockoutMatches : setMatches;
         updater(prev => prev.map(m => m.id === matchId ? { ...m, [team]: score } : m));
     };
@@ -70,11 +71,28 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
         setMessage('');
         try {
             const tournamentRef = doc(db, "tournaments", tournament.id);
+
+            // --- FIX: Sanitize data before saving to remove nulls ---
+            const sanitizeMatches = (matchArray: Match[]) => {
+                return matchArray.map(m => {
+                    const matchCopy: Partial<Match> & { id: string } = { ...m };
+                    if (matchCopy.team1Score === null || matchCopy.team1Score === undefined) {
+                        delete matchCopy.team1Score;
+                    }
+                    if (matchCopy.team2Score === null || matchCopy.team2Score === undefined) {
+                        delete matchCopy.team2Score;
+                    }
+                    return matchCopy;
+                });
+            };
+            
             await updateDoc(tournamentRef, {
-                matches: matches,
-                knockoutMatches: knockoutMatches,
+                matches: sanitizeMatches(matches),
+                knockoutMatches: sanitizeMatches(knockoutMatches),
                 champion: champion
             });
+            // --- END FIX ---
+
             setIsDirty(false);
             setMessage('Scores and seeding saved successfully!');
             setTimeout(() => setMessage(''), 3000);
@@ -116,7 +134,6 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
                     <h2 className="text-2xl font-bold text-white">{tournament.name}</h2>
                     <p className="text-blue-400">Manage Scores & Knockout Seeding</p>
                 </div>
-                {/* UPDATED: The onBack prop is now called directly. The Dashboard will handle the confirmation. */}
                 <button onClick={onBack} className="text-sm text-blue-400 hover:text-blue-300 flex items-center whitespace-nowrap">
                     &larr; Back to Tournaments List
                 </button>
@@ -149,7 +166,7 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
                                                 const isKnockout = match.stage !== 'Group Stage';
                                                 let team1Outcome: 'WIN' | 'LOSE' | 'DRAW' | null = null;
                                                 let team2Outcome: 'WIN' | 'LOSE' | 'DRAW' | null = null;
-                                                if (match.team1Score !== undefined && match.team2Score !== undefined) {
+                                                if (match.team1Score !== undefined && match.team1Score !== null && match.team2Score !== undefined && match.team2Score !== null) {
                                                     if (match.team1Score > match.team2Score) { team1Outcome = 'WIN'; team2Outcome = 'LOSE'; }
                                                     else if (match.team2Score > match.team1Score) { team1Outcome = 'LOSE'; team2Outcome = 'WIN'; }
                                                     else { team1Outcome = 'DRAW'; team2Outcome = 'DRAW'; }

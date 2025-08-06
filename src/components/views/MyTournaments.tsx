@@ -6,6 +6,7 @@ import { collection, query, where, getDocs, Timestamp, doc, getDoc } from 'fireb
 import type { Tournament, UserProfile, UserPredictions, MatchStage } from '../../types';
 import TournamentDetails from './TournamentDetails';
 import AllPredictionsView from '../admin/AllPredictionsView';
+import cramorantImage from '../../assets/delz-cramorant.png'; // 1. Import the image
 
 interface MyTournamentsProps {
     userProfile: UserProfile | null;
@@ -69,6 +70,23 @@ const MyTournaments = ({ userProfile, onEnterPredictions }: MyTournamentsProps) 
     const [isLoading, setIsLoading] = useState(true);
     const [viewingTournament, setViewingTournament] = useState<Tournament | null>(null);
     const [viewingAllPredictionsFor, setViewingAllPredictionsFor] = useState<Tournament | null>(null);
+
+    if (userProfile?.role === 'admin' || userProfile?.role === 'superadmin') {
+        return (
+            <div className="bg-slate-800 border border-slate-700 p-8 max-w-lg mx-auto text-center">
+                <h2 className="text-xl font-bold text-blue-400 mb-4">Admins don't have a 'My Tournaments' view</h2>
+                <p className="text-slate-300 mb-6">
+                    This page is for participants. But don't be sad, here is a picture of Cramorant to cheer you up!
+                </p>
+                {/* 2. Use the imported image variable */}
+                <img 
+                    src={cramorantImage} 
+                    alt="A cheerful Cramorant" 
+                    className="mx-auto w-48 h-48 object-contain"
+                />
+            </div>
+        );
+    }
 
     useEffect(() => {
         const fetchAllData = async () => {
@@ -144,7 +162,6 @@ const MyTournaments = ({ userProfile, onEnterPredictions }: MyTournamentsProps) 
                         const applicableStages = new Set(allMatches.map(m => m.stage));
                         if (tournament.hasThirdPlaceMatch) applicableStages.add('Third Place Match');
 
-                        // --- NEW: Logic to check if all prediction windows are closed ---
                         const predStatus = tournament.predictionStatus;
                         const areSubmissionsClosed = predStatus ?
                             !predStatus.allowChampion &&
@@ -154,7 +171,7 @@ const MyTournaments = ({ userProfile, onEnterPredictions }: MyTournamentsProps) 
                             !predStatus.allowQuarterFinal &&
                             !predStatus.allowSemiFinal &&
                             !predStatus.allowFinals
-                            : true; // Default to true (closed) if status object doesn't exist for safety.
+                            : true;
 
                         return (
                             <div key={tournament.id} className="bg-slate-800 border border-slate-700 shadow-lg flex flex-col">
@@ -204,7 +221,6 @@ const MyTournaments = ({ userProfile, onEnterPredictions }: MyTournamentsProps) 
                                 </div>
                                 <div className="p-4 bg-slate-900/50 grid grid-cols-3 gap-4">
                                     <button onClick={() => setViewingTournament(tournament)} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm">Details</button>
-                                    {/* --- UPDATED: Button is now conditionally disabled --- */}
                                     <button 
                                         onClick={() => setViewingAllPredictionsFor(tournament)} 
                                         className="px-4 py-2 bg-gray-500 hover:bg-gray-400 font-semibold text-white text-sm disabled:bg-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"

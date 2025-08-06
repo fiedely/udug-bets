@@ -26,10 +26,11 @@ const LeaderboardContent = () => <div className="bg-slate-800 p-8">Leaderboard V
 
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // Set the initial default view for all users
+  const [activeView, setActiveView] = useState<View>('User Dashboard');
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
-  const [activeView, setActiveView] = useState<View>('User Dashboard');
   const [editingTournamentId, setEditingTournamentId] = useState<string | null>(null);
   const [isEditorDirty, setIsEditorDirty] = useState(false);
   const [predictingTournament, setPredictingTournament] = useState<Tournament | null>(null);
@@ -46,7 +47,14 @@ const Dashboard = () => {
         const userDocRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(userDocRef);
         if (docSnap.exists()) {
-          setUserProfile(docSnap.data() as UserProfile);
+          const profile = docSnap.data() as UserProfile;
+          setUserProfile(profile);
+          // --- NEW: Set default view based on role ---
+          if (profile.role === 'admin' || profile.role === 'superadmin') {
+            setActiveView('List Tournaments');
+          } else {
+            setActiveView('User Dashboard');
+          }
         }
       }
       setIsLoadingProfile(false);
@@ -171,7 +179,6 @@ const Dashboard = () => {
 
   return (
     <div className="relative min-h-screen flex bg-slate-900">
-      {/* --- ENHANCEMENT 1: Sidebar Behavior --- */}
       <aside
         className={`
           bg-slate-800 border-r border-slate-700 text-slate-300 w-64 space-y-2 py-7 px-2
@@ -179,7 +186,6 @@ const Dashboard = () => {
           transition-transform duration-200 ease-in-out
           flex flex-col z-30
         `}
-        // This event handler closes the sidebar when the mouse leaves its area
         onMouseLeave={() => setIsSidebarOpen(false)}
       >
         <div className="px-4">
@@ -217,10 +223,8 @@ const Dashboard = () => {
         </div>
       </aside>
       
-      {/* --- ENHANCEMENT 2: Table Scroll Fix --- */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="bg-slate-800 border-b border-slate-700 p-4 flex justify-between items-center">
-          {/* The hamburger button is now always visible */}
           <button className="text-slate-300" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
           </button>

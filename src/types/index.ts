@@ -1,11 +1,5 @@
 // src/types/index.ts
 
-// --- NEW: Defined and exported the PointRule type ---
-export interface PointRule {
-  correctScore: number;
-  correctOutcome: number;
-}
-
 export interface Widget {
   i: string;
   type: WidgetType;
@@ -20,10 +14,12 @@ export interface Widget {
   props?: {
     tournamentId?: string;
     currentMatchIndex?: number;
+    selectedUserId?: string; // NEW: For admins to select a user in certain widgets
   };
 }
 
-export type WidgetType = 'leaderboard' | 'predictionChart';
+// NEW: Added 'myPredictionsChart' to the list of available widget types
+export type WidgetType = 'leaderboard' | 'predictionChart' | 'myPredictionsChart';
 
 export type View = 'User Dashboard' | 'My Tournaments' | 'Join Tournament' | 'Leaderboard' | 'Create Tournament' | 'Manage Users' | 'List Tournaments' | 'Edit Tournament' | 'Manage Scores' | 'Debug';
 
@@ -40,7 +36,11 @@ export interface Team {
   code: string;
 }
 
-// --- UPDATED: This interface now uses the exported PointRule type ---
+export interface PointRule {
+  correctScore: number;
+  correctOutcome: number;
+}
+
 export interface PointRules {
     groupStage: PointRule;
     round32?: PointRule;

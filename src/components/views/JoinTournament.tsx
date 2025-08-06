@@ -4,10 +4,11 @@ import React, { useState } from 'react';
 import { db, auth } from '../../firebaseConfig';
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import type { Tournament, UserProfile, View } from '../../types';
+import cramorantImage from '../../assets/delz-cramorant.png'; // 1. Import the image
 
 interface JoinTournamentProps {
     userProfile: UserProfile | null;
-    setView: (view: View) => void; // Function to change the view in the parent Dashboard
+    setView: (view: View) => void;
 }
 
 const JoinTournament = ({ userProfile, setView }: JoinTournamentProps) => {
@@ -15,6 +16,23 @@ const JoinTournament = ({ userProfile, setView }: JoinTournamentProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState<React.ReactNode | null>(null);
+
+    if (userProfile?.role === 'admin' || userProfile?.role === 'superadmin') {
+        return (
+            <div className="bg-slate-800 border border-slate-700 p-8 max-w-lg mx-auto text-center">
+                <h2 className="text-xl font-bold text-blue-400 mb-4">Admins Cannot Join Tournaments</h2>
+                <p className="text-slate-300 mb-6">
+                    But don't be sad, here is a picture of Cramorant to cheer you up!
+                </p>
+                {/* 2. Use the imported image variable */}
+                <img 
+                    src={cramorantImage} 
+                    alt="A cheerful Cramorant" 
+                    className="mx-auto w-48 h-48 object-contain"
+                />
+            </div>
+        );
+    }
 
     const handleJoinTournament = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -30,12 +48,6 @@ const JoinTournament = ({ userProfile, setView }: JoinTournamentProps) => {
         const currentUser = auth.currentUser;
         if (!currentUser || !userProfile) {
             setError('You must be logged in to join a tournament.');
-            setIsLoading(false);
-            return;
-        }
-
-        if (userProfile.role === 'admin' || userProfile.role === 'superadmin') {
-            setError('Administrators cannot join tournaments as participants.');
             setIsLoading(false);
             return;
         }
@@ -61,7 +73,6 @@ const JoinTournament = ({ userProfile, setView }: JoinTournamentProps) => {
             }
 
             if (tournamentData.participants?.includes(currentUser.uid)) {
-                // UPDATED: Success message for already-joined users formatted in two lines
                 setSuccess(
                     <div>
                         <div>You have already joined "{tournamentData.name}"!</div>
@@ -83,7 +94,6 @@ const JoinTournament = ({ userProfile, setView }: JoinTournamentProps) => {
                 participants: arrayUnion(currentUser.uid)
             });
 
-            // UPDATED: New success message formatted in two lines
             setSuccess(
                 <div>
                     <div>Successfully joined {tournamentData.name}!</div>

@@ -9,6 +9,7 @@ import { db } from '../../firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import LeaderboardWidget from './widgets/LeaderboardWidget';
 import PredictionChartWidget from './widgets/PredictionChartWidget';
+import MyPredictionsChartWidget from './widgets/MyPredictionsChartWidget'; // 1. Import the new widget
 import WidgetConfigModal from './WidgetConfigModal';
 import AddWidgetModal from './AddWidgetModal';
 
@@ -58,7 +59,6 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
         await setDoc(layoutDocRef, { widgets: newWidgets });
     };
 
-    // --- FIX: Simplified the handler to only take the layout argument ---
     const handleLayoutChange = (layout: ReactGridLayout.Layout[]) => {
         if (!isMounted) return;
         setWidgets(currentWidgets => {
@@ -87,14 +87,12 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
         const newWidget: Partial<Widget> = {
             i: `${type}-${new Date().getTime()}`,
             type: type,
-            title: type === 'leaderboard' ? 'New Leaderboard' : 'New Prediction Chart',
+            title: `New ${type.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}`,
             x: (widgets.length * 4) % 12, y: Infinity,
-            w: type === 'leaderboard' ? 4 : 6,
-            h: 10, 
-            minW: type === 'leaderboard' ? 3 : 5,
-            minH: 8,
+            w: 6, h: 10, minW: 5, minH: 8,
             props: {
-                currentMatchIndex: 0
+                currentMatchIndex: 0,
+                selectedUserId: userProfile.uid, // Default to self for admins
             }
         };
         setEditingWidget(newWidget);
@@ -134,13 +132,7 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
     const handleWidgetPropChange = (widgetId: string, propName: string, value: any) => {
         const newWidgets = widgets.map(w => {
             if (w.i === widgetId) {
-                return {
-                    ...w,
-                    props: {
-                        ...w.props,
-                        [propName]: value,
-                    }
-                };
+                return { ...w, props: { ...w.props, [propName]: value } };
             }
             return w;
         });
@@ -163,6 +155,15 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
                     tournamentId={widget.props?.tournamentId}
                     currentMatchIndex={widget.props?.currentMatchIndex || 0}
                     onMatchIndexChange={(index) => handleWidgetPropChange(widget.i, 'currentMatchIndex', index)}
+                    setRefreshFunc={(func) => refreshFuncs.set(widget.i, func)}
+                />;
+            // 2. Add the case for the new widget
+            case 'myPredictionsChart':
+                return <MyPredictionsChartWidget
+                    userProfile={userProfile}
+                    tournamentId={widget.props?.tournamentId}
+                    selectedUserId={widget.props?.selectedUserId}
+                    onSelectedUserChange={(userId) => handleWidgetPropChange(widget.i, 'selectedUserId', userId)}
                     setRefreshFunc={(func) => refreshFuncs.set(widget.i, func)}
                 />;
             default:
@@ -188,7 +189,6 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
 
             <ResponsiveGridLayout
                 layouts={{ lg: widgets }}
-                // --- FIX: Replaced onDragStop and onResizeStop with the correct prop ---
                 onLayoutChange={handleLayoutChange}
                 className="layout"
                 draggableHandle=".widget-header"
