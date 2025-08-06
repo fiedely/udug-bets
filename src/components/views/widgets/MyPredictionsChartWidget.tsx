@@ -161,7 +161,8 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
                                     <Cell key={`cell-${index}`} fill={COLORS[entry.name.toLowerCase().replace(' ', '') as keyof typeof COLORS]} />
                                 ))}
                             </Pie>
-                            <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }}/>
+                            {/* --- FIX: Added itemStyle to make tooltip text light --- */}
+                            <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} itemStyle={{ color: '#cbd5e1' }}/>
                             <Legend iconSize={10} wrapperStyle={{fontSize: '10px'}}/>
                         </PieChart>
                     </ResponsiveContainer>
@@ -175,7 +176,8 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
                                     <Cell key={`cell-${index}`} fill={COLORS[entry.name.toLowerCase().replace(' ', '') as keyof typeof COLORS]} />
                                 ))}
                             </Pie>
-                            <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }}/>
+                            {/* --- FIX: Added itemStyle to make tooltip text light --- */}
+                            <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} itemStyle={{ color: '#cbd5e1' }}/>
                             <Legend iconSize={10} wrapperStyle={{fontSize: '10px'}}/>
                         </PieChart>
                     </ResponsiveContainer>
