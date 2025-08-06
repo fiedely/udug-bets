@@ -14,12 +14,12 @@ export interface Widget {
   props?: {
     tournamentId?: string;
     currentMatchIndex?: number;
-    selectedUserId?: string; // NEW: For admins to select a user in certain widgets
+    selectedUserId?: string;
   };
 }
 
-// NEW: Added 'myPredictionsChart' to the list of available widget types
-export type WidgetType = 'leaderboard' | 'predictionChart' | 'myPredictionsChart';
+// NEW: Added 'championPredictionChart' to the list of available widget types
+export type WidgetType = 'leaderboard' | 'predictionChart' | 'myPredictionsChart' | 'championPredictionChart';
 
 export type View = 'User Dashboard' | 'My Tournaments' | 'Join Tournament' | 'Leaderboard' | 'Create Tournament' | 'Manage Users' | 'List Tournaments' | 'Edit Tournament' | 'Manage Scores' | 'Debug';
 

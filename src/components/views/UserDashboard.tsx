@@ -9,7 +9,8 @@ import { db } from '../../firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import LeaderboardWidget from './widgets/LeaderboardWidget';
 import PredictionChartWidget from './widgets/PredictionChartWidget';
-import MyPredictionsChartWidget from './widgets/MyPredictionsChartWidget'; // 1. Import the new widget
+import MyPredictionsChartWidget from './widgets/MyPredictionsChartWidget';
+import ChampionPredictionWidget from './widgets/ChampionPredictionWidget';
 import WidgetConfigModal from './WidgetConfigModal';
 import AddWidgetModal from './AddWidgetModal';
 
@@ -89,10 +90,10 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
             type: type,
             title: `New ${type.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}`,
             x: (widgets.length * 4) % 12, y: Infinity,
-            w: 6, h: 10, minW: 5, minH: 8,
+            w: 6, h: 10, minW: 4, minH: 8,
             props: {
                 currentMatchIndex: 0,
-                selectedUserId: userProfile.uid, // Default to self for admins
+                selectedUserId: userProfile.uid,
             }
         };
         setEditingWidget(newWidget);
@@ -157,13 +158,18 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
                     onMatchIndexChange={(index) => handleWidgetPropChange(widget.i, 'currentMatchIndex', index)}
                     setRefreshFunc={(func) => refreshFuncs.set(widget.i, func)}
                 />;
-            // 2. Add the case for the new widget
             case 'myPredictionsChart':
                 return <MyPredictionsChartWidget
                     userProfile={userProfile}
                     tournamentId={widget.props?.tournamentId}
                     selectedUserId={widget.props?.selectedUserId}
                     onSelectedUserChange={(userId) => handleWidgetPropChange(widget.i, 'selectedUserId', userId)}
+                    setRefreshFunc={(func) => refreshFuncs.set(widget.i, func)}
+                />;
+            case 'championPredictionChart':
+                return <ChampionPredictionWidget
+                    userProfile={userProfile} // FIX: Pass the user profile
+                    tournamentId={widget.props?.tournamentId}
                     setRefreshFunc={(func) => refreshFuncs.set(widget.i, func)}
                 />;
             default:

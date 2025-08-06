@@ -12,6 +12,7 @@ const WIDGET_OPTIONS = [
     { type: 'leaderboard' as WidgetType, name: 'Leaderboard', description: 'Display tournament rankings.' },
     { type: 'predictionChart' as WidgetType, name: 'Prediction Chart', description: 'Visualize prediction data for each match.' },
     { type: 'myPredictionsChart' as WidgetType, name: 'My Performance Chart', description: 'See your own prediction accuracy.' },
+    { type: 'championPredictionChart' as WidgetType, name: 'Champion Picks', description: 'See who everyone thinks will win it all.' },
 ];
 
 const AddWidgetModal = ({ isOpen, onClose, onSelect }: AddWidgetModalProps) => {
