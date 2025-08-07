@@ -1,18 +1,15 @@
 // src/components/admin/ListTournamentsContent.tsx
 
 import { useState, useEffect, useRef } from 'react';
-import { db } from '../../firebaseConfig';
-import { collection, getDocs, deleteDoc, doc, updateDoc, Timestamp } from 'firebase/firestore';
+// Import Firebase Functions SDK and the new callable function
+import { db, functions } from '../../firebaseConfig';
+import { httpsCallable } from 'firebase/functions';
+import { collection, getDocs, doc, updateDoc, Timestamp } from 'firebase/firestore';
 import type { Tournament, UserProfile, PredictionStatus } from '../../types';
 import InviteModal from './InviteModal';
 
-interface ListTournamentsContentProps {
-    onEditTournament: (id: string) => void;
-    onManageTournament: (tournament: Tournament) => void;
-    onViewLeaderboard: (tournament: Tournament) => void;
-    onViewAllPredictions: (tournament: Tournament) => void; // New prop
-    userProfile: UserProfile | null;
-}
+// Initialize the callable function for deletion
+const deleteTournamentAndData = httpsCallable(functions, 'deleteTournamentAndData');
 
 const formatDate = (date?: Date) => {
     if (!date) return 'N/A';
@@ -24,10 +21,19 @@ const defaultPredictionStatus: PredictionStatus = {
     allowRoundOf16: false, allowQuarterFinal: false, allowSemiFinal: false, allowFinals: false,
 };
 
+interface ListTournamentsContentProps {
+    onEditTournament: (id: string) => void;
+    onManageTournament: (tournament: Tournament) => void;
+    onViewLeaderboard: (tournament: Tournament) => void;
+    onViewAllPredictions: (tournament: Tournament) => void;
+    userProfile: UserProfile | null;
+}
+
 const ListTournamentsContent = ({ onEditTournament, onManageTournament, onViewLeaderboard, onViewAllPredictions, userProfile }: ListTournamentsContentProps) => {
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [deletingTournament, setDeletingTournament] = useState<Tournament | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false); // State for deletion loading feedback
     const [invitingTournament, setInvitingTournament] = useState<Tournament | null>(null);
     const [managingPredictionsFor, setManagingPredictionsFor] = useState<string | null>(null);
     const predictionMenuRef = useRef<HTMLDivElement>(null);
@@ -62,15 +68,25 @@ const ListTournamentsContent = ({ onEditTournament, onManageTournament, onViewLe
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    /**
+     * Handles the deletion of a tournament by calling the secure Cloud Function.
+     */
     const handleDelete = async (tournamentId: string) => {
         if (!tournamentId) return;
+        setIsDeleting(true);
         try {
-            await deleteDoc(doc(db, "tournaments", tournamentId));
+            // Call the Cloud Function with the tournamentId
+            const result = await deleteTournamentAndData({ tournamentId });
+            console.log("Cloud Function response:", result.data); // Log success message
+
+            // Update UI by removing the deleted tournament from the list
             setTournaments(tournaments.filter(t => t.id !== tournamentId));
         } catch (error) {
-            console.error("Error deleting tournament: ", error);
+            console.error("Error deleting tournament via Cloud Function: ", error);
+            // Optionally, show an error toast/modal to the admin here
         } finally {
-            setDeletingTournament(null);
+            setDeletingTournament(null); // Close the confirmation modal
+            setIsDeleting(false); // Reset loading state
         }
     };
 
@@ -160,10 +176,16 @@ const ListTournamentsContent = ({ onEditTournament, onManageTournament, onViewLe
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
                     <div className="bg-slate-800 border border-slate-700 p-6 shadow-xl max-w-sm w-full">
                         <h3 className="text-lg font-bold text-white">Confirm Deletion</h3>
-                        <p className="mt-2 text-slate-400">Are you sure you want to delete the tournament "{deletingTournament.name}"? This action cannot be undone.</p>
+                        <p className="mt-2 text-slate-400">
+                            Are you sure you want to delete "{deletingTournament.name}"?
+                            <br />
+                            <strong className="text-red-400">This will permanently delete the tournament, all predictions, and its leaderboard. This action cannot be undone.</strong>
+                        </p>
                         <div className="mt-6 flex justify-end gap-4">
-                            <button onClick={() => setDeletingTournament(null)} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white">Cancel</button>
-                            <button onClick={() => handleDelete(deletingTournament.id)} className="px-4 py-2 bg-red-600 hover:bg-red-500 font-semibold text-white">Delete</button>
+                            <button onClick={() => setDeletingTournament(null)} disabled={isDeleting} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white disabled:opacity-50">Cancel</button>
+                            <button onClick={() => handleDelete(deletingTournament.id)} disabled={isDeleting} className="px-4 py-2 bg-red-600 hover:bg-red-500 font-semibold text-white disabled:bg-red-800 disabled:cursor-not-allowed">
+                                {isDeleting ? 'Deleting...' : 'Delete'}
+                            </button>
                         </div>
                     </div>
                 </div>

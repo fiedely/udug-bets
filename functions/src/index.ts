@@ -1,18 +1,21 @@
-import { setGlobalOptions } from "firebase-functions/v2";
-setGlobalOptions({ region: "asia-southeast2" });
+// functions/src/index.ts
 
 import * as logger from "firebase-functions/logger";
+// Import setGlobalOptions to define the deployment region
+import { setGlobalOptions } from "firebase-functions/v2";
 import { onDocumentUpdated, onDocumentWritten } from "firebase-functions/v2/firestore";
-import { HttpsError, onCall } from "firebase-functions/v2/https"; // Import onCall and HttpsError
-import { initializeApp }from "firebase-admin/app";
+import { HttpsError, onCall } from "firebase-functions/v2/https";
+import { initializeApp } from "firebase-admin/app";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
+
+// **CHANGE**: Set the deployment region for all functions in this file to Jakarta
+setGlobalOptions({ region: "asia-southeast2" });
 
 // Initialize Firebase Admin SDK
 initializeApp();
 const db = getFirestore();
 
-// --- TYPE DEFINITIONS ---
-// (Keep all your existing type definitions here)
+// --- TYPE DEFINITIONS (from your file) ---
 interface Team { name: string; flag: string; code: string; }
 interface PointRule { correctScore: number; correctOutcome: number; }
 interface PointRules { groupStage: PointRule; round32?: PointRule; round16?: PointRule; quarterFinal?: PointRule; semiFinal?: PointRule; thirdPlaceMatch?: PointRule; final?: PointRule; championBonus?: number; }
@@ -25,7 +28,7 @@ interface UserProfile { uid: string; name: string; email: string; role: 'user' |
 interface LeaderboardEntry { userId: string; userName: string; totalPoints: number; rank: number; previousRank?: number | null; rankChange: "up" | "down" | "same"; }
 
 
-// --- REUSABLE LEADERBOARD CALCULATION LOGIC ---
+// --- REUSABLE LEADERBOARD CALCULATION LOGIC (from your file) ---
 const stageToRuleKeyMap: { [key in MatchStage]?: keyof PointRules } = {
     "Group Stage": "groupStage", "Round of 32": "round32", "Round of 16": "round16",
     "Quarter-final": "quarterFinal", "Semi-final": "semiFinal",
@@ -33,7 +36,6 @@ const stageToRuleKeyMap: { [key in MatchStage]?: keyof PointRules } = {
 };
 
 async function recalculateLeaderboard(tournamentId: string) {
-    // ... (Keep the entire recalculateLeaderboard function exactly as it is)
     logger.info(`Recalculating leaderboard for tournament: ${tournamentId}`);
     const tournamentRef = db.collection("tournaments").doc(tournamentId);
     const tournamentDoc = await tournamentRef.get();
@@ -46,10 +48,10 @@ async function recalculateLeaderboard(tournamentId: string) {
         logger.info("Tournament has no participants or point rules. Skipping.");
         return;
     }
-    const predictionsPromises = tournamentData.participants.map(userId => 
+    const predictionsPromises = tournamentData.participants.map(userId =>
         db.collection("predictions").doc(`${tournamentId}_${userId}`).get()
     );
-    const usersPromises = tournamentData.participants.map(userId => 
+    const usersPromises = tournamentData.participants.map(userId =>
         db.collection("users").doc(userId).get()
     );
     const [predictionsSnapshots, usersSnapshots] = await Promise.all([
@@ -123,10 +125,10 @@ async function recalculateLeaderboard(tournamentId: string) {
     logger.info(`Leaderboard for tournament ${tournamentId} successfully updated.`);
 }
 
+
 // --- CLOUD FUNCTION TRIGGERS ---
 
 export const onTournamentUpdate = onDocumentUpdated("tournaments/{tournamentId}", async (event) => {
-    // ... (Keep this function exactly as it is)
     const beforeData = event.data?.before.data() as Tournament | undefined;
     const afterData = event.data?.after.data() as Tournament | undefined;
     if (!beforeData || !afterData) return;
@@ -140,7 +142,6 @@ export const onTournamentUpdate = onDocumentUpdated("tournaments/{tournamentId}"
 });
 
 export const onPredictionWrite = onDocumentWritten("predictions/{predictionId}", async (event) => {
-    // ... (Keep this function exactly as it is)
     const predictionData = event.data?.after.data() as UserPredictions | undefined;
     const oldPredictionData = event.data?.before.data() as UserPredictions | undefined;
     const tournamentId = predictionData?.tournamentId || oldPredictionData?.tournamentId;
@@ -151,46 +152,111 @@ export const onPredictionWrite = onDocumentWritten("predictions/{predictionId}",
     }
 });
 
-// --- NEW CALLABLE FUNCTION ---
+
+// --- CALLABLE FUNCTIONS ---
+
+/**
+ * Deletes a tournament and all of its associated data.
+ * This is the secure and robust replacement for the onTournamentDelete trigger.
+ */
+export const deleteTournamentAndData = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) {
+    throw new HttpsError("unauthenticated", "You must be logged in to perform this action.");
+  }
+
+  const { tournamentId } = request.data;
+  if (!tournamentId) {
+    throw new HttpsError("invalid-argument", "The function must be called with a 'tournamentId'.");
+  }
+
+  const userDoc = await db.collection("users").doc(uid).get();
+  const userProfile = userDoc.data();
+
+  if (!userProfile || !['admin', 'superadmin'].includes(userProfile.role)) {
+    throw new HttpsError("permission-denied", "You do not have permission to delete tournaments.");
+  }
+
+  logger.info(`Admin user ${uid} initiated deletion for tournament ${tournamentId}`);
+
+  try {
+    const predictionsRef = db.collection("predictions");
+    const predictionsQuery = predictionsRef.where("tournamentId", "==", tournamentId);
+    const predictionsSnapshot = await predictionsQuery.get();
+
+    const batches: FirebaseFirestore.WriteBatch[] = [db.batch()];
+    let currentBatchIndex = 0;
+    let operationCount = 0;
+
+    predictionsSnapshot.forEach((doc) => {
+      batches[currentBatchIndex].delete(doc.ref);
+      operationCount++;
+      if (operationCount === 499) {
+        batches.push(db.batch());
+        currentBatchIndex++;
+        operationCount = 0;
+      }
+    });
+
+    const tournamentRef = db.collection("tournaments").doc(tournamentId);
+    const leaderboardRef = db.collection("leaderboards").doc(tournamentId);
+
+    batches[currentBatchIndex].delete(tournamentRef);
+    batches[currentBatchIndex].delete(leaderboardRef);
+
+    await Promise.all(batches.map((batch) => batch.commit()));
+
+    logger.info(`Successfully deleted tournament ${tournamentId} and ${predictionsSnapshot.size} associated predictions.`);
+    return { success: true, message: "Tournament and all associated data deleted successfully." };
+
+  } catch (error) {
+    logger.error(`Error during tournament deletion for ${tournamentId}:`, error);
+    throw new HttpsError("internal", "An unexpected error occurred while deleting the tournament.");
+  }
+});
+
+/**
+ * Fetches all participant profiles for a given tournament.
+ * This function now handles more than 30 participants by batching queries.
+ */
 export const getTournamentParticipants = onCall(async (request) => {
     const { tournamentId } = request.data;
     const uid = request.auth?.uid;
-
     if (!uid) {
         throw new HttpsError('unauthenticated', 'You must be logged in to view participants.');
     }
     if (!tournamentId) {
         throw new HttpsError('invalid-argument', 'The function must be called with a "tournamentId" argument.');
     }
-
-    // Securely get the tournament document
     const tournamentRef = db.collection('tournaments').doc(tournamentId);
     const tournamentDoc = await tournamentRef.get();
-
     if (!tournamentDoc.exists) {
         throw new HttpsError('not-found', 'Tournament not found.');
     }
-
     const tournament = tournamentDoc.data() as Tournament;
     const participants = tournament.participants || [];
-
-    // Security Check: Ensure the calling user is a participant or an admin
     const userProfileDoc = await db.collection('users').doc(uid).get();
     const userProfile = userProfileDoc.data() as UserProfile;
     const isAdmin = userProfile.role === 'admin' || userProfile.role === 'superadmin';
-
     if (!participants.includes(uid) && !isAdmin) {
         throw new HttpsError('permission-denied', 'You are not a participant of this tournament.');
     }
-
-    // If security checks pass, fetch the participant profiles
     if (participants.length === 0) {
         return [];
     }
 
-    const usersQuery = db.collection('users').where('uid', 'in', participants);
-    const usersSnap = await usersQuery.get();
-    const participantProfiles = usersSnap.docs.map(doc => doc.data() as UserProfile);
+    const participantProfiles: UserProfile[] = [];
+    const usersCollection = db.collection('users');
+
+    // Process participants in chunks of 30 (the limit for 'in' queries)
+    for (let i = 0; i < participants.length; i += 30) {
+        const chunk = participants.slice(i, i + 30);
+        const usersQuery = usersCollection.where('uid', 'in', chunk);
+        const usersSnap = await usersQuery.get();
+        usersSnap.forEach(doc => {
+            participantProfiles.push(doc.data() as UserProfile);
+        });
+    }
 
     return participantProfiles;
 });
