@@ -18,7 +18,6 @@ export interface Widget {
   };
 }
 
-// NEW: Added 'championPredictionChart' to the list of available widget types
 export type WidgetType = 'leaderboard' | 'predictionChart' | 'myPredictionsChart' | 'championPredictionChart';
 
 export type View = 'User Dashboard' | 'My Tournaments' | 'Join Tournament' | 'Leaderboard' | 'Create Tournament' | 'Manage Users' | 'List Tournaments' | 'Edit Tournament' | 'Manage Scores' | 'Debug';
@@ -28,6 +27,22 @@ export interface UserProfile {
   name: string;
   email: string;
   role: 'user' | 'admin' | 'superadmin';
+}
+
+export interface Leaderboard {
+    entries: LeaderboardEntry[];
+    lastUpdated: Date;
+    tournamentAiSummary?: string;
+}
+
+export interface LeaderboardEntry {
+    userId: string;
+    userName: string;
+    totalPoints: number;
+    rank: number;
+    previousRank?: number | null;
+    rankChange: "up" | "down" | "same";
+    aiSummary?: string;
 }
 
 export interface Team {

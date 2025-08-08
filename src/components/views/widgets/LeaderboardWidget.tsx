@@ -3,15 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../../../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
-import type { UserProfile } from '../../../types';
-
-interface LeaderboardEntry {
-    userId: string;
-    userName: string;
-    totalPoints: number;
-    rank: number;
-    rankChange: 'up' | 'down' | 'same';
-}
+import type { UserProfile, LeaderboardEntry } from '../../../types'; // Use the updated LeaderboardEntry type
 
 interface LeaderboardWidgetProps {
     userProfile: UserProfile;
@@ -29,6 +21,7 @@ const RankChangeIndicator = ({ change }: { change: 'up' | 'down' | 'same' }) => 
 
 const LeaderboardWidget = ({ userProfile, tournamentId, setRefreshFunc }: LeaderboardWidgetProps) => {
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+    const [tournamentSummary, setTournamentSummary] = useState<string | null>(null); // State for admin summary
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchData = useCallback(async () => {
@@ -41,9 +34,12 @@ const LeaderboardWidget = ({ userProfile, tournamentId, setRefreshFunc }: Leader
         const leaderboardRef = doc(db, "leaderboards", tournamentId);
         const docSnap = await getDoc(leaderboardRef);
         if (docSnap.exists()) {
-            setLeaderboard(docSnap.data().entries || []);
+            const data = docSnap.data();
+            setLeaderboard(data.entries || []);
+            setTournamentSummary(data.tournamentAiSummary || null); // Fetch the admin summary
         } else {
             setLeaderboard([]);
+            setTournamentSummary(null);
         }
         setIsLoading(false);
     }, [tournamentId]);
@@ -53,9 +49,8 @@ const LeaderboardWidget = ({ userProfile, tournamentId, setRefreshFunc }: Leader
     }, [fetchData]);
     
     useEffect(() => {
-        setRefreshFunc(() => fetchData);
+        setRefreshFunc(fetchData); // Correctly pass the function reference
     }, [fetchData, setRefreshFunc]);
-
 
     if (!tournamentId) {
         return (
@@ -65,10 +60,24 @@ const LeaderboardWidget = ({ userProfile, tournamentId, setRefreshFunc }: Leader
         );
     }
 
+    const isAdmin = userProfile.role === 'admin' || userProfile.role === 'superadmin';
     const userRank = leaderboard.find(entry => entry.userId === userProfile.uid);
 
     return (
         <div className="h-full flex flex-col">
+            {/* --- NEW: AI Summary Section --- */}
+            {isAdmin && tournamentSummary ? (
+                <div className="p-3 mb-2 bg-slate-700/50 border border-green-500 text-sm text-slate-300">
+                    <h4 className="font-bold text-green-400 mb-1">AI Tournament Overview</h4>
+                    <p>{tournamentSummary}</p>
+                </div>
+            ) : userRank && userRank.aiSummary ? (
+                <div className="p-3 mb-2 bg-slate-700/50 border border-blue-500 text-sm text-slate-300">
+                    <h4 className="font-bold text-blue-400 mb-1">Your AI Analyst Report</h4>
+                    <p>{userRank.aiSummary}</p>
+                </div>
+            ) : null}
+
             <div className="flex-grow overflow-y-auto">
                 {isLoading ? (
                     <div className="flex items-center justify-center h-full"><p className="text-slate-400">Loading...</p></div>
@@ -77,7 +86,6 @@ const LeaderboardWidget = ({ userProfile, tournamentId, setRefreshFunc }: Leader
                 ) : (
                     <table className="w-full text-xs">
                         <tbody>
-                            {/* --- FIX 1: Removed .slice(0, 10) to show all participants --- */}
                             {leaderboard.map((entry) => (
                                 <tr key={entry.userId} className={`border-b border-slate-700 ${entry.userId === userProfile.uid ? 'bg-blue-900/50' : ''}`}>
                                     <td className="p-2 text-center w-10 text-slate-300">
