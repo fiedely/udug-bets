@@ -1,12 +1,13 @@
 // src/components/admin/AllPredictionsView.tsx
 
 import { useState, useEffect, useRef, Fragment } from 'react';
-import { db, functions } from '../../firebaseConfig'; // Import functions
-import { httpsCallable } from 'firebase/functions'; // Import httpsCallable
-import { doc, getDoc } from 'firebase/firestore'; // Removed unused collection, getDocs, query, where
+import { db, functions } from '../../firebaseConfig';
+import { httpsCallable } from 'firebase/functions';
+import { doc, getDoc } from 'firebase/firestore';
 import type { Tournament, UserProfile, UserPredictions, Match, Team, PointRule, PointRules, MatchStage } from '../../types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import Flag from '../../components/common/Flag';
 
 interface AllPredictionsViewProps {
     tournament: Tournament;
@@ -213,7 +214,9 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                             {enrichedMatches.map((match) => (
                                 <tr key={match.id} className="border-b border-slate-700">
                                     <td className="p-3 font-medium text-white sticky left-0 bg-slate-800 z-10 w-48">
-                                        {match.team1.flag} {match.team1.name} vs {match.team2.flag} {match.team2.name}
+                                        <div className="flex items-center gap-2">
+                                            <Flag code={match.team1.code} /> {match.team1.name} vs <Flag code={match.team2.code} /> {match.team2.name}
+                                        </div>
                                         <div className="text-xs text-slate-400">Actual: {typeof match.team1Score === 'number' ? `${match.team1Score} - ${match.team2Score}` : 'Not Played'}</div>
                                     </td>
                                     {match.participantPredictions.map(p => (
@@ -236,7 +239,7 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                                 {championPredictions.map(p => (
                                     <Fragment key={p.userId}>
                                         <td className="p-3 text-center text-xs border-l border-slate-600">
-                                            {p.team ? `${p.team.flag} ${p.team.name}` : <span className="text-slate-500">-</span>}
+                                            {p.team ? <span className="flex items-center justify-center gap-2"><Flag code={p.team.code} /> {p.team.name}</span> : <span className="text-slate-500">-</span>}
                                         </td>
                                         <td className="p-3 text-center font-mono text-blue-400 w-12">{p.points}</td>
                                     </Fragment>

@@ -5,6 +5,7 @@ import { db } from '../../../firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
 import type { Tournament, Team } from '../../../types';
 import { FIFA_COUNTRIES } from '../../../data/countries';
+import Flag from '../../common/Flag';
 
 interface Step2ParticipantsProps {
     tournament: Tournament;
@@ -18,7 +19,7 @@ const Step2Participants = ({ tournament, onNext, onBack, setIsDirty }: Step2Part
     const [selectedTeams, setSelectedTeams] = useState<Team[]>(initialTeams);
 
     const [groups, setGroups] = useState<Record<string, Team[]>>(tournament.groups || {});
-    const [numGroups, setNumGroups] = useState(Object.keys(tournament.groups || {}).length || 8); // Default to 8 groups
+    const [numGroups, setNumGroups] = useState(Object.keys(tournament.groups || {}).length || 8);
     const [teamsPerGroup, setTeamsPerGroup] = useState(4);
 
     const [isSaving, setIsSaving] = useState(false);
@@ -48,7 +49,7 @@ const Step2Participants = ({ tournament, onNext, onBack, setIsDirty }: Step2Part
                 markDirty();
             }
         }
-    }, [numGroups]);
+    }, [numGroups, groups]);
 
     const handleTeamSelect = (team: Team) => {
         const isSelected = selectedTeams.some(t => t.code === team.code);
@@ -142,14 +143,15 @@ const Step2Participants = ({ tournament, onNext, onBack, setIsDirty }: Step2Part
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
                 <div className="col-span-1">
                     <h3 className="text-lg font-semibold text-slate-100 mb-2">Select Teams ({selectedTeams.length} selected)</h3>
                     <div className="h-96 overflow-y-auto border border-slate-700 p-2 space-y-1 bg-slate-900">
                         {FIFA_COUNTRIES.map(country => (
                             <div key={country.code} className="flex items-center justify-between p-2 hover:bg-slate-700 cursor-pointer" onClick={() => handleTeamSelect(country)}>
-                                {/* FIX: Added text-slate-100 to make font visible */}
-                                <span className="text-sm text-slate-100">{country.flag} {country.name}</span>
+                                <span className="text-sm text-slate-100 flex items-center gap-2">
+                                    <Flag code={country.code} />
+                                    {country.name}
+                                </span>
                                 <input type="checkbox" checked={selectedTeams.some(t => t.code === country.code)} readOnly className="h-4 w-4 bg-slate-700 border-slate-600 text-blue-600" />
                             </div>
                         ))}
@@ -164,9 +166,10 @@ const Step2Participants = ({ tournament, onNext, onBack, setIsDirty }: Step2Part
                                 key={team.code}
                                 draggable
                                 onDragStart={(e) => e.dataTransfer.setData("team", JSON.stringify(team))}
-                                className="p-2 bg-blue-700 hover:bg-blue-600 cursor-grab text-white text-sm shadow-md"
+                                className="p-2 bg-blue-700 hover:bg-blue-600 cursor-grab text-white text-sm shadow-md flex items-center gap-2"
                             >
-                                {team.flag} {team.name}
+                                <Flag code={team.code} />
+                                {team.name}
                             </div>
                         ))}
                     </div>
@@ -186,7 +189,10 @@ const Step2Participants = ({ tournament, onNext, onBack, setIsDirty }: Step2Part
                                 <div className="space-y-1 min-h-[2rem]">
                                     {groups[groupName].map(team => (
                                         <div key={team.code} className="flex justify-between items-center text-sm text-white p-1 bg-slate-900">
-                                            <span>{team.flag} {team.name}</span>
+                                            <span className="flex items-center gap-2">
+                                                <Flag code={team.code} />
+                                                {team.name}
+                                            </span>
                                             <button onClick={() => removeTeamFromGroup(groupName, team.code)} className="text-red-500 hover:text-red-300 ml-2 px-2">X</button>
                                         </div>
                                     ))}

@@ -5,6 +5,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import type { Tournament, Match, Team, MatchStage } from '../../../types';
 import { useState, useMemo, useEffect } from 'react';
 import { marked } from 'marked';
+import Flag from '../../common/Flag';
 
 interface Step5ConfirmationProps {
     tournament: Tournament;
@@ -64,7 +65,7 @@ const MatchList = ({ title, matches, groupByStage = false }: { title: string, ma
                                     {(groupedMatches[stageKey] as Record<string, Match[]>)[dateKey].map(match => (
                                         <div key={match.id} className="flex justify-between items-center p-1.5 hover:bg-slate-700/50">
                                             <span className="flex items-center gap-2">
-                                                {match.team1.flag} {match.team1.name} <span className="text-slate-500">vs</span> {match.team2.flag} {match.team2.name}
+                                                <Flag code={match.team1.code} /> {match.team1.name} <span className="text-slate-500">vs</span> <Flag code={match.team2.code} /> {match.team2.name}
                                             </span>
                                             <span className="text-xs text-slate-400 text-right">{new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}<br/>@ {match.stadium.name}</span>
                                         </div>
@@ -80,7 +81,7 @@ const MatchList = ({ title, matches, groupByStage = false }: { title: string, ma
                             {(groupedMatches[dateKey] as Match[]).map(match => (
                                  <div key={match.id} className="flex justify-between items-center p-1.5 hover:bg-slate-700/50">
                                     <span className="flex items-center gap-2">
-                                        {match.team1.flag} {match.team1.name} <span className="text-slate-500">vs</span> {match.team2.flag} {match.team2.name}
+                                        <Flag code={match.team1.code} /> {match.team1.name} <span className="text-slate-500">vs</span> <Flag code={match.team2.code} /> {match.team2.name}
                                     </span>
                                     <span className="text-xs text-slate-400 text-right">{new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}<br/>@ {match.stadium.name}</span>
                                 </div>
@@ -174,7 +175,12 @@ const Step5Confirmation = ({ tournament, onBack, onFinish }: Step5ConfirmationPr
                             <div key={groupName} className="bg-slate-800 p-3 border border-slate-700">
                                 <h5 className="font-bold text-slate-300 text-sm mb-1">{groupName}</h5>
                                 <ul className="space-y-1 text-xs text-slate-400">
-                                    {teams.map((team: Team) => <li key={team.code}>{team.flag} {team.name}</li>)}
+                                    {teams.map((team: Team) => (
+                                        <li key={team.code} className="flex items-center gap-2">
+                                            <Flag code={team.code} className="w-4 h-auto" />
+                                            {team.name}
+                                        </li>
+                                    ))}
                                 </ul>
                             </div>
                         ))}

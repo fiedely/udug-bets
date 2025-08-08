@@ -5,6 +5,7 @@ import { db } from '../../../firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
 import type { Tournament, Match, Team, MatchStage, KnockoutStartStage } from '../../../types';
 import { STADIUMS } from '../../../data/stadiums';
+import Flag from '../../common/Flag';
 
 interface Step4KnockoutProps {
     tournament: Tournament;
@@ -55,11 +56,10 @@ const Step4Knockout = ({ tournament, onNext, onBack, setIsDirty }: Step4Knockout
         const startIndex = ALL_KNOCKOUT_STAGES.findIndex(s => s.stage === selectedStage);
         let relevantStages = ALL_KNOCKOUT_STAGES.slice(startIndex);
 
-        // **BUG FIX:** Manually add the Third Place Match if 'Final' is selected and it's included.
         if (selectedStage === 'Final' && includeThirdPlace) {
             const thirdPlaceStage = ALL_KNOCKOUT_STAGES.find(s => s.stage === 'Third Place Match');
             if (thirdPlaceStage) {
-                relevantStages.unshift(thirdPlaceStage); // Add it to the beginning
+                relevantStages.unshift(thirdPlaceStage);
             }
         }
 
@@ -140,6 +140,12 @@ const Step4Knockout = ({ tournament, onNext, onBack, setIsDirty }: Step4Knockout
         }, {} as Record<MatchStage, Match[]>);
     }, [matches]);
 
+    const SelectOption = ({ team }: { team: Team }) => (
+        <option value={team.code}>
+            {team.name}
+        </option>
+    );
+
     if (matches.length > 0) {
         return (
             <div className="mt-4 space-y-6">
@@ -160,11 +166,11 @@ const Step4Knockout = ({ tournament, onNext, onBack, setIsDirty }: Step4Knockout
                                             <label className="block text-xs font-medium text-slate-400">Match Participants</label>
                                             <div className="flex items-center gap-2 mt-1">
                                                 <select value={match.team1.code} onChange={e => handleMatchChange(match.id, 'team1', e.target.value)} className="w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100">
-                                                    {allTeams.map(t => <option key={t.code} value={t.code}>{t.flag} {t.name}</option>)}
+                                                    {allTeams.map(t => <SelectOption key={`t1-${match.id}-${t.code}`} team={t} />)}
                                                 </select>
                                                 <span className="text-slate-400">vs</span>
                                                 <select value={match.team2.code} onChange={e => handleMatchChange(match.id, 'team2', e.target.value)} className="w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100">
-                                                    {allTeams.map(t => <option key={t.code} value={t.code}>{t.flag} {t.name}</option>)}
+                                                    {allTeams.map(t => <SelectOption key={`t2-${match.id}-${t.code}`} team={t} />)}
                                                 </select>
                                             </div>
                                        </div>

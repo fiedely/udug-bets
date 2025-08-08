@@ -5,6 +5,7 @@ import { db } from '../../../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Tournament, UserPredictions, Match } from '../../../types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import Flag from '../../common/Flag';
 
 interface PredictionChartWidgetProps {
     tournamentId?: string;
@@ -31,8 +32,6 @@ const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexCh
         }
         setIsLoading(true);
         
-        // --- FIX: Secure data fetching logic ---
-        // 1. Fetch the tournament document first to get the list of participants
         const tourneyRef = doc(db, "tournaments", tournamentId);
         const tourneySnap = await getDoc(tourneyRef);
         let fetchedTournament: Tournament | null = null;
@@ -47,7 +46,6 @@ const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexCh
             return;
         }
 
-        // 2. If the tournament and participants exist, fetch each prediction document by its specific ID
         if (fetchedTournament && fetchedTournament.participants && fetchedTournament.participants.length > 0) {
             const predictionPromises = fetchedTournament.participants.map(userId => 
                 getDoc(doc(db, "predictions", `${tournamentId}_${userId}`))
@@ -60,7 +58,6 @@ const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexCh
         } else {
             setPredictions([]);
         }
-        // --- END FIX ---
         
         setIsLoading(false);
     }, [tournamentId]);
@@ -125,7 +122,9 @@ const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexCh
                 <div className="flex justify-between items-center">
                     <button onClick={handlePrev} disabled={currentMatchIndex === 0} className="px-2 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50">&lt;</button>
                     <div className="text-center">
-                        <p className="font-bold text-white text-sm">{currentMatch.team1.flag} {currentMatch.team1.name} vs {currentMatch.team2.flag} {currentMatch.team2.name}</p>
+                        <p className="font-bold text-white text-sm flex items-center justify-center gap-2">
+                            <Flag code={currentMatch.team1.code} /> {currentMatch.team1.name} vs <Flag code={currentMatch.team2.code} /> {currentMatch.team2.name}
+                        </p>
                         <p className="text-slate-400 text-xs">Match {currentMatch.matchNumber} &bull; {new Date(currentMatch.date).toLocaleDateString()}</p>
                     </div>
                     <button onClick={handleNext} disabled={currentMatchIndex === allMatches.length - 1} className="px-2 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50">&gt;</button>

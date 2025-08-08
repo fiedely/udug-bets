@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { db } from '../../firebaseConfig';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
-import type { Tournament, UserProfile, UserPredictions, Match, MatchStage } from '../../types';
+import type { Tournament, UserProfile, UserPredictions, Match, MatchStage, Team } from '../../types';
+import Flag from '../common/Flag';
 
 interface PredictionEntryProps {
     tournament: Tournament;
@@ -19,7 +20,6 @@ const OutcomeBadge = ({ outcome }: { outcome: 'WIN' | 'LOSE' | 'DRAW' | null }) 
     switch (outcome) {
         case 'WIN': return <span className={`${baseClasses} bg-green-500 text-white`}>WIN</span>;
         case 'LOSE': return <span className={`${baseClasses} bg-red-500 text-white`}>LOSE</span>;
-        // UPDATED: Changed DRAW badge to dark grey with white text
         case 'DRAW': return <span className={`${baseClasses} bg-slate-600 text-white`}>DRAW</span>;
         default: return null;
     }
@@ -30,10 +30,8 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [message, setMessage] = useState('');
-    // UPDATED: State to track if there are unsaved changes
     const [isDirty, setIsDirty] = useState(false);
 
-    // UPDATED: Initialize collapsed state from localStorage
     const [collapsedStages, setCollapsedStages] = useState<Record<string, boolean>>(() => {
         try {
             const savedState = localStorage.getItem(`udug-bets-collapsed-${tournament.id}`);
@@ -46,12 +44,11 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
 
     const allMatches = useMemo(() => [...(tournament.matches || []), ...(tournament.knockoutMatches || [])], [tournament]);
 
-    // UPDATED: Add a browser warning if user tries to leave with unsaved changes
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
             if (isDirty) {
                 e.preventDefault();
-                e.returnValue = ''; // Required for legacy browsers
+                e.returnValue = '';
             }
         };
         window.addEventListener('beforeunload', handleBeforeUnload);
@@ -84,7 +81,7 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
     }, [fetchPredictions]);
 
     const handleScoreChange = (matchId: string, team: 'team1Score' | 'team2Score', value: string) => {
-        setIsDirty(true); // Mark as dirty when a change is made
+        setIsDirty(true);
         const score = value === '' ? -1 : parseInt(value, 10);
         setPredictions(prev => {
             if (!prev) return null;
@@ -96,7 +93,7 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
     };
 
     const handleChampionChange = (teamCode: string) => {
-        setIsDirty(true); // Mark as dirty when a change is made
+        setIsDirty(true);
         setPredictions(prev => prev ? { ...prev, championPrediction: teamCode } : null);
     };
 
@@ -107,7 +104,7 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
         try {
             const predictionDocId = `${tournament.id}_${userProfile!.uid}`;
             await setDoc(doc(db, "predictions", predictionDocId), { ...predictions, lastUpdated: Timestamp.now() });
-            setIsDirty(false); // Mark as clean after saving
+            setIsDirty(false);
             setMessage('Your predictions have been saved successfully!');
             setTimeout(() => setMessage(''), 3000);
         } catch (error) {
@@ -118,7 +115,6 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
         }
     };
 
-    // UPDATED: Handle back navigation with a check for unsaved changes
     const handleBack = () => {
         if (isDirty) {
             if (window.confirm("You have unsaved changes that will be lost. Are you sure you want to leave?")) {
@@ -129,7 +125,6 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
         }
     };
 
-    // UPDATED: Data is now grouped by stage, then by date for better rendering
     const matchesByStageAndDate = useMemo(() => {
         return allMatches.reduce((acc, match) => {
             const stage = match.stage;
@@ -160,7 +155,6 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
         }
     };
 
-    // UPDATED: Save collapsed state to localStorage
     const toggleStageCollapse = (stage: string) => {
         const newCollapsedState = { ...collapsedStages, [stage]: !collapsedStages[stage] };
         setCollapsedStages(newCollapsedState);
@@ -196,7 +190,7 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
                         >
                             <option value="">-- Select a Champion --</option>
                             {tournament.teams?.sort((a,b) => a.name.localeCompare(b.name)).map(team => (
-                                <option key={team.code} value={team.code}>{team.flag} {team.name}</option>
+                                <option key={team.code} value={team.code}>{team.name}</option>
                             ))}
                         </select>
                         {predictions.championPrediction && <span className="text-2xl ml-3">🏆</span>}
@@ -211,7 +205,6 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
                         </button>
                         {!collapsedStages[stage] && (
                             <div className="space-y-3">
-                                {/* UPDATED: Render matches grouped by date */}
                                 {Object.keys(matchesByStageAndDate[stage as MatchStage]).map(date => (
                                     <div key={date}>
                                         <h4 className="font-semibold text-slate-300 text-sm mb-2 pl-2">{date}</h4>
@@ -234,7 +227,7 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
                                                                 <OutcomeBadge outcome={team1Outcome} />
                                                                 <span className="hidden md:inline text-right">{match.team1.name}</span>
                                                                 <span className="md:hidden">{match.team1.code}</span>
-                                                                <span className="text-2xl">{match.team1.flag}</span>
+                                                                <Flag code={match.team1.code} />
                                                             </div>
                                                             <div className="col-span-2 flex items-center justify-center gap-1">
                                                                 <input type="number" min="0" value={pred?.team1Score > -1 ? pred.team1Score : ''} onChange={e => handleScoreChange(match.id, 'team1Score', e.target.value)} disabled={isDisabled} className="w-10 text-center bg-slate-800 border border-slate-600 text-white font-bold disabled:opacity-50" />
@@ -242,7 +235,7 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
                                                                 <input type="number" min="0" value={pred?.team2Score > -1 ? pred.team2Score : ''} onChange={e => handleScoreChange(match.id, 'team2Score', e.target.value)} disabled={isDisabled} className="w-10 text-center bg-slate-800 border border-slate-600 text-white font-bold disabled:opacity-50" />
                                                             </div>
                                                             <div className="col-span-5 flex items-center gap-2 text-white">
-                                                                <span className="text-2xl">{match.team2.flag}</span>
+                                                                <Flag code={match.team2.code} />
                                                                 <span className="hidden md:inline">{match.team2.name}</span>
                                                                 <span className="md:hidden">{match.team2.code}</span>
                                                                 <OutcomeBadge outcome={team2Outcome} />
@@ -253,7 +246,6 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
                                                             <span className="text-slate-600">•</span>
                                                             <span>{match.stadium.name}, {match.stadium.city}</span>
                                                             <span className="text-slate-600">•</span>
-                                                            {/* UPDATED: Added Match Number */}
                                                             <span>Match #{match.matchNumber}</span>
                                                         </div>
                                                     </div>

@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { db } from '../../firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
 import type { Tournament, Match, Team, MatchStage } from '../../types';
+import Flag from '../common/Flag';
 
 interface ScoreManagementProps {
     tournament: Tournament;
@@ -49,7 +50,6 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
 
     const handleScoreChange = (matchId: string, isKnockout: boolean, team: 'team1Score' | 'team2Score', value: string) => {
         setIsDirty(true);
-        // --- FIX: Use null instead of undefined for empty values ---
         const score = value === '' ? null : parseInt(value, 10);
         const updater = isKnockout ? setKnockoutMatches : setMatches;
         updater(prev => prev.map(m => m.id === matchId ? { ...m, [team]: score } : m));
@@ -72,7 +72,6 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
         try {
             const tournamentRef = doc(db, "tournaments", tournament.id);
 
-            // --- FIX: Sanitize data before saving to remove nulls ---
             const sanitizeMatches = (matchArray: Match[]) => {
                 return matchArray.map(m => {
                     const matchCopy: Partial<Match> & { id: string } = { ...m };
@@ -91,7 +90,6 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
                 knockoutMatches: sanitizeMatches(knockoutMatches),
                 champion: champion
             });
-            // --- END FIX ---
 
             setIsDirty(false);
             setMessage('Scores and seeding saved successfully!');
@@ -126,6 +124,12 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
         setCollapsedStages(newCollapsedState);
         localStorage.setItem(`udug-bets-admin-collapsed-${tournament.id}`, JSON.stringify(newCollapsedState));
     };
+    
+    const SelectOption = ({ team }: { team: Team }) => (
+        <option value={team.code}>
+            {team.name}
+        </option>
+    );
 
     return (
         <div className="bg-slate-800 border border-slate-700 p-6 md:p-8">
@@ -145,7 +149,7 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
                     <select id="champion-select" value={champion} onChange={e => handleChampionChange(e.target.value)} className="w-full md:w-1/2 px-4 py-2 bg-slate-800 border border-slate-600 text-slate-100">
                         <option value="">-- Select a Champion --</option>
                         {allTeams.map(team => (
-                            <option key={team.code} value={team.code}>{team.flag} {team.name}</option>
+                            <option key={team.code} value={team.code}>{team.name}</option>
                         ))}
                     </select>
                 </div>
@@ -179,10 +183,10 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
                                                                 <OutcomeBadge outcome={team1Outcome} />
                                                                 {isKnockout ? (
                                                                     <select value={match.team1.code} onChange={e => handleTeamChange(match.id, 'team1', e.target.value)} className="w-full bg-slate-800 border border-slate-600 text-white p-1 text-xs">
-                                                                        {selectableTeams.map(t => <option key={`t1-${match.id}-${t.code}`} value={t.code}>{t.flag} {t.name}</option>)}
+                                                                        {selectableTeams.map(t => <SelectOption key={`t1-${match.id}-${t.code}`} team={t} />)}
                                                                     </select>
                                                                 ) : (
-                                                                    <span className="text-white text-right">{match.team1.name} {match.team1.flag}</span>
+                                                                    <span className="text-white text-right flex items-center gap-2">{match.team1.name} <Flag code={match.team1.code} /></span>
                                                                 )}
                                                             </div>
                                                             <div className="col-span-2 flex items-center justify-center gap-1">
@@ -193,10 +197,10 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
                                                             <div className="col-span-5 flex items-center gap-2">
                                                                 {isKnockout ? (
                                                                     <select value={match.team2.code} onChange={e => handleTeamChange(match.id, 'team2', e.target.value)} className="w-full bg-slate-800 border border-slate-600 text-white p-1 text-xs">
-                                                                        {selectableTeams.map(t => <option key={`t2-${match.id}-${t.code}`} value={t.code}>{t.flag} {t.name}</option>)}
+                                                                        {selectableTeams.map(t => <SelectOption key={`t2-${match.id}-${t.code}`} team={t} />)}
                                                                     </select>
                                                                 ) : (
-                                                                    <span className="text-white">{match.team2.flag} {match.team2.name}</span>
+                                                                    <span className="text-white flex items-center gap-2"><Flag code={match.team2.code} /> {match.team2.name}</span>
                                                                 )}
                                                                 <OutcomeBadge outcome={team2Outcome} />
                                                             </div>

@@ -5,6 +5,7 @@ import { db } from '../../../firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
 import type { Tournament, Match, Team } from '../../../types';
 import { STADIUMS } from '../../../data/stadiums';
+import Flag from '../../common/Flag';
 
 interface Step3MatchesProps {
     tournament: Tournament;
@@ -13,7 +14,6 @@ interface Step3MatchesProps {
     setIsDirty: (dirty: boolean) => void;
 }
 
-// Dynamic round-robin generator
 const getRoundRobinPairs = (teams: Team[]) => {
     const pairs: { t1: Team; t2: Team }[] = [];
     if (teams.length < 2) return [];
@@ -43,6 +43,7 @@ const getRoundRobinPairs = (teams: Team[]) => {
     }
     return pairs;
 };
+
 
 const Step3Matches = ({ tournament, onNext, onBack, setIsDirty }: Step3MatchesProps) => {
     const [matches, setMatches] = useState<Match[]>(tournament.matches || []);
@@ -152,7 +153,12 @@ const Step3Matches = ({ tournament, onNext, onBack, setIsDirty }: Step3MatchesPr
                                         onChange={e => handleMatchChange(match.id, 'team1', e.target.value)}
                                         className="w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100"
                                     >
-                                        {allTeams.map((t: Team) => <option key={t.code} value={t.code}>{t.flag} {t.name}</option>)}
+                                        {allTeams.map((t: Team) => (
+                                            <option key={t.code} value={t.code}>
+                                                {/* Use team name for select option text */}
+                                                {t.name}
+                                            </option>
+                                        ))}
                                     </select>
                                     <span className="text-slate-400">vs</span>
                                     <select
@@ -160,7 +166,11 @@ const Step3Matches = ({ tournament, onNext, onBack, setIsDirty }: Step3MatchesPr
                                         onChange={e => handleMatchChange(match.id, 'team2', e.target.value)}
                                         className="w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100"
                                     >
-                                        {allTeams.map((t: Team) => <option key={t.code} value={t.code}>{t.flag} {t.name}</option>)}
+                                        {allTeams.map((t: Team) => (
+                                            <option key={t.code} value={t.code}>
+                                                {t.name}
+                                            </option>
+                                        ))}
                                     </select>
                                 </div>
                                 <p className="text-xs text-slate-500 mt-1">{match.group} - Match {match.matchNumber}</p>

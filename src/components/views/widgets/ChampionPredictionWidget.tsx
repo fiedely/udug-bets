@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { db } from '../../../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Tournament, UserPredictions, Team, UserProfile } from '../../../types';
+import Flag from '../../common/Flag';
 
 interface ChampionPredictionWidgetProps {
-    userProfile: UserProfile; // Now receives the user's profile
+    userProfile: UserProfile;
     tournamentId?: string;
     setRefreshFunc: (func: () => void) => void;
 }
@@ -22,11 +23,9 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
     const [totalPredictions, setTotalPredictions] = useState(0);
     const [myChampionPick, setMyChampionPick] = useState<string | null>(null);
 
-    // --- FIX: Add a guard clause to handle the initial render when userProfile might be null ---
     if (!userProfile) {
         return <div className="flex items-center justify-center h-full"><p className="text-slate-400">Loading User...</p></div>;
     }
-    // --- END FIX ---
 
     const isAdmin = userProfile.role === 'admin' || userProfile.role === 'superadmin';
 
@@ -121,7 +120,10 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
                                 className={`border-b border-slate-700 ${!isAdmin && myChampionPick === pick.team.code ? 'bg-blue-900/50' : ''}`}
                             >
                                 <td className="p-2 text-center w-10">{index + 1}</td>
-                                <td className="p-2 truncate">{pick.team.flag} {pick.team.name}</td>
+                                <td className="p-2 truncate flex items-center gap-2">
+                                    <Flag code={pick.team.code} className="w-5 h-auto" />
+                                    {pick.team.name}
+                                </td>
                                 <td className="p-2 text-right font-mono">{pick.count} vote(s)</td>
                             </tr>
                         ))}
