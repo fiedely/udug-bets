@@ -2,7 +2,7 @@
 // Create a new folder 'common' inside 'components' for this file.
 
 import React from 'react';
-import { GB, EU } from 'country-flag-icons/react/3x2';
+import { GB } from 'country-flag-icons/react/3x2';
 
 // Dynamically import all flags for tree-shaking
 const flags = import.meta.glob('/node_modules/country-flag-icons/react/3x2/*.tsx', { eager: true });

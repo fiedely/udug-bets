@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { db } from '../../firebaseConfig';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
-import type { Tournament, UserProfile, UserPredictions, Match, MatchStage, Team } from '../../types';
+import type { Tournament, UserProfile, UserPredictions, Match, MatchStage } from '../../types';
 import Flag from '../common/Flag';
 
 interface PredictionEntryProps {

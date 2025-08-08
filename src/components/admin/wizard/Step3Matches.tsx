@@ -5,7 +5,6 @@ import { db } from '../../../firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
 import type { Tournament, Match, Team } from '../../../types';
 import { STADIUMS } from '../../../data/stadiums';
-import Flag from '../../common/Flag';
 
 interface Step3MatchesProps {
     tournament: Tournament;
