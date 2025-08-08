@@ -6,7 +6,8 @@ import { httpsCallable } from 'firebase/functions';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Tournament, UserProfile, UserPredictions, Match, Team, PointRule, PointRules, MatchStage } from '../../types';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import autoTable from 'jspdf-autotable';
+import type { CellDef } from 'jspdf-autotable';
 import Flag from '../../components/common/Flag';
 
 interface AllPredictionsViewProps {
@@ -128,42 +129,86 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
         fetchAllData();
     }, [tournament]);
 
-    const handleExportPDF = async () => {
-        const table = tableRef.current;
-        if (!table) return;
-
+    const handleExportPDF = () => {
+        if (!participants.length || !enrichedMatches.length) return;
         setIsGeneratingPdf(true);
-        const canvas = await html2canvas(table, { scale: 1.5 });
-        const imgData = canvas.toDataURL('image/png');
-        const imgWidth = canvas.width;
-        const imgHeight = canvas.height;
 
-        const pdf = new jsPDF({ orientation: 'l', unit: 'pt', format: 'a4' });
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const margin = 40;
-        const contentWidth = pdfWidth - margin * 2;
-        const ratio = contentWidth / imgWidth;
-        const totalPDFHeight = imgHeight * ratio;
+        const doc = new jsPDF({ orientation: 'landscape' });
 
-        let heightLeft = totalPDFHeight;
-        let position = 0;
+        // --- PDF GENERATION LOGIC ---
 
-        pdf.setFontSize(20);
-        pdf.text(`${tournament.name} - All Predictions`, margin, margin);
-        pdf.addImage(imgData, 'PNG', margin, 60, contentWidth, totalPDFHeight, undefined, 'MEDIUM');
-        heightLeft -= (pdfHeight - 60 - margin);
+        // 1. Define Header and Sub-header Rows
+        const mainHeaderRow: CellDef[] = [
+            { content: 'Match', rowSpan: 2, styles: { valign: 'middle', halign: 'center' } }
+        ];
+        const subHeaderRow: CellDef[] = [];
 
-        while (heightLeft > 0) {
-            position -= (pdfHeight - margin * 2);
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', margin, position, contentWidth, totalPDFHeight, undefined, 'MEDIUM');
-            heightLeft -= (pdfHeight - margin * 2);
-        }
+        participants.forEach(p => {
+            mainHeaderRow.push({ content: p.name, colSpan: 2, styles: { halign: 'center' } });
+            subHeaderRow.push({ content: 'Pred.' });
+            subHeaderRow.push({ content: 'Pts' });
+        });
         
-        pdf.save(`${tournament.name.replace(/ /g, '_')}_predictions.pdf`);
+        // 2. Build Body Rows from data
+        const body = enrichedMatches.map(match => {
+            const matchCell = `${match.team1.name} vs ${match.team2.name}\nActual: ${typeof match.team1Score === 'number' ? `${match.team1Score}-${match.team2Score}` : 'N/A'}`;
+            const participantCells = participants.flatMap(p => {
+                const pred = match.participantPredictions.find(pp => pp.userId === p.uid);
+                const predText = pred?.prediction ? `${pred.prediction.team1Score}-${pred.prediction.team2Score}` : '-';
+                const pointsText = pred?.points.toString() || '0';
+                return [predText, pointsText];
+            });
+            return [matchCell, ...participantCells];
+        });
+
+        // 3. Build Champion Row
+        const championRow = [
+            `Champion\nActual: ${tournament.champion ? tournament.teams?.find(t => t.code === tournament.champion)?.name : 'TBD'}`,
+            ...participants.flatMap(p => {
+                const champPred = championPredictions.find(cp => cp.userId === p.uid);
+                const teamName = champPred?.team?.name || '-';
+                const points = champPred?.points.toString() || '0';
+                return [teamName, points];
+            })
+        ];
+        body.push(championRow);
+
+        // 4. Add the title ONCE before generating the table
+        const generationDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        const title = `${tournament.name} - ${generationDate}`;
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.text(title, 14, 20);
+
+        // 5. Generate the Table with a clean, black & white theme and optimized styles
+        autoTable(doc, {
+            head: [mainHeaderRow, subHeaderRow],
+            body: body,
+            startY: 25,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [230, 230, 230],
+                textColor: [0, 0, 0],
+                fontStyle: 'bold',
+                halign: 'center',
+            },
+            styles: {
+                textColor: [0, 0, 0],
+                lineColor: [200, 200, 200],
+                lineWidth: 0.5,
+                cellPadding: 2,
+                fontSize: 6,
+                overflow: 'linebreak',
+            },
+            alternateRowStyles: {
+                fillColor: [245, 245, 245]
+            },
+        });
+
+        doc.save(`${tournament.name.replace(/ /g, '_')}_predictions.pdf`);
         setIsGeneratingPdf(false);
     };
+
 
     return (
         <div className="bg-slate-800 border border-slate-700 p-6 md:p-8 flex flex-col h-[85vh] w-full">
@@ -174,7 +219,7 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                         <p className="text-blue-400">All Participant Predictions</p>
                     </div>
                     <div className="flex gap-4">
-                        <button onClick={handleExportPDF} disabled={isGeneratingPdf} className="px-4 py-2 bg-green-600 hover:bg-green-500 font-semibold text-white text-sm disabled:bg-green-800 disabled:cursor-not-allowed">
+                        <button onClick={handleExportPDF} disabled={isGeneratingPdf || isLoading} className="px-4 py-2 bg-green-600 hover:bg-green-500 font-semibold text-white text-sm disabled:bg-green-800 disabled:cursor-not-allowed">
                             {isGeneratingPdf ? 'Generating...' : 'Download as PDF'}
                         </button>
                         <button onClick={onBack} className="text-sm text-blue-400 hover:text-blue-300 flex items-center whitespace-nowrap">
