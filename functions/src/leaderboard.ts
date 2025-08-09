@@ -27,10 +27,6 @@ function calculateRemainingMatchPoints(allMatches: Match[], pointRules: PointRul
     return maxPoints;
 }
 
-/**
- * NEW: Determines the current, precise stage of the tournament based on match completion.
- * FIX: Added 'tournament' as a parameter to resolve the scope issue.
- */
 function determineCurrentStage(allMatches: Match[], tournament: Tournament): Leaderboard['currentTournamentStage'] {
     const completedMatches = allMatches.filter(m => typeof m.team1Score !== 'number');
     if (completedMatches.length === 0) {
@@ -71,7 +67,6 @@ export async function recalculateLeaderboard(tournamentId: string) {
     const pointRules = tournamentData.pointRules;
     if (!tournamentData.participants || tournamentData.participants.length === 0 || !pointRules) {
         logger.info("Tournament has no participants or point rules. Skipping.");
-        // NEW: Set a welcoming AI summary if there are no participants yet.
         await db.collection("leaderboards").doc(tournamentId).set({
             entries: [],
             tournamentAiSummary: "The tournament is all set up! Get ready for an exciting competition. The leaderboard will come alive as soon as participants join and make their predictions.",
@@ -90,13 +85,11 @@ export async function recalculateLeaderboard(tournamentId: string) {
     
     const allMatches = [...(tournamentData.matches || []), ...(tournamentData.knockoutMatches || [])].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
-    // FIX: Pass tournamentData into the function.
     const currentTournamentStage = determineCurrentStage(allMatches, tournamentData);
     const completedMatches = allMatches.filter(m => typeof m.team1Score === 'number');
     const tournamentCompletion = allMatches.length > 0 ? Math.round((completedMatches.length / allMatches.length) * 100) : 0;
     const isFinalConcluded = currentTournamentStage === "Completed";
 
-    // If no scores are in yet, set a specific "pre-game" AI summary.
     if (completedMatches.length === 0) {
         await db.collection("leaderboards").doc(tournamentId).set({
             entries: [],
@@ -294,17 +287,15 @@ export async function recalculateLeaderboard(tournamentId: string) {
             return acc;
         }, {} as Record<string, number>);
 
-        // NEW: Filter out eliminated teams for the main analysis, but keep them for a one-time mention.
         const activePicks = Object.entries(pickCounts).filter(([code]) => !eliminatedTeamCodes.has(code));
         const eliminatedPicks = Object.entries(pickCounts).filter(([code]) => eliminatedTeamCodes.has(code));
 
         const sortedActivePicks = activePicks.sort(([, a], [, b]) => b - a).map(([code, count]) => ({ code, count }));
         
-        // Find the most recently eliminated top pick to mention it.
         const oldLeaderboardData = oldLeaderboardSnap.data() as Leaderboard | undefined;
         const previouslyEliminated = new Set(oldLeaderboardData?.eliminatedTeamCodes || []);
         const newlyEliminatedPicks = eliminatedPicks.filter(([code]) => !previouslyEliminated.has(code));
-        newlyEliminatedPicks.sort(([,a], [,b]) => b-a); // Sort by vote count
+        newlyEliminatedPicks.sort(([,a], [,b]) => b-a);
 
         let eliminatedMention = "";
         if (newlyEliminatedPicks.length > 0) {
@@ -337,7 +328,7 @@ export async function recalculateLeaderboard(tournamentId: string) {
         const adminChampPrompt = `You are an analytical sport journalist. Summarize the champion predictions for an admin in 4-5 sentences.
         Context: ${champContext}
         Analysis: ${eliminatedMention} ${topPickAnalysis}
-        Instruction: Combine the context and analysis into a cohesive summary. Be more analytical about what these trends mean for the overall leaderboard.`;
+        Instruction: Combine the context and analysis into a cohesive summary. Be more analytical about what these trends mean for the overall leaderboard. Maintain an enthusiastic and slightly humorous tone.`;
         championAdminSummary = await generateAiSummary(adminChampPrompt);
     }
 
