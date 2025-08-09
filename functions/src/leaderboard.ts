@@ -11,9 +11,6 @@ const stageToRuleKeyMap: { [key in MatchStage]?: keyof PointRules } = {
     "Third Place Match": "thirdPlaceMatch", "Final": "final",
 };
 
-/**
- * Calculates the maximum possible points remaining in the tournament from unplayed matches.
- */
 function calculateRemainingMatchPoints(allMatches: Match[], pointRules: PointRules): number {
     const unplayedMatches = allMatches.filter(m => typeof m.team1Score !== 'number');
     let maxPoints = 0;
@@ -28,7 +25,8 @@ function calculateRemainingMatchPoints(allMatches: Match[], pointRules: PointRul
 }
 
 function determineCurrentStage(allMatches: Match[], tournament: Tournament): Leaderboard['currentTournamentStage'] {
-    const completedMatches = allMatches.filter(m => typeof m.team1Score !== 'number');
+    const completedMatches = allMatches.filter(m => typeof m.team1Score === 'number');
+    
     if (completedMatches.length === 0) {
         return "Not Started";
     }
@@ -37,7 +35,6 @@ function determineCurrentStage(allMatches: Match[], tournament: Tournament): Lea
     }
 
     const stages: MatchStage[] = ['Group Stage', 'Round of 32', 'Round of 16', 'Quarter-final', 'Semi-final', 'Third Place Match', 'Final'];
-    // Filter stages to only include those relevant to this tournament's structure
     const relevantStages = stages.filter(stage => {
         if (stage === 'Group Stage' && tournament.matches && tournament.matches.length > 0) return true;
         if (tournament.knockoutStartStage && stages.indexOf(stage) >= stages.indexOf(tournament.knockoutStartStage)) return true;
@@ -51,7 +48,7 @@ function determineCurrentStage(allMatches: Match[], tournament: Tournament): Lea
         }
     }
 
-    return "Completed"; // Fallback if all matches are somehow completed
+    return "Completed";
 }
 
 
@@ -211,7 +208,7 @@ export async function recalculateLeaderboard(tournamentId: string) {
             contextSpecificInstruction = `The user can still win. Analyze their chances based on the '${currentTournamentStage}' stage. Mention the point gap to the leader and what they need to do to close it, considering the remaining points available.`;
         }
 
-        const prompt = `You are a supportive and enthusiastic sport journalist specialized in soccer. Write a detailed, analytical, and slightly humorous summary (4-5 sentences) for a user named '**${data.userName}**'.
+        const prompt = `You are a supportive and enthusiastic sport journalist specialized in soccer. Write a detailed, analytical, and slightly humorous summary (3-4 sentences) for a user named '**${data.userName}**'.
 
         User Data:
         - Current Rank: ${rank} of ${leaderboardData.length}
@@ -260,7 +257,7 @@ export async function recalculateLeaderboard(tournamentId: string) {
         
         const bottomRankUser = newLeaderboard[newLeaderboard.length - 1];
 
-        const adminPrompt = `You are a supportive and enthusiastic sport journalist specialized in soccer providing a detailed, analytical summary (4-5 sentences) of a tournament leaderboard for an administrator.
+        const adminPrompt = `You are a supportive and enthusiastic sport journalist specialized in soccer providing a detailed, analytical summary (3-4 sentences) of a tournament leaderboard for an administrator.
         
         Data:
         - Tournament Completion: ${tournamentCompletion}%
@@ -319,16 +316,16 @@ export async function recalculateLeaderboard(tournamentId: string) {
 
         const champContext = isFinalConcluded ? `The final is over and the official champion was **${tournamentData.champion ? tournamentData.teams?.find(t=>t.code === tournamentData.champion)?.name : 'TBD'}**! Let's see how the final predictions panned out.` : `The tournament is in the '${currentTournamentStage}' stage. Here's the latest on who the community thinks will win.`;
 
-        const userChampPrompt = `You are a supportive and enthusiastic sport journalist. Summarize the champion predictions for a user in 4-5 sentences.
+        const userChampPrompt = `You are a supportive and enthusiastic sport journalist specialized in soccer. Summarize the champion predictions for a user in 3-4 sentences.
         Context: ${champContext}
         Analysis: ${eliminatedMention} ${topPickAnalysis}
-        Instruction: Combine the context and analysis into a cohesive, engaging summary. Maintain an enthusiastic and slightly humorous tone.`;
+        Instruction: Combine the context and analysis into a cohesive, engaging summary. Maintain an enthusiastic and slightly humorous tone. Ensure all team names are bolded using markdown.`;
         championUserSummary = await generateAiSummary(userChampPrompt);
 
-        const adminChampPrompt = `You are an analytical sport journalist. Summarize the champion predictions for an admin in 4-5 sentences.
+        const adminChampPrompt = `You are a supportive and enthusiastic sport journalist specialized in soccer. Summarize the champion predictions for an admin in 3-4 sentences.
         Context: ${champContext}
         Analysis: ${eliminatedMention} ${topPickAnalysis}
-        Instruction: Combine the context and analysis into a cohesive summary. Be more analytical about what these trends mean for the overall leaderboard. Maintain an enthusiastic and slightly humorous tone.`;
+        Instruction: Combine the context and analysis into a cohesive summary. Be more analytical about what these trends mean for the overall leaderboard. Maintain an enthusiastic and slightly humorous tone. Ensure all team names are bolded using markdown.`;
         championAdminSummary = await generateAiSummary(adminChampPrompt);
     }
 
@@ -341,5 +338,5 @@ export async function recalculateLeaderboard(tournamentId: string) {
         currentTournamentStage: currentTournamentStage,
         lastUpdated: Timestamp.now(),
     });
-    logger.info(`Leaderboard for tournament ${tournamentId} successfully updated with smarter AI summaries.`);
+    logger.info(`Leaderboard for tournament ${tournamentId} successfully updated with AI summaries.`);
 }
