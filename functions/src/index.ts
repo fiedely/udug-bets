@@ -5,7 +5,7 @@ import { onDocumentUpdated, onDocumentWritten } from "firebase-functions/v2/fire
 
 // Import the modularized logic
 import { recalculateLeaderboard } from "./leaderboard";
-import { deleteTournamentAndData, getTournamentParticipants } from "./callable";
+import { deleteTournamentAndData, getTournamentParticipants, generateStagePredictions } from "./callable";
 import { Tournament, UserPredictions } from "./common";
 
 // --- INITIALIZATION ---
@@ -42,4 +42,4 @@ export const onPredictionWrite = onDocumentWritten("predictions/{predictionId}",
 
 // --- CALLABLE FUNCTIONS ---
 
-export { deleteTournamentAndData, getTournamentParticipants };
+export { deleteTournamentAndData, getTournamentParticipants, generateStagePredictions };

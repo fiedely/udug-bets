@@ -7,6 +7,82 @@ import { db, Tournament, UserProfile } from "./common";
 
 setGlobalOptions({ region: "asia-southeast2" });
 
+const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+/**
+ * NEW: Callable function to generate random predictions for a specific stage of a tournament.
+ */
+export const generateStagePredictions = onCall(async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+        throw new HttpsError("unauthenticated", "You must be logged in.");
+    }
+
+    const userDoc = await db.collection("users").doc(uid).get();
+    const userProfile = userDoc.data() as UserProfile | undefined;
+
+    if (userProfile?.role !== 'superadmin') {
+        throw new HttpsError("permission-denied", "You must be a superadmin to perform this action.");
+    }
+
+    const { tournamentId, stage } = request.data;
+    if (!tournamentId || !stage) {
+        throw new HttpsError("invalid-argument", "Missing 'tournamentId' or 'stage'.");
+    }
+
+    logger.info(`Superadmin ${uid} initiated prediction seeding for stage '${stage}' in tournament ${tournamentId}`);
+
+    try {
+        const tournamentRef = db.collection("tournaments").doc(tournamentId);
+        const tournamentSnap = await tournamentRef.get();
+        if (!tournamentSnap.exists) {
+            throw new HttpsError("not-found", "Tournament not found.");
+        }
+        const tournament = tournamentSnap.data() as Tournament;
+
+        const allMatches = [...(tournament.matches || []), ...(tournament.knockoutMatches || [])];
+        const stageMatches = allMatches.filter(m => m.stage === stage);
+
+        if (stageMatches.length === 0) {
+            return { success: false, message: `No matches found for stage '${stage}'.` };
+        }
+
+        const participants = tournament.participants || [];
+        if (participants.length === 0) {
+            return { success: false, message: "Tournament has no participants." };
+        }
+
+        const batch = db.batch();
+        const predictionsCollection = db.collection("predictions");
+
+        for (const userId of participants) {
+            const predictionRef = predictionsCollection.doc(`${tournamentId}_${userId}`);
+            const matchPredictionsUpdate: { [key: string]: any } = {};
+
+            stageMatches.forEach(match => {
+                const predictionPath = `matchPredictions.${match.id}`;
+                matchPredictionsUpdate[predictionPath] = {
+                    team1Score: getRandomInt(0, 4),
+                    team2Score: getRandomInt(0, 4),
+                };
+            });
+
+            batch.update(predictionRef, matchPredictionsUpdate);
+        }
+
+        await batch.commit();
+
+        const message = `Successfully generated predictions for ${stageMatches.length} matches in stage '${stage}' for ${participants.length} participants.`;
+        logger.info(message);
+        return { success: true, message };
+
+    } catch (error) {
+        logger.error("Error during stage prediction seeding:", error);
+        throw new HttpsError("internal", "An unexpected error occurred during seeding.");
+    }
+});
+
+
 export const deleteTournamentAndData = onCall(async (request) => {
     const uid = request.auth?.uid;
     if (!uid) {

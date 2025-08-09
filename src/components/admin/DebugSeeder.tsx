@@ -1,10 +1,11 @@
 // src/components/admin/DebugSeeder.tsx
 
-import { useState } from 'react';
-import { db } from '../../firebaseConfig';
+import { useState, useEffect } from 'react';
+import { db, functions } from '../../firebaseConfig';
+import { httpsCallable } from 'firebase/functions';
 import { collection, getDocs, query, where, writeBatch, doc } from 'firebase/firestore';
-import { faker } from '@faker-js/faker'; // Make sure @faker-js/faker is installed
-import type { Team, UserProfile, Match } from '../../types';
+import { faker } from '@faker-js/faker';
+import type { Team, UserProfile, Match, Tournament, MatchStage } from '../../types';
 
 const TOURNAMENT_NAME_PREFIX = "Seeded Test Showdown";
 const GROUPS = ['Group A', 'Group B', 'Group C', 'Group D', 'Group E', 'Group F', 'Group G', 'Group H', 'Group I', 'Group J', 'Group K', 'Group L', 'Group M', 'Group N', 'Group O', 'Group P'];
@@ -23,7 +24,6 @@ const getRoundRobinPairs = (teams: Team[]) => {
     return pairs;
 };
 
-// Function to create a single fake user, adapted from your seed.js
 const createFakeUser = () => {
   const name = faker.person.fullName();
   const email = faker.internet.email({ firstName: name.split(' ')[0], lastName: name.split(' ')[1] }).toLowerCase();
@@ -35,6 +35,8 @@ const createFakeUser = () => {
   };
 };
 
+// --- NEW: Initialize the callable function ---
+const generateStagePredictions = httpsCallable(functions, 'generateStagePredictions');
 
 const DebugSeeder = () => {
     // State for full tournament seeder
@@ -48,6 +50,25 @@ const DebugSeeder = () => {
     const [userSeedLog, setUserSeedLog] = useState<string[]>([]);
     const [numUsersToSeed, setNumUsersToSeed] = useState(50);
 
+    // --- NEW: State for stage prediction seeder ---
+    const [isSeedingStage, setIsSeedingStage] = useState(false);
+    const [stageSeedLog, setStageSeedLog] = useState<string[]>([]);
+    const [allTournaments, setAllTournaments] = useState<Tournament[]>([]);
+    const [selectedTournamentId, setSelectedTournamentId] = useState('');
+    const [selectedStage, setSelectedStage] = useState<MatchStage | ''>('');
+
+    // --- NEW: Fetch tournaments for the dropdown ---
+    useEffect(() => {
+        const fetchTournaments = async () => {
+            const tourneySnapshot = await getDocs(collection(db, 'tournaments'));
+            const tourneys = tourneySnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Tournament));
+            setAllTournaments(tourneys);
+            if (tourneys.length > 0) {
+                setSelectedTournamentId(tourneys[0].id);
+            }
+        };
+        fetchTournaments();
+    }, []);
 
     const addTournamentLog = (message: string) => {
         console.log(`[Tournament] ${message}`);
@@ -57,6 +78,12 @@ const DebugSeeder = () => {
     const addUserSeedLog = (message: string) => {
         console.log(`[User Seed] ${message}`);
         setUserSeedLog(prev => [...prev, message]);
+    };
+
+    // --- NEW: Logger for stage seeder ---
+    const addStageSeedLog = (message: string) => {
+        console.log(`[Stage Seed] ${message}`);
+        setStageSeedLog(prev => [...prev, message]);
     };
 
     const handleSeedTournament = async () => {
@@ -177,11 +204,84 @@ const DebugSeeder = () => {
         }
     };
 
+    // --- NEW: Handler for the new seeder button ---
+    const handleSeedStagePredictions = async () => {
+        if (!selectedTournamentId || !selectedStage) {
+            addStageSeedLog("❌ Error: Please select a tournament and a stage.");
+            return;
+        }
+        setIsSeedingStage(true);
+        setStageSeedLog([]);
+        addStageSeedLog(`Starting to generate predictions for stage: '${selectedStage}' in tournament: ${selectedTournamentId}`);
+
+        try {
+            const result: any = await generateStagePredictions({
+                tournamentId: selectedTournamentId,
+                stage: selectedStage
+            });
+            addStageSeedLog(`   -> ${result.data.message}`);
+            addStageSeedLog("--- ✅ Stage prediction seeding complete! ---");
+        } catch (error: any) {
+            addStageSeedLog(`--- ❌ An error occurred: ${error.message} ---`);
+        } finally {
+            setIsSeedingStage(false);
+        }
+    };
+
+    const availableStages = allTournaments.find(t => t.id === selectedTournamentId)?.knockoutMatches
+        ?.map(m => m.stage)
+        .filter((value, index, self) => self.indexOf(value) === index) || [];
+
+
     return (
         <div className="bg-slate-800 border border-slate-700 p-8 space-y-8">
             <div>
                 <h2 className="text-2xl font-bold text-blue-400">Debug & Seeding Panel</h2>
                 <p className="mt-2 text-slate-400 text-sm">Use these tools for testing purposes. (Visible to superadmins only)</p>
+            </div>
+
+            {/* --- NEW: Section for Stage Prediction Seeding --- */}
+            <div className="border-t border-slate-700 pt-6">
+                <h3 className="text-lg font-semibold text-white">Generate Stage Predictions</h3>
+                <p className="mt-1 text-slate-400 text-sm mb-4">
+                    Select a tournament and a specific stage to fill with random predictions for all participants.
+                </p>
+                <div className="flex items-end gap-4">
+                    <div>
+                        <label className="text-xs text-slate-400">Tournament</label>
+                        <select
+                            value={selectedTournamentId}
+                            onChange={e => setSelectedTournamentId(e.target.value)}
+                            className="w-64 px-2 py-1 bg-slate-900 border border-slate-600 text-white"
+                        >
+                            {allTournaments.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="text-xs text-slate-400">Stage</label>
+                        <select
+                            value={selectedStage}
+                            onChange={e => setSelectedStage(e.target.value as MatchStage)}
+                            className="w-48 px-2 py-1 bg-slate-900 border border-slate-600 text-white"
+                            disabled={!selectedTournamentId}
+                        >
+                            <option value="">-- Select Stage --</option>
+                            {availableStages.map(stage => <option key={stage} value={stage}>{stage}</option>)}
+                        </select>
+                    </div>
+                    <button
+                        onClick={handleSeedStagePredictions}
+                        disabled={isSeedingStage || !selectedTournamentId || !selectedStage}
+                        className="px-4 py-2 bg-orange-600 hover:bg-orange-500 font-semibold text-white disabled:bg-orange-800 disabled:cursor-not-allowed"
+                    >
+                        {isSeedingStage ? 'Generating...' : 'Generate Predictions'}
+                    </button>
+                </div>
+                {stageSeedLog.length > 0 && (
+                    <div className="mt-4 p-4 bg-slate-900 text-xs text-slate-300 font-mono h-48 overflow-y-auto">
+                        {stageSeedLog.map((line, index) => <p key={index}>{line}</p>)}
+                    </div>
+                )}
             </div>
 
             <div className="border-t border-slate-700 pt-6">
