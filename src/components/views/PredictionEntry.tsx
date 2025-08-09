@@ -190,7 +190,7 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
                         >
                             <option value="">-- Select a Champion --</option>
                             {tournament.teams?.sort((a,b) => a.name.localeCompare(b.name)).map(team => (
-                                <option key={team.code} value={team.code}>{team.name}</option>
+                                <option key={team.code} value={team.code}>{team.flag} {team.name}</option>
                             ))}
                         </select>
                         {predictions.championPrediction && <span className="text-2xl ml-3">🏆</span>}

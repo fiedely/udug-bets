@@ -77,6 +77,7 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
             isEliminated: eliminatedCodes.has(teamCode),
         }));
 
+        // Corrected sort function
         formattedPicks.sort((a, b) => b.count - a.count || a.team.name.localeCompare(b.team.name));
         
         setPicks(formattedPicks);

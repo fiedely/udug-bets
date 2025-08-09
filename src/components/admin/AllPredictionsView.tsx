@@ -8,7 +8,7 @@ import type { Tournament, UserProfile, UserPredictions, Match, Team, PointRule, 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { CellDef, UserOptions } from 'jspdf-autotable';
-import Flag from '../../components/common/Flag';
+import Flag from '../common/Flag';
 
 interface AllPredictionsViewProps {
     tournament: Tournament;

@@ -3,6 +3,7 @@
 import type { Tournament, Match, MatchStage } from '../../types';
 import { useMemo, useState, useEffect } from 'react';
 import { marked } from 'marked';
+import Flag from '../common/Flag';
 
 interface TournamentDetailsProps {
     tournament: Tournament;
@@ -61,7 +62,7 @@ const MatchList = ({ title, matches, groupByStage = false }: { title: string, ma
                                     {(groupedMatches[stageKey] as Record<string, Match[]>)[dateKey].map(match => (
                                         <div key={match.id} className="flex justify-between items-center p-1.5 hover:bg-slate-700/50">
                                             <span className="flex items-center gap-2">
-                                                {match.team1.flag} {match.team1.name} <span className="text-slate-500">vs</span> {match.team2.flag} {match.team2.name}
+                                                <Flag code={match.team1.code} /> {match.team1.name} <span className="text-slate-500">vs</span> <Flag code={match.team2.code} /> {match.team2.name}
                                             </span>
                                             <span className="text-xs text-slate-400 text-right">{new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}<br/>@ {match.stadium.name}</span>
                                         </div>
@@ -77,7 +78,7 @@ const MatchList = ({ title, matches, groupByStage = false }: { title: string, ma
                             {(groupedMatches[dateKey] as Match[]).map(match => (
                                  <div key={match.id} className="flex justify-between items-center p-1.5 hover:bg-slate-700/50">
                                     <span className="flex items-center gap-2">
-                                        {match.team1.flag} {match.team1.name} <span className="text-slate-500">vs</span> {match.team2.flag} {match.team2.name}
+                                        <Flag code={match.team1.code} /> {match.team1.name} <span className="text-slate-500">vs</span> <Flag code={match.team2.code} /> {match.team2.name}
                                     </span>
                                     <span className="text-xs text-slate-400 text-right">{new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}<br/>@ {match.stadium.name}</span>
                                 </div>
@@ -89,6 +90,7 @@ const MatchList = ({ title, matches, groupByStage = false }: { title: string, ma
         </div>
     );
 };
+
 
 const TournamentDetails = ({ tournament, onBack }: TournamentDetailsProps) => {
     const [renderedDescription, setRenderedDescription] = useState('');

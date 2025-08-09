@@ -141,7 +141,7 @@ const Step4Knockout = ({ tournament, onNext, onBack, setIsDirty }: Step4Knockout
 
     const SelectOption = ({ team }: { team: Team }) => (
         <option value={team.code}>
-            {team.name}
+            {team.flag} {team.name}
         </option>
     );
 

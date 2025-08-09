@@ -154,8 +154,7 @@ const Step3Matches = ({ tournament, onNext, onBack, setIsDirty }: Step3MatchesPr
                                     >
                                         {allTeams.map((t: Team) => (
                                             <option key={t.code} value={t.code}>
-                                                {/* Use team name for select option text */}
-                                                {t.name}
+                                                {t.flag} {t.name}
                                             </option>
                                         ))}
                                     </select>
@@ -167,7 +166,7 @@ const Step3Matches = ({ tournament, onNext, onBack, setIsDirty }: Step3MatchesPr
                                     >
                                         {allTeams.map((t: Team) => (
                                             <option key={t.code} value={t.code}>
-                                                {t.name}
+                                                {t.flag} {t.name}
                                             </option>
                                         ))}
                                     </select>
