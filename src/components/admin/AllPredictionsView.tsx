@@ -23,7 +23,7 @@ interface EnrichedMatch extends Match {
     }[];
 }
 
-const PredictionCell = ({ actual, prediction }: { actual?: number, prediction?: number }) => {
+const PredictionCell = ({ actual, prediction }: { actual?: number | null, prediction?: number }) => {
     if (typeof prediction !== 'number' || prediction < 0) {
         return <span className="text-slate-500">-</span>;
     }

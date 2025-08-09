@@ -56,24 +56,21 @@ export interface PointRules {
     championBonus?: number;
 }
 
-export interface Stadium {
-    name: string;
-    city: string;
-}
-
 export type MatchStage = "Group Stage" | "Round of 32" | "Round of 16" | "Quarter-final" | "Semi-final" | "Third Place Match" | "Final";
+export type KnockoutStartStage = 'Final' | 'Semi-final' | 'Quarter-final' | 'Round of 16' | 'Round of 32';
 
 export interface Match {
     id: string;
-    stage: MatchStage; 
-    group: string; 
+    stage: MatchStage;
+    group?: string;
     matchNumber: number;
     team1: Team;
     team2: Team;
-    date: string; 
+    team1Score?: number | null;
+    team2Score?: number | null;
+    date: string;
     stadium: Stadium;
-    team1Score?: number;
-    team2Score?: number;
+    winnerTeamCode?: string; // This team won after a draw (e.g., penalties)
 }
 
 export interface PredictionStatus {
@@ -85,8 +82,6 @@ export interface PredictionStatus {
     allowSemiFinal: boolean;
     allowFinals: boolean;
 }
-
-export type KnockoutStartStage = 'Final' | 'Semi-final' | 'Quarter-final' | 'Round of 16' | 'Round of 32';
 
 export interface Tournament {
     id: string;
@@ -125,8 +120,8 @@ export interface Leaderboard {
     entries: LeaderboardEntry[];
     lastUpdated: Date;
     tournamentAiSummary?: string;
-    championUserSummary?: string;   // For regular users
-    championAdminSummary?: string;  // For admins
+    championUserSummary?: string;
+    championAdminSummary?: string;
     eliminatedTeamCodes?: string[];
     currentTournamentStage?: MatchStage | "Not Started" | "Completed";
 }

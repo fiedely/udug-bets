@@ -111,8 +111,17 @@ export async function recalculateLeaderboard(tournamentId: string) {
                 if (match.team2.code.substring(0, 3) !== 'TBD') teamsInKnockout.add(match.team2.code);
 
                 if (typeof match.team1Score === 'number' && typeof match.team2Score === 'number') {
-                    if (match.team1Score > match.team2Score) eliminatedTeamCodes.add(match.team2.code);
-                    else if (match.team2Score > match.team1Score) eliminatedTeamCodes.add(match.team1.code);
+                    if (match.team1Score > match.team2Score) {
+                        eliminatedTeamCodes.add(match.team2.code);
+                    } else if (match.team2Score > match.team1Score) {
+                        eliminatedTeamCodes.add(match.team1.code);
+                    } else { // It's a draw, so check for the declared winner
+                        if (match.winnerTeamCode === match.team1.code) {
+                            eliminatedTeamCodes.add(match.team2.code);
+                        } else if (match.winnerTeamCode === match.team2.code) {
+                            eliminatedTeamCodes.add(match.team1.code);
+                        }
+                    }
                 }
             });
         }

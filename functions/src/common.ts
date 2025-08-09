@@ -23,7 +23,16 @@ export interface Team { name: string; flag: string; code: string; }
 export interface PointRule { correctScore: number; correctOutcome: number; }
 export interface PointRules { groupStage: PointRule; round32?: PointRule; round16?: PointRule; quarterFinal?: PointRule; semiFinal?: PointRule; thirdPlaceMatch?: PointRule; final?: PointRule; championBonus?: number; }
 export type MatchStage = "Group Stage" | "Round of 32" | "Round of 16" | "Quarter-final" | "Semi-final" | "Third Place Match" | "Final";
-export interface Match { id: string; stage: MatchStage; team1: Team; team2: Team; team1Score?: number; team2Score?: number; date: string; }
+export interface Match { 
+    id: string; 
+    stage: MatchStage; 
+    team1: Team; 
+    team2: Team; 
+    team1Score?: number; 
+    team2Score?: number; 
+    date: string; 
+    winnerTeamCode?: string;
+}
 export interface Tournament { id: string; name: string; pointRules?: PointRules; matches?: Match[]; knockoutMatches?: Match[]; participants?: string[]; champion?: string; teams?: Team[]; knockoutStartStage?: MatchStage; }
 export interface MatchPrediction { team1Score: number; team2Score: number; }
 export interface UserPredictions { tournamentId: string; userId: string; championPrediction?: string; matchPredictions: Record<string, MatchPrediction>; }
@@ -33,8 +42,8 @@ export interface Leaderboard {
     entries: LeaderboardEntry[];
     lastUpdated: Date;
     tournamentAiSummary?: string;
-    championUserSummary?: string;   // For regular users
-    championAdminSummary?: string;  // For admins
+    championUserSummary?: string;
+    championAdminSummary?: string;
     eliminatedTeamCodes?: string[];
     currentTournamentStage?: MatchStage | "Not Started" | "Completed";
 }

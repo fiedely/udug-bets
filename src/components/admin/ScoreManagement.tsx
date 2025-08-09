@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect } from 'react';
 import { db } from '../../firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
 import type { Tournament, Match, Team, MatchStage } from '../../types';
-import Flag from '../common/Flag';
 
 interface ScoreManagementProps {
     tournament: Tournament;
@@ -59,6 +58,12 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
         setIsDirty(true);
         const selectedTeam = selectableTeams.find(t => t.code === teamCode) || placeholderTeam;
         setKnockoutMatches(prev => prev.map(m => m.id === matchId ? { ...m, [teamNum]: selectedTeam } : m));
+    };
+    
+    const handleWinnerChange = (matchId: string, isKnockout: boolean, winnerCode: string) => {
+        setIsDirty(true);
+        const updater = isKnockout ? setKnockoutMatches : setMatches;
+        updater(prev => prev.map(m => m.id === matchId ? { ...m, winnerTeamCode: winnerCode } : m));
     };
 
     const handleChampionChange = (teamCode: string) => {
@@ -127,7 +132,7 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
     
     const SelectOption = ({ team }: { team: Team }) => (
         <option value={team.code}>
-            {team.name}
+            {team.flag} {team.name}
         </option>
     );
 
@@ -149,7 +154,7 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
                     <select id="champion-select" value={champion} onChange={e => handleChampionChange(e.target.value)} className="w-full md:w-1/2 px-4 py-2 bg-slate-800 border border-slate-600 text-slate-100">
                         <option value="">-- Select a Champion --</option>
                         {allTeams.map(team => (
-                            <option key={team.code} value={team.code}>{team.name}</option>
+                            <option key={team.code} value={team.code}>{team.flag} {team.name}</option>
                         ))}
                     </select>
                 </div>
@@ -168,6 +173,7 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
                                         <div className="space-y-2 pl-4 border-l-2 border-slate-700">
                                             {matchesByStageAndDate[stage as MatchStage][date].map(match => {
                                                 const isKnockout = match.stage !== 'Group Stage';
+                                                const isDraw = typeof match.team1Score === 'number' && match.team1Score === match.team2Score;
                                                 let team1Outcome: 'WIN' | 'LOSE' | 'DRAW' | null = null;
                                                 let team2Outcome: 'WIN' | 'LOSE' | 'DRAW' | null = null;
                                                 if (match.team1Score !== undefined && match.team1Score !== null && match.team2Score !== undefined && match.team2Score !== null) {
@@ -181,13 +187,9 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
                                                         <div className="grid grid-cols-12 gap-2 items-center text-sm">
                                                             <div className="col-span-5 flex items-center justify-end gap-2">
                                                                 <OutcomeBadge outcome={team1Outcome} />
-                                                                {isKnockout ? (
-                                                                    <select value={match.team1.code} onChange={e => handleTeamChange(match.id, 'team1', e.target.value)} className="w-full bg-slate-800 border border-slate-600 text-white p-1 text-xs">
-                                                                        {selectableTeams.map(t => <SelectOption key={`t1-${match.id}-${t.code}`} team={t} />)}
-                                                                    </select>
-                                                                ) : (
-                                                                    <span className="text-white text-right flex items-center gap-2">{match.team1.name} <Flag code={match.team1.code} /></span>
-                                                                )}
+                                                                <select value={match.team1.code} onChange={e => handleTeamChange(match.id, 'team1', e.target.value)} disabled={!isKnockout} className="w-full bg-slate-800 border border-slate-600 text-white p-1 text-xs disabled:opacity-70 disabled:cursor-not-allowed">
+                                                                    {isKnockout ? selectableTeams.map(t => <SelectOption key={`t1-${match.id}-${t.code}`} team={t} />) : <SelectOption team={match.team1} />}
+                                                                </select>
                                                             </div>
                                                             <div className="col-span-2 flex items-center justify-center gap-1">
                                                                 <input type="number" min="0" value={match.team1Score ?? ''} onChange={e => handleScoreChange(match.id, isKnockout, 'team1Score', e.target.value)} className="w-10 text-center bg-slate-800 border border-slate-600 text-white font-bold" />
@@ -195,13 +197,9 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
                                                                 <input type="number" min="0" value={match.team2Score ?? ''} onChange={e => handleScoreChange(match.id, isKnockout, 'team2Score', e.target.value)} className="w-10 text-center bg-slate-800 border border-slate-600 text-white font-bold" />
                                                             </div>
                                                             <div className="col-span-5 flex items-center gap-2">
-                                                                {isKnockout ? (
-                                                                    <select value={match.team2.code} onChange={e => handleTeamChange(match.id, 'team2', e.target.value)} className="w-full bg-slate-800 border border-slate-600 text-white p-1 text-xs">
-                                                                        {selectableTeams.map(t => <SelectOption key={`t2-${match.id}-${t.code}`} team={t} />)}
-                                                                    </select>
-                                                                ) : (
-                                                                    <span className="text-white flex items-center gap-2"><Flag code={match.team2.code} /> {match.team2.name}</span>
-                                                                )}
+                                                                <select value={match.team2.code} onChange={e => handleTeamChange(match.id, 'team2', e.target.value)} disabled={!isKnockout} className="w-full bg-slate-800 border border-slate-600 text-white p-1 text-xs disabled:opacity-70 disabled:cursor-not-allowed">
+                                                                     {isKnockout ? selectableTeams.map(t => <SelectOption key={`t2-${match.id}-${t.code}`} team={t} />) : <SelectOption team={match.team2} />}
+                                                                </select>
                                                                 <OutcomeBadge outcome={team2Outcome} />
                                                             </div>
                                                         </div>
@@ -212,6 +210,33 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
                                                             <span className="text-slate-600">•</span>
                                                             <span>Match #{match.matchNumber}</span>
                                                         </div>
+                                                        {isKnockout && isDraw && (
+                                                            <div className="pt-2 mt-2 border-t border-slate-700 text-center">
+                                                                <span className="text-xs font-bold text-yellow-400">TIE-BREAKER: DECLARE WINNER</span>
+                                                                <div className="flex justify-center gap-4 mt-1 text-sm">
+                                                                    <label className="flex items-center gap-2 cursor-pointer text-slate-300">
+                                                                        <input
+                                                                            type="radio"
+                                                                            name={`winner-${match.id}`}
+                                                                            checked={match.winnerTeamCode === match.team1.code}
+                                                                            onChange={() => handleWinnerChange(match.id, isKnockout, match.team1.code)}
+                                                                            className="appearance-none h-4 w-4 bg-slate-800 border border-slate-500 checked:bg-blue-600 checked:border-blue-500"
+                                                                        />
+                                                                        {match.team1.name} won
+                                                                    </label>
+                                                                    <label className="flex items-center gap-2 cursor-pointer text-slate-300">
+                                                                        <input
+                                                                            type="radio"
+                                                                            name={`winner-${match.id}`}
+                                                                            checked={match.winnerTeamCode === match.team2.code}
+                                                                            onChange={() => handleWinnerChange(match.id, isKnockout, match.team2.code)}
+                                                                            className="appearance-none h-4 w-4 bg-slate-800 border border-slate-500 checked:bg-blue-600 checked:border-blue-500"
+                                                                        />
+                                                                        {match.team2.name} won
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 );
                                             })}
