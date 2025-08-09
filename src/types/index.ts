@@ -35,6 +35,11 @@ export interface Team {
   code: string;
 }
 
+export interface Stadium {
+    name: string;
+    city: string;
+}
+
 export interface PointRule {
   correctScore: number;
   correctOutcome: number;
