@@ -29,22 +29,6 @@ export interface UserProfile {
   role: 'user' | 'admin' | 'superadmin';
 }
 
-export interface Leaderboard {
-    entries: LeaderboardEntry[];
-    lastUpdated: Date;
-    tournamentAiSummary?: string;
-}
-
-export interface LeaderboardEntry {
-    userId: string;
-    userName: string;
-    totalPoints: number;
-    rank: number;
-    previousRank?: number | null;
-    rankChange: "up" | "down" | "same";
-    aiSummary?: string;
-}
-
 export interface Team {
   name: string;
   flag: string;
@@ -72,7 +56,7 @@ export interface Stadium {
     city: string;
 }
 
-export type MatchStage = 'Group Stage' | 'Round of 32' | 'Round of 16' | 'Quarter-final' | 'Semi-final' | 'Third Place Match' | 'Final';
+export type MatchStage = "Group Stage" | "Round of 32" | "Round of 16" | "Quarter-final" | "Semi-final" | "Third Place Match" | "Final";
 
 export interface Match {
     id: string;
@@ -115,7 +99,7 @@ export interface Tournament {
     knockoutMatches?: Match[];
     participants?: string[];
     predictionStatus?: PredictionStatus; 
-    knockoutStartStage?: KnockoutStartStage; 
+    knockoutStartStage?: KnockoutStartStage;
     hasThirdPlaceMatch?: boolean;
     champion?: string;
 }
@@ -136,7 +120,8 @@ export interface Leaderboard {
     entries: LeaderboardEntry[];
     lastUpdated: Date;
     tournamentAiSummary?: string;
-    championAiSummary?: string;
+    championUserSummary?: string;   // For regular users
+    championAdminSummary?: string;  // For admins
     eliminatedTeamCodes?: string[];
     currentTournamentStage?: MatchStage | "Not Started" | "Completed";
 }

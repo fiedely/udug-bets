@@ -22,7 +22,7 @@ const JoinTournament = ({ userProfile, setView }: JoinTournamentProps) => {
             <div className="bg-slate-800 border border-slate-700 p-8 max-w-lg mx-auto text-center">
                 <h2 className="text-xl font-bold text-blue-400 mb-4">Admins Cannot Join Tournaments</h2>
                 <p className="text-slate-300 mb-6">
-                    But don't be sad, here is a picture of Cramorant to cheer you up!
+                    This page is for participants. But don't be sad, here is a picture of Cramoly the Cramorant to cheer you up!
                 </p>
                 {/* 2. Use the imported image variable */}
                 <img 

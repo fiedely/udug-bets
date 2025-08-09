@@ -29,12 +29,12 @@ export interface MatchPrediction { team1Score: number; team2Score: number; }
 export interface UserPredictions { tournamentId: string; userId: string; championPrediction?: string; matchPredictions: Record<string, MatchPrediction>; }
 export interface UserProfile { uid: string; name: string; email: string; role: 'user' | 'admin' | 'superadmin'; }
 
-// Properties to the Leaderboard interface
 export interface Leaderboard {
     entries: LeaderboardEntry[];
     lastUpdated: Date;
     tournamentAiSummary?: string;
-    championAiSummary?: string;
+    championUserSummary?: string;   // For regular users
+    championAdminSummary?: string;  // For admins
     eliminatedTeamCodes?: string[];
     currentTournamentStage?: MatchStage | "Not Started" | "Completed";
 }
