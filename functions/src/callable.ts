@@ -1,8 +1,11 @@
 // functions/src/callable.ts
 
 import * as logger from "firebase-functions/logger";
+import { setGlobalOptions } from "firebase-functions/v2";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { db, Tournament, UserProfile } from "./common";
+
+setGlobalOptions({ region: "asia-southeast2" });
 
 export const deleteTournamentAndData = onCall(async (request) => {
     const uid = request.auth?.uid;
