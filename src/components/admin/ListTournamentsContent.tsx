@@ -1,14 +1,12 @@
 // src/components/admin/ListTournamentsContent.tsx
 
 import { useState, useEffect, useRef } from 'react';
-// Import Firebase Functions SDK and the new callable function
 import { db, functions } from '../../firebaseConfig';
 import { httpsCallable } from 'firebase/functions';
 import { collection, getDocs, doc, updateDoc, Timestamp } from 'firebase/firestore';
 import type { Tournament, UserProfile, PredictionStatus } from '../../types';
 import InviteModal from './InviteModal';
 
-// Initialize the callable function for deletion
 const deleteTournamentAndData = httpsCallable(functions, 'deleteTournamentAndData');
 
 const formatDate = (date?: Date) => {
@@ -33,7 +31,7 @@ const ListTournamentsContent = ({ onEditTournament, onManageTournament, onViewLe
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [deletingTournament, setDeletingTournament] = useState<Tournament | null>(null);
-    const [isDeleting, setIsDeleting] = useState(false); // State for deletion loading feedback
+    const [isDeleting, setIsDeleting] = useState(false);
     const [invitingTournament, setInvitingTournament] = useState<Tournament | null>(null);
     const [managingPredictionsFor, setManagingPredictionsFor] = useState<string | null>(null);
     const predictionMenuRef = useRef<HTMLDivElement>(null);
@@ -68,25 +66,18 @@ const ListTournamentsContent = ({ onEditTournament, onManageTournament, onViewLe
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    /**
-     * Handles the deletion of a tournament by calling the secure Cloud Function.
-     */
     const handleDelete = async (tournamentId: string) => {
         if (!tournamentId) return;
         setIsDeleting(true);
         try {
-            // Call the Cloud Function with the tournamentId
             const result = await deleteTournamentAndData({ tournamentId });
-            console.log("Cloud Function response:", result.data); // Log success message
-
-            // Update UI by removing the deleted tournament from the list
+            console.log("Cloud Function response:", result.data);
             setTournaments(tournaments.filter(t => t.id !== tournamentId));
         } catch (error) {
             console.error("Error deleting tournament via Cloud Function: ", error);
-            // Optionally, show an error toast/modal to the admin here
         } finally {
-            setDeletingTournament(null); // Close the confirmation modal
-            setIsDeleting(false); // Reset loading state
+            setDeletingTournament(null);
+            setIsDeleting(false);
         }
     };
 
@@ -142,30 +133,34 @@ const ListTournamentsContent = ({ onEditTournament, onManageTournament, onViewLe
                                 <p><strong>Period:</strong> {formatDate(t.startDate)} - {formatDate(t.endDate)}</p>
                                 <p><strong>Participants:</strong> {t.participants?.length || 0} users</p>
                             </div>
-                            <div className="flex flex-wrap justify-between items-center gap-4">
-                                <div className="relative">
-                                    <button onClick={() => setManagingPredictionsFor(managingPredictionsFor === t.id ? null : t.id)} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm" disabled={!isAdmin || t.status === 'draft'}>
-                                        Manage Predictions
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="col-span-1 flex flex-col gap-2">
+                                    <button onClick={() => onManageTournament(t)} className="w-full px-3 py-2 bg-purple-600 hover:bg-purple-500 font-semibold text-white text-sm disabled:bg-slate-700 disabled:cursor-not-allowed" disabled={t.status === 'draft'}>
+                                        Manage Scores
                                     </button>
-                                    {managingPredictionsFor === t.id && (
-                                        <div ref={predictionMenuRef} className="absolute bottom-full mb-2 w-64 bg-slate-700 border border-slate-600 shadow-lg p-2 z-10">
-                                            <PredictionToggle t={t} stage="allowChampion" label="Champion" />
-                                            <PredictionToggle t={t} stage="allowGroupStage" label="Group Stage" />
-                                            <PredictionToggle t={t} stage="allowRoundOf32" label="Round of 32" />
-                                            <PredictionToggle t={t} stage="allowRoundOf16" label="Round of 16" />
-                                            <PredictionToggle t={t} stage="allowQuarterFinal" label="Quarter-finals" />
-                                            <PredictionToggle t={t} stage="allowSemiFinal" label="Semi-finals" />
-                                            <PredictionToggle t={t} stage="allowFinals" label="Finals" />
-                                        </div>
-                                    )}
+                                    <div className="relative">
+                                        <button onClick={() => setManagingPredictionsFor(managingPredictionsFor === t.id ? null : t.id)} className="w-full px-3 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm disabled:bg-slate-700 disabled:cursor-not-allowed" disabled={!isAdmin || t.status === 'draft'}>
+                                            Manage Predictions
+                                        </button>
+                                        {managingPredictionsFor === t.id && (
+                                            <div ref={predictionMenuRef} className="absolute bottom-full mb-2 w-full bg-slate-700 border border-slate-600 shadow-lg p-2 z-10">
+                                                <PredictionToggle t={t} stage="allowChampion" label="Champion" />
+                                                <PredictionToggle t={t} stage="allowGroupStage" label="Group Stage" />
+                                                <PredictionToggle t={t} stage="allowRoundOf32" label="Round of 32" />
+                                                <PredictionToggle t={t} stage="allowRoundOf16" label="Round of 16" />
+                                                <PredictionToggle t={t} stage="allowQuarterFinal" label="Quarter-finals" />
+                                                <PredictionToggle t={t} stage="allowSemiFinal" label="Semi-finals" />
+                                                <PredictionToggle t={t} stage="allowFinals" label="Finals" />
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="flex flex-wrap gap-2">
-                                    <button onClick={() => onViewLeaderboard(t)} className="px-3 py-2 bg-cyan-600 hover:bg-cyan-500 font-semibold text-white text-xs" disabled={t.status === 'draft'}>Leaderboard</button>
-                                    <button onClick={() => onViewAllPredictions(t)} className="px-3 py-2 bg-gray-500 hover:bg-gray-400 font-semibold text-white text-xs" disabled={t.status === 'draft'}>All Predictions</button>
+                                <div className="col-span-1 grid grid-cols-2 grid-rows-2 gap-2">
+                                    <button onClick={() => onViewLeaderboard(t)} className="px-3 py-2 bg-cyan-600 hover:bg-cyan-500 font-semibold text-white text-xs disabled:bg-slate-700 disabled:cursor-not-allowed" disabled={t.status === 'draft'}>Leaderboard</button>
+                                    <button onClick={() => onViewAllPredictions(t)} className="px-3 py-2 bg-gray-500 hover:bg-gray-400 font-semibold text-white text-xs disabled:bg-slate-700 disabled:cursor-not-allowed" disabled={t.status === 'draft'}>Predictions</button>
                                     <button onClick={() => setInvitingTournament(t)} className="px-3 py-2 bg-green-600 hover:bg-green-500 font-semibold text-white text-xs">Invite</button>
-                                    <button onClick={() => onManageTournament(t)} className="px-3 py-2 bg-purple-600 hover:bg-purple-500 font-semibold text-white text-xs" disabled={t.status === 'draft'}>Manage Scores</button>
                                     <button onClick={() => onEditTournament(t.id)} className="px-3 py-2 bg-blue-600 hover:bg-blue-500 font-semibold text-white text-xs">Edit</button>
-                                    <button onClick={() => setDeletingTournament(t)} className="px-3 py-2 bg-red-600 hover:bg-red-500 font-semibold text-white text-xs">Delete</button>
+                                    <button onClick={() => setDeletingTournament(t)} className="col-span-2 px-3 py-2 bg-red-600 hover:bg-red-500 font-semibold text-white text-xs">Delete</button>
                                 </div>
                             </div>
                         </div>

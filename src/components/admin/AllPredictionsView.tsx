@@ -7,7 +7,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import type { Tournament, UserProfile, UserPredictions, Match, Team, PointRule, PointRules, MatchStage } from '../../types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import type { CellDef } from 'jspdf-autotable';
+import type { CellDef, UserOptions } from 'jspdf-autotable';
 import Flag from '../../components/common/Flag';
 
 interface AllPredictionsViewProps {
@@ -132,24 +132,20 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
     const handleExportPDF = () => {
         if (!participants.length || !enrichedMatches.length) return;
         setIsGeneratingPdf(true);
-
+    
         const doc = new jsPDF({ orientation: 'landscape' });
-
-        // --- PDF GENERATION LOGIC ---
-
-        // 1. Define Header and Sub-header Rows
+    
         const mainHeaderRow: CellDef[] = [
             { content: 'Match', rowSpan: 2, styles: { valign: 'middle', halign: 'center' } }
         ];
         const subHeaderRow: CellDef[] = [];
-
+    
         participants.forEach(p => {
             mainHeaderRow.push({ content: p.name, colSpan: 2, styles: { halign: 'center' } });
             subHeaderRow.push({ content: 'Pred.' });
             subHeaderRow.push({ content: 'Pts' });
         });
         
-        // 2. Build Body Rows from data
         const body = enrichedMatches.map(match => {
             const matchCell = `${match.team1.name} vs ${match.team2.name}\nActual: ${typeof match.team1Score === 'number' ? `${match.team1Score}-${match.team2Score}` : 'N/A'}`;
             const participantCells = participants.flatMap(p => {
@@ -160,8 +156,7 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
             });
             return [matchCell, ...participantCells];
         });
-
-        // 3. Build Champion Row
+    
         const championRow = [
             `Champion\nActual: ${tournament.champion ? tournament.teams?.find(t => t.code === tournament.champion)?.name : 'TBD'}`,
             ...participants.flatMap(p => {
@@ -172,16 +167,25 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
             })
         ];
         body.push(championRow);
-
-        // 4. Add the title ONCE before generating the table
+    
         const generationDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         const title = `${tournament.name} - ${generationDate}`;
         doc.setFontSize(10);
         doc.setTextColor(0, 0, 0);
         doc.text(title, 14, 20);
+    
+        let fontSize = 7;
+        let cellPadding = 1.5;
 
-        // 5. Generate the Table with a clean, black & white theme and optimized styles
-        autoTable(doc, {
+        if (participants.length > 12) {
+            fontSize = 6;
+            cellPadding = 1;
+        } else if (participants.length > 8) {
+            fontSize = 7;
+            cellPadding = 1.2;
+        }
+
+        const tableOptions: UserOptions = {
             head: [mainHeaderRow, subHeaderRow],
             body: body,
             startY: 25,
@@ -191,20 +195,29 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                 textColor: [0, 0, 0],
                 fontStyle: 'bold',
                 halign: 'center',
+                fontSize: fontSize,
             },
             styles: {
                 textColor: [0, 0, 0],
                 lineColor: [200, 200, 200],
-                lineWidth: 0.5,
-                cellPadding: 2,
-                fontSize: 6,
+                lineWidth: 0.1,
+                cellPadding: cellPadding,
                 overflow: 'linebreak',
+                fontSize: fontSize,
             },
             alternateRowStyles: {
                 fillColor: [245, 245, 245]
             },
-        });
+            columnStyles: {
+                0: {
+                    minCellWidth: 35,
+                    fontStyle: 'bold',
+                }
+            }
+        };
 
+        autoTable(doc, tableOptions);
+    
         doc.save(`${tournament.name.replace(/ /g, '_')}_predictions.pdf`);
         setIsGeneratingPdf(false);
     };

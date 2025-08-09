@@ -131,8 +131,8 @@ const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexCh
                 </div>
             </div>
 
-            <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden">
-                <div className="flex flex-col">
+            <div className="flex-grow flex flex-col md:flex-row gap-4 overflow-hidden">
+                <div className="flex-1 flex flex-col min-w-0">
                     <h5 className="text-center font-bold text-slate-400 mb-1">Predicted Outcome</h5>
                     <div className="flex-grow">
                          <ResponsiveContainer width="100%" height="100%">
@@ -145,7 +145,7 @@ const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexCh
                         </ResponsiveContainer>
                     </div>
                 </div>
-                <div className="flex flex-col">
+                <div className="flex-1 flex flex-col min-w-0">
                      <h5 className="text-center font-bold text-slate-400 mb-1">Exact Score Guesses</h5>
                     <div className="flex-grow">
                         <ResponsiveContainer width="100%" height="100%">

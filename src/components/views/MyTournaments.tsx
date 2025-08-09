@@ -6,7 +6,7 @@ import { collection, query, where, getDocs, Timestamp, doc, getDoc } from 'fireb
 import type { Tournament, UserProfile, UserPredictions, MatchStage } from '../../types';
 import TournamentDetails from './TournamentDetails';
 import AllPredictionsView from '../admin/AllPredictionsView';
-import cramorantImage from '../../assets/delz-cramorant.png'; // 1. Import the image
+import cramorantImage from '../../assets/delz-cramorant.png';
 
 interface MyTournamentsProps {
     userProfile: UserProfile | null;
@@ -78,7 +78,6 @@ const MyTournaments = ({ userProfile, onEnterPredictions }: MyTournamentsProps) 
                 <p className="text-slate-300 mb-6">
                     This page is for participants. But don't be sad, here is a picture of Cramoly the Cramorant to cheer you up!
                 </p>
-                {/* 2. Use the imported image variable */}
                 <img 
                     src={cramorantImage} 
                     alt="A cheerful Cramorant" 

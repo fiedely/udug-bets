@@ -4,20 +4,16 @@
 interface AiSummaryProps {
     title: string;
     text: string;
-    colorClass: string; // e.g., 'border-blue-500 text-blue-400'
-    userName?: string; // <-- FIX: Added optional userName prop
+    colorClass: string; 
+    userName?: string;
 }
 
 const AiSummary = ({ title, text, colorClass }: AiSummaryProps) => {
-    // This function correctly finds all instances of markdown bolding (**)
-    // and replaces them with <strong> tags.
     const renderTextWithMarkdown = () => {
-        // Split by the markdown bold syntax
         const parts = text.split(/(\*\*.*?\*\*)/g);
         return parts.map((part, index) => {
             if (part.startsWith('**') && part.endsWith('**')) {
                 const content = part.slice(2, -2);
-                // The 'key' is crucial for React to render lists correctly
                 return <strong key={index} className="font-bold text-white">{content}</strong>;
             }
             return part;

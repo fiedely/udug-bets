@@ -43,7 +43,6 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
         const participants = tournament.participants || [];
         const eliminatedCodes = new Set(leaderboardData?.eliminatedTeamCodes || []);
         
-        // Check user role and get the correct AI summary
         const isAdmin = userProfile.role === 'admin' || userProfile.role === 'superadmin';
         setAiSummary(isAdmin ? leaderboardData?.championAdminSummary || null : leaderboardData?.championUserSummary || null);
 

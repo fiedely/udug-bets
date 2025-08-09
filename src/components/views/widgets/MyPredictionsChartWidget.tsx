@@ -156,7 +156,7 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
                     <h5 className="font-bold text-slate-400 mb-1">Outcome Accuracy</h5>
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                            <Pie data={chartData.outcomeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={50} label={(entry) => entry.value}>
+                            <Pie data={chartData.outcomeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={(entry) => entry.value}>
                                 {chartData.outcomeData.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[entry.name.toLowerCase().replace(' ', '') as keyof typeof COLORS]} />
                                 ))}
@@ -171,7 +171,7 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
                     <h5 className="font-bold text-slate-400 mb-1">Score Accuracy</h5>
                     <ResponsiveContainer width="100%" height="100%">
                          <PieChart>
-                            <Pie data={chartData.scoreData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={50} label={(entry) => entry.value}>
+                            <Pie data={chartData.scoreData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={(entry) => entry.value}>
                                 {chartData.scoreData.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[entry.name.toLowerCase().replace(' ', '') as keyof typeof COLORS]} />
                                 ))}
