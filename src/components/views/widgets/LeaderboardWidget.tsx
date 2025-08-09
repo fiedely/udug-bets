@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../../../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
-import type { UserProfile, LeaderboardEntry } from '../../../types'; // Use the updated LeaderboardEntry type
+import type { UserProfile, Leaderboard } from '../../../types';
+import AiSummary from './AiSummary'; // Import the new component
 
 interface LeaderboardWidgetProps {
     userProfile: UserProfile;
@@ -20,26 +21,22 @@ const RankChangeIndicator = ({ change }: { change: 'up' | 'down' | 'same' }) => 
 };
 
 const LeaderboardWidget = ({ userProfile, tournamentId, setRefreshFunc }: LeaderboardWidgetProps) => {
-    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-    const [tournamentSummary, setTournamentSummary] = useState<string | null>(null); // State for admin summary
+    const [leaderboardData, setLeaderboardData] = useState<Leaderboard | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchData = useCallback(async () => {
         if (!tournamentId) {
             setIsLoading(false);
-            setLeaderboard([]);
+            setLeaderboardData(null);
             return;
         }
         setIsLoading(true);
         const leaderboardRef = doc(db, "leaderboards", tournamentId);
         const docSnap = await getDoc(leaderboardRef);
         if (docSnap.exists()) {
-            const data = docSnap.data();
-            setLeaderboard(data.entries || []);
-            setTournamentSummary(data.tournamentAiSummary || null); // Fetch the admin summary
+            setLeaderboardData(docSnap.data() as Leaderboard);
         } else {
-            setLeaderboard([]);
-            setTournamentSummary(null);
+            setLeaderboardData(null);
         }
         setIsLoading(false);
     }, [tournamentId]);
@@ -49,7 +46,7 @@ const LeaderboardWidget = ({ userProfile, tournamentId, setRefreshFunc }: Leader
     }, [fetchData]);
     
     useEffect(() => {
-        setRefreshFunc(fetchData); // Correctly pass the function reference
+        setRefreshFunc(fetchData);
     }, [fetchData, setRefreshFunc]);
 
     if (!tournamentId) {
@@ -61,32 +58,26 @@ const LeaderboardWidget = ({ userProfile, tournamentId, setRefreshFunc }: Leader
     }
 
     const isAdmin = userProfile.role === 'admin' || userProfile.role === 'superadmin';
-    const userRank = leaderboard.find(entry => entry.userId === userProfile.uid);
+    const userRank = leaderboardData?.entries.find(entry => entry.userId === userProfile.uid);
+    const entries = leaderboardData?.entries || [];
 
     return (
         <div className="h-full flex flex-col">
-            {/* --- NEW: AI Summary Section --- */}
-            {isAdmin && tournamentSummary ? (
-                <div className="p-3 mb-2 bg-slate-700/50 border border-green-500 text-sm text-slate-300">
-                    <h4 className="font-bold text-green-400 mb-1">AI Tournament Overview</h4>
-                    <p>{tournamentSummary}</p>
-                </div>
+            {isAdmin && leaderboardData?.tournamentAiSummary ? (
+                <AiSummary title="Tournament Overview" text={leaderboardData.tournamentAiSummary} colorClass="border-slate-600 text-blue-400" />
             ) : userRank && userRank.aiSummary ? (
-                <div className="p-3 mb-2 bg-slate-700/50 border border-blue-500 text-sm text-slate-300">
-                    <h4 className="font-bold text-blue-400 mb-1">Your AI Analyst Report</h4>
-                    <p>{userRank.aiSummary}</p>
-                </div>
+                <AiSummary title="Your Analyst Report" text={userRank.aiSummary} colorClass="border-slate-600 text-blue-400" userName={userProfile.name} />
             ) : null}
 
             <div className="flex-grow overflow-y-auto">
                 {isLoading ? (
                     <div className="flex items-center justify-center h-full"><p className="text-slate-400">Loading...</p></div>
-                ) : leaderboard.length === 0 ? (
+                ) : entries.length === 0 ? (
                     <div className="flex items-center justify-center h-full"><p className="text-slate-400 text-sm text-center">No data available.</p></div>
                 ) : (
                     <table className="w-full text-xs">
                         <tbody>
-                            {leaderboard.map((entry) => (
+                            {entries.map((entry) => (
                                 <tr key={entry.userId} className={`border-b border-slate-700 ${entry.userId === userProfile.uid ? 'bg-blue-900/50' : ''}`}>
                                     <td className="p-2 text-center w-10 text-slate-300">
                                         <div className="flex items-center justify-center gap-2">

@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../../../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
-import type { Tournament, UserPredictions, Team, UserProfile } from '../../../types';
+import type { Tournament, UserPredictions, Team, UserProfile, Leaderboard } from '../../../types';
 import Flag from '../../common/Flag';
+import AiSummary from './AiSummary'; // Import the new component
 
 interface ChampionPredictionWidgetProps {
     userProfile: UserProfile;
@@ -15,36 +16,34 @@ interface ChampionPredictionWidgetProps {
 interface ChampionPick {
     team: Team;
     count: number;
+    isEliminated: boolean;
 }
 
 const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }: ChampionPredictionWidgetProps) => {
     const [picks, setPicks] = useState<ChampionPick[]>([]);
+    const [aiSummary, setAiSummary] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [totalPredictions, setTotalPredictions] = useState(0);
     const [myChampionPick, setMyChampionPick] = useState<string | null>(null);
 
-    if (!userProfile) {
-        return <div className="flex items-center justify-center h-full"><p className="text-slate-400">Loading User...</p></div>;
-    }
-
-    const isAdmin = userProfile.role === 'admin' || userProfile.role === 'superadmin';
-
     const fetchData = useCallback(async () => {
-        if (!tournamentId) {
-            setIsLoading(false);
-            return;
-        }
+        if (!tournamentId) { setIsLoading(false); return; }
         setIsLoading(true);
 
         const tourneyRef = doc(db, "tournaments", tournamentId);
-        const tourneySnap = await getDoc(tourneyRef);
-        if (!tourneySnap.exists()) {
-            setIsLoading(false);
-            return;
-        }
+        const leaderboardRef = doc(db, "leaderboards", tournamentId);
+        const [tourneySnap, leaderboardSnap] = await Promise.all([getDoc(tourneyRef), getDoc(leaderboardRef)]);
+
+        if (!tourneySnap.exists()) { setIsLoading(false); return; }
+        
         const tournament = tourneySnap.data() as Tournament;
+        const leaderboardData = leaderboardSnap.data() as Leaderboard | undefined;
+        
         const teamsMap = new Map(tournament.teams?.map(t => [t.code, t]));
         const participants = tournament.participants || [];
+        const eliminatedCodes = new Set(leaderboardData?.eliminatedTeamCodes || []);
+        
+        setAiSummary(leaderboardData?.championAiSummary || null);
 
         if (participants.length === 0) {
             setPicks([]);
@@ -53,17 +52,13 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
             return;
         }
 
-        const predictionPromises = participants.map(userId =>
-            getDoc(doc(db, "predictions", `${tournamentId}_${userId}`))
-        );
+        const predictionPromises = participants.map(userId => getDoc(doc(db, "predictions", `${tournamentId}_${userId}`)));
         const predictionSnapshots = await Promise.all(predictionPromises);
-        const predictions = predictionSnapshots
-            .filter(snap => snap.exists())
-            .map(snap => snap.data() as UserPredictions);
+        const predictions = predictionSnapshots.filter(snap => snap.exists()).map(snap => snap.data() as UserPredictions);
 
         setTotalPredictions(predictions.length);
 
-        if (!isAdmin) {
+        if (userProfile.role !== 'admin' && userProfile.role !== 'superadmin') {
             const myPred = predictions.find(p => p.userId === userProfile.uid);
             setMyChampionPick(myPred?.championPrediction || null);
         }
@@ -78,18 +73,14 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
         const formattedPicks: ChampionPick[] = Array.from(counts.entries()).map(([teamCode, count]) => ({
             team: teamsMap.get(teamCode) || { name: 'Unknown', code: teamCode, flag: '❓' },
             count,
+            isEliminated: eliminatedCodes.has(teamCode),
         }));
 
-        formattedPicks.sort((a, b) => {
-            if (b.count !== a.count) {
-                return b.count - a.count;
-            }
-            return a.team.name.localeCompare(b.team.name);
-        });
+        formattedPicks.sort((a, b) => b.count - a.count || a.team.name.localeCompare(b.team.name));
         
         setPicks(formattedPicks);
         setIsLoading(false);
-    }, [tournamentId, userProfile, isAdmin]);
+    }, [tournamentId, userProfile.uid, userProfile.role]);
 
     useEffect(() => {
         fetchData();
@@ -98,7 +89,7 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
     useEffect(() => {
         setRefreshFunc(fetchData);
     }, [fetchData, setRefreshFunc]);
-
+    
     if (isLoading) {
         return <div className="flex items-center justify-center h-full"><p className="text-slate-400">Loading...</p></div>;
     }
@@ -111,20 +102,25 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
 
     return (
         <div className="h-full flex flex-col text-slate-300 text-xs">
+            {aiSummary && <AiSummary title="Sentiment Analysis" text={aiSummary} colorClass="border-slate-600 text-blue-400" />}
             <div className="flex-grow overflow-y-auto">
                 <table className="w-full text-xs">
                     <tbody>
                         {picks.map((pick, index) => (
                             <tr 
                                 key={pick.team.code} 
-                                className={`border-b border-slate-700 ${!isAdmin && myChampionPick === pick.team.code ? 'bg-blue-900/50' : ''}`}
+                                className={`border-b border-slate-700 ${myChampionPick === pick.team.code ? 'bg-blue-900/50' : ''}`}
                             >
                                 <td className="p-2 text-center w-10">{index + 1}</td>
                                 <td className="p-2 truncate flex items-center gap-2">
                                     <Flag code={pick.team.code} className="w-5 h-auto" />
-                                    {pick.team.name}
+                                    <span className={pick.isEliminated ? 'text-slate-500 line-through' : ''}>
+                                        {pick.team.name}
+                                    </span>
                                 </td>
-                                <td className="p-2 text-right font-mono">{pick.count} vote(s)</td>
+                                <td className={`p-2 text-right font-mono ${pick.isEliminated ? 'text-slate-500' : ''}`}>
+                                    {pick.count} vote(s)
+                                </td>
                             </tr>
                         ))}
                     </tbody>

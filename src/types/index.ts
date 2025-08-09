@@ -131,3 +131,22 @@ export interface UserPredictions {
     championPrediction?: string;
     matchPredictions: Record<string, MatchPrediction>;
 }
+
+export interface Leaderboard {
+    entries: LeaderboardEntry[];
+    lastUpdated: Date;
+    tournamentAiSummary?: string;
+    championAiSummary?: string;
+    eliminatedTeamCodes?: string[];
+    currentTournamentStage?: MatchStage | "Not Started" | "Completed";
+}
+
+export interface LeaderboardEntry {
+    userId: string;
+    userName: string;
+    totalPoints: number;
+    rank: number;
+    previousRank?: number | null;
+    rankChange: "up" | "down" | "same";
+    aiSummary?: string;
+}
