@@ -137,13 +137,13 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
     );
 
     return (
-        <div className="bg-slate-800 border border-slate-700 p-6 md:p-8">
-            <div className="flex justify-between items-start mb-6">
+        <div className="bg-slate-800 border border-slate-700 p-4 md:p-8">
+            <div className="flex flex-col md:flex-row justify-between md:items-start mb-6 gap-4">
                 <div>
                     <h2 className="text-2xl font-bold text-white">{tournament.name}</h2>
                     <p className="text-blue-400">Manage Scores & Knockout Seeding</p>
                 </div>
-                <button onClick={onBack} className="text-sm text-blue-400 hover:text-blue-300 flex items-center whitespace-nowrap">
+                <button onClick={onBack} className="text-sm text-blue-400 hover:text-blue-300 flex items-center whitespace-nowrap self-start md:self-auto">
                     &larr; Back to Tournaments List
                 </button>
             </div>
@@ -184,30 +184,30 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
 
                                                 return (
                                                     <div key={match.id} className="p-3 bg-slate-900/50 space-y-2">
-                                                        <div className="grid grid-cols-12 gap-2 items-center text-sm">
-                                                            <div className="col-span-5 flex items-center justify-end gap-2">
+                                                        <div className="grid grid-cols-[1fr_auto_1fr] md:grid-cols-12 gap-2 items-center text-sm">
+                                                            <div className="flex items-center justify-end gap-2 md:col-span-5">
                                                                 <OutcomeBadge outcome={team1Outcome} />
                                                                 <select value={match.team1.code} onChange={e => handleTeamChange(match.id, 'team1', e.target.value)} disabled={!isKnockout} className="w-full bg-slate-800 border border-slate-600 text-white p-1 text-xs disabled:opacity-70 disabled:cursor-not-allowed">
                                                                     {isKnockout ? selectableTeams.map(t => <SelectOption key={`t1-${match.id}-${t.code}`} team={t} />) : <SelectOption team={match.team1} />}
                                                                 </select>
                                                             </div>
-                                                            <div className="col-span-2 flex items-center justify-center gap-1">
+                                                            <div className="flex items-center justify-center gap-1 md:col-span-2">
                                                                 <input type="number" min="0" value={match.team1Score ?? ''} onChange={e => handleScoreChange(match.id, isKnockout, 'team1Score', e.target.value)} className="w-10 text-center bg-slate-800 border border-slate-600 text-white font-bold" />
                                                                 <span className="text-slate-500">-</span>
                                                                 <input type="number" min="0" value={match.team2Score ?? ''} onChange={e => handleScoreChange(match.id, isKnockout, 'team2Score', e.target.value)} className="w-10 text-center bg-slate-800 border border-slate-600 text-white font-bold" />
                                                             </div>
-                                                            <div className="col-span-5 flex items-center gap-2">
+                                                            <div className="flex items-center gap-2 md:col-span-5">
                                                                 <select value={match.team2.code} onChange={e => handleTeamChange(match.id, 'team2', e.target.value)} disabled={!isKnockout} className="w-full bg-slate-800 border border-slate-600 text-white p-1 text-xs disabled:opacity-70 disabled:cursor-not-allowed">
                                                                      {isKnockout ? selectableTeams.map(t => <SelectOption key={`t2-${match.id}-${t.code}`} team={t} />) : <SelectOption team={match.team2} />}
                                                                 </select>
                                                                 <OutcomeBadge outcome={team2Outcome} />
                                                             </div>
                                                         </div>
-                                                        <div className="text-center text-xs text-slate-500 flex justify-center items-center gap-2">
+                                                        <div className="text-center text-xs text-slate-500 flex flex-wrap justify-center items-center gap-x-2">
                                                             <span>{new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                            <span className="text-slate-600">•</span>
-                                                            <span>{match.stadium.name}, {match.stadium.city}</span>
-                                                            <span className="text-slate-600">•</span>
+                                                            <span className="text-slate-600 hidden sm:inline">•</span>
+                                                            <span className="w-full sm:w-auto text-center">{match.stadium.name}, {match.stadium.city}</span>
+                                                            <span className="text-slate-600 hidden sm:inline">•</span>
                                                             <span>Match #{match.matchNumber}</span>
                                                         </div>
                                                         {isKnockout && isDraw && (

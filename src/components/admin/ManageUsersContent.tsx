@@ -10,7 +10,6 @@ interface ManageUsersContentProps {
 }
 
 const ManageUsersContent = ({ userProfile }: ManageUsersContentProps) => {
-  // ... (The rest of the component logic remains the same)
   const [usersList, setUsersList] = useState<UserProfile[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -83,8 +82,7 @@ const ManageUsersContent = ({ userProfile }: ManageUsersContentProps) => {
   }
 
   return (
-    // The full JSX from the original file remains here
-    <div className="bg-slate-800 border border-slate-700 p-8">
+    <div className="bg-slate-800 border border-slate-700 p-4 md:p-8">
       <h2 className="text-2xl font-bold text-blue-400">Manage Users</h2>
       <div className="mt-4 overflow-x-auto">
         <table className="w-full text-sm text-left text-slate-300">
@@ -136,7 +134,7 @@ const ManageUsersContent = ({ userProfile }: ManageUsersContentProps) => {
           </tbody>
         </table>
       </div>
-      <div className="flex items-center justify-between mt-4 text-sm text-slate-400">
+      <div className="flex flex-col md:flex-row items-center justify-between mt-4 text-sm text-slate-400 gap-4">
           <div className="flex items-center gap-2">
             <span>Show</span>
             <select value={itemsPerPage} onChange={handleItemsPerPageChange} className="bg-slate-900 border border-slate-600 text-white p-1">

@@ -27,6 +27,7 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
     const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
     const [editingWidget, setEditingWidget] = useState<Partial<Widget> | null>(null);
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+    const [breakpoint, setBreakpoint] = useState('lg');
     
     const dropdownRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
@@ -168,7 +169,7 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
                 />;
             case 'championPredictionChart':
                 return <ChampionPredictionWidget
-                    userProfile={userProfile} // FIX: Pass the user profile
+                    userProfile={userProfile}
                     tournamentId={widget.props?.tournamentId}
                     setRefreshFunc={(func) => refreshFuncs.set(widget.i, func)}
                 />;
@@ -180,6 +181,8 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
     if (!isMounted) {
         return <div className="text-center p-8"><svg className="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>;
     }
+    
+    const isMobile = breakpoint === 'xs';
 
     return (
         <div>
@@ -194,18 +197,21 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
             </div>
 
             <ResponsiveGridLayout
-                layouts={{ lg: widgets }}
+                layouts={{ lg: widgets, md: widgets, sm: widgets, xs: widgets, xxs: widgets }}
                 onLayoutChange={handleLayoutChange}
+                onBreakpointChange={(newBreakpoint) => setBreakpoint(newBreakpoint)}
                 className="layout"
                 draggableHandle=".widget-header"
                 draggableCancel=".widget-menu-button"
                 breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-                cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
+                cols={{ lg: 12, md: 10, sm: 6, xs: 1, xxs: 1 }}
                 rowHeight={30}
+                isDraggable={!isMobile}
+                isResizable={!isMobile}
             >
                 {widgets.map(widget => (
                     <div key={widget.i} className="bg-slate-800 border border-slate-700 flex flex-col">
-                        <div className={`widget-header flex justify-between items-center p-2 cursor-move ${widget.headerColor || 'bg-slate-700/50'}`}>
+                        <div className={`widget-header flex justify-between items-center p-2 ${!isMobile ? 'cursor-move' : ''} ${widget.headerColor || 'bg-slate-700/50'}`}>
                             <h4 className="text-sm font-bold text-white truncate">{widget.title || 'Widget'}</h4>
                             <div className="relative widget-menu-button" ref={ref => { dropdownRefs.current.set(widget.i, ref); }}>
                                 <button onClick={() => setActiveDropdown(activeDropdown === widget.i ? null : widget.i)} className="p-1">

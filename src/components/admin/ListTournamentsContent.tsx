@@ -119,7 +119,7 @@ const ListTournamentsContent = ({ onEditTournament, onManageTournament, onViewLe
 
     return (
         <>
-            <div className="bg-slate-800 border border-slate-700 p-8">
+            <div className="bg-slate-800 border border-slate-700 p-4 md:p-8">
                 <h2 className="text-2xl font-bold text-blue-400">Your Tournaments</h2>
                 <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {tournaments.map(t => (

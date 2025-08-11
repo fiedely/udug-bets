@@ -17,8 +17,8 @@ import AllPredictionsView from './admin/AllPredictionsView';
 import DebugSeeder from './admin/DebugSeeder';
 
 // User Components
-import JoinTournament from './views/JoinTournament'; 
-import MyTournaments from './views/MyTournaments'; 
+import JoinTournament from './views/JoinTournament';
+import MyTournaments from './views/MyTournaments';
 import PredictionEntry from './views/PredictionEntry';
 import UserDashboard from './views/UserDashboard';
 const LeaderboardContent = () => <div className="bg-slate-800 p-8">Leaderboard View - Coming Soon!</div>;
@@ -26,7 +26,6 @@ const LeaderboardContent = () => <div className="bg-slate-800 p-8">Leaderboard V
 
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  // Set the initial default view for all users
   const [activeView, setActiveView] = useState<View>('User Dashboard');
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
@@ -49,7 +48,6 @@ const Dashboard = () => {
         if (docSnap.exists()) {
           const profile = docSnap.data() as UserProfile;
           setUserProfile(profile);
-          // --- NEW: Set default view based on role ---
           if (profile.role === 'admin' || profile.role === 'superadmin') {
             setActiveView('List Tournaments');
           } else {
@@ -178,15 +176,23 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="relative min-h-screen flex bg-slate-900">
+    <div className="relative min-h-screen md:flex bg-slate-900">
+      {/* Mobile overlay */}
+      {isSidebarOpen && (
+        <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+        ></div>
+      )}
+
+      {/* Sidebar */}
       <aside
         className={`
           bg-slate-800 border-r border-slate-700 text-slate-300 w-64 space-y-2 py-7 px-2
           absolute inset-y-0 left-0 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          transition-transform duration-200 ease-in-out
+          md:relative md:translate-x-0 transition-transform duration-200 ease-in-out
           flex flex-col z-30
         `}
-        onMouseLeave={() => setIsSidebarOpen(false)}
       >
         <div className="px-4">
           <h2 className="text-2xl font-bold text-blue-400">Udug Bets</h2>
@@ -218,18 +224,22 @@ const Dashboard = () => {
           )}
         </nav>
         <div className="px-4 py-2 border-t border-slate-700">
-          <p className="text-sm font-semibold">{user?.displayName || 'User'}</p>
-          <p className="text-xs text-slate-400">{user?.email}</p>
+          <p className="text-sm font-semibold truncate">{user?.displayName || 'User'}</p>
+          <p className="text-xs text-slate-400 truncate">{user?.email}</p>
         </div>
       </aside>
       
       <div className="flex-1 flex flex-col min-w-0">
         <header className="bg-slate-800 border-b border-slate-700 p-4 flex justify-between items-center">
-          <button className="text-slate-300" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+          {/* Hamburger Menu - only show on mobile */}
+          <button className="text-slate-300 md:hidden" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
           </button>
-          <div className="text-xl font-semibold text-slate-100">{getHeaderTitle()}</div>
-          <button onClick={handleSignOut} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm transition-colors">Sign Out</button>
+          
+          {/* Header Title - ensure it doesn't push other elements */}
+          <div className="text-lg md:text-xl font-semibold text-slate-100 truncate">{getHeaderTitle()}</div>
+          
+          <button onClick={handleSignOut} className="px-3 py-2 md:px-4 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm transition-colors whitespace-nowrap">Sign Out</button>
         </header>
         <main className="flex-1 p-4 md:p-8 overflow-y-auto">
           {renderContent()}

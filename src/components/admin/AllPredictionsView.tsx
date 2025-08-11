@@ -224,16 +224,16 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
 
 
     return (
-        <div className="bg-slate-800 border border-slate-700 p-6 md:p-8 flex flex-col h-[85vh] w-full">
+        <div className="bg-slate-800 border border-slate-700 p-4 md:p-8 flex flex-col h-[calc(100vh-6rem)] w-full">
             <div className="flex-shrink-0">
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
                     <div>
                         <h2 className="text-2xl font-bold text-white">{tournament.name}</h2>
                         <p className="text-blue-400">All Participant Predictions</p>
                     </div>
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 self-start md:self-center">
                         <button onClick={handleExportPDF} disabled={isGeneratingPdf || isLoading} className="px-4 py-2 bg-green-600 hover:bg-green-500 font-semibold text-white text-sm disabled:bg-green-800 disabled:cursor-not-allowed">
-                            {isGeneratingPdf ? 'Generating...' : 'Download as PDF'}
+                            {isGeneratingPdf ? 'Generating...' : 'Download PDF'}
                         </button>
                         <button onClick={onBack} className="text-sm text-blue-400 hover:text-blue-300 flex items-center whitespace-nowrap">
                             &larr; Back

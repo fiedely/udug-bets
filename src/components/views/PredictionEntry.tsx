@@ -166,13 +166,13 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
     }
 
     return (
-        <div className="bg-slate-800 border border-slate-700 p-6 md:p-8">
-            <div className="flex justify-between items-start mb-6">
+        <div className="bg-slate-800 border border-slate-700 p-4 md:p-8">
+            <div className="flex flex-col md:flex-row justify-between md:items-start mb-6 gap-4">
                 <div>
                     <h2 className="text-2xl font-bold text-white">{tournament.name}</h2>
                     <p className="text-blue-400">Enter Your Predictions</p>
                 </div>
-                <button onClick={handleBack} className="text-sm text-blue-400 hover:text-blue-300 flex items-center whitespace-nowrap">
+                <button onClick={handleBack} className="text-sm text-blue-400 hover:text-blue-300 flex items-center whitespace-nowrap self-start md:self-auto">
                     &larr; Back to My Tournaments
                 </button>
             </div>
@@ -222,30 +222,30 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
 
                                                 return (
                                                     <div key={match.id} className={`p-3 space-y-2 ${isDisabled ? 'bg-slate-800/50' : 'bg-slate-900/50'}`}>
-                                                        <div className="grid grid-cols-12 gap-2 items-center text-sm">
-                                                            <div className="col-span-5 flex items-center justify-end gap-2 text-white">
+                                                        <div className="grid grid-cols-[1fr_auto_1fr] md:grid-cols-12 gap-2 items-center text-sm">
+                                                            <div className="flex items-center justify-end gap-2 text-white md:col-span-5">
                                                                 <OutcomeBadge outcome={team1Outcome} />
                                                                 <span className="hidden md:inline text-right">{match.team1.name}</span>
-                                                                <span className="md:hidden">{match.team1.code}</span>
+                                                                <span className="md:hidden font-semibold">{match.team1.code}</span>
                                                                 <Flag code={match.team1.code} />
                                                             </div>
-                                                            <div className="col-span-2 flex items-center justify-center gap-1">
+                                                            <div className="flex items-center justify-center gap-1 md:col-span-2">
                                                                 <input type="number" min="0" value={pred?.team1Score > -1 ? pred.team1Score : ''} onChange={e => handleScoreChange(match.id, 'team1Score', e.target.value)} disabled={isDisabled} className="w-10 text-center bg-slate-800 border border-slate-600 text-white font-bold disabled:opacity-50" />
                                                                 <span className="text-slate-500">-</span>
                                                                 <input type="number" min="0" value={pred?.team2Score > -1 ? pred.team2Score : ''} onChange={e => handleScoreChange(match.id, 'team2Score', e.target.value)} disabled={isDisabled} className="w-10 text-center bg-slate-800 border border-slate-600 text-white font-bold disabled:opacity-50" />
                                                             </div>
-                                                            <div className="col-span-5 flex items-center gap-2 text-white">
+                                                            <div className="flex items-center gap-2 text-white md:col-span-5">
                                                                 <Flag code={match.team2.code} />
                                                                 <span className="hidden md:inline">{match.team2.name}</span>
-                                                                <span className="md:hidden">{match.team2.code}</span>
+                                                                <span className="md:hidden font-semibold">{match.team2.code}</span>
                                                                 <OutcomeBadge outcome={team2Outcome} />
                                                             </div>
                                                         </div>
-                                                        <div className="text-center text-xs text-slate-500 flex justify-center items-center gap-2">
+                                                        <div className="text-center text-xs text-slate-500 flex flex-wrap justify-center items-center gap-x-2">
                                                             <span>{new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                            <span className="text-slate-600">•</span>
-                                                            <span>{match.stadium.name}, {match.stadium.city}</span>
-                                                            <span className="text-slate-600">•</span>
+                                                            <span className="text-slate-600 hidden sm:inline">•</span>
+                                                            <span className="w-full sm:w-auto text-center">{match.stadium.name}, {match.stadium.city}</span>
+                                                            <span className="text-slate-600 hidden sm:inline">•</span>
                                                             <span>Match #{match.matchNumber}</span>
                                                         </div>
                                                     </div>
