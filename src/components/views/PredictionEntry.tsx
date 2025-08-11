@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { db } from '../../firebaseConfig';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import type { Tournament, UserProfile, UserPredictions, Match, MatchStage } from '../../types';
-import Flag from '../common/Flag';
 
 interface PredictionEntryProps {
     tournament: Tournament;
@@ -221,23 +220,24 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
                                                 }
 
                                                 return (
-                                                    <div key={match.id} className={`p-3 space-y-2 ${isDisabled ? 'bg-slate-800/50' : 'bg-slate-900/50'}`}>
-                                                        <div className="grid grid-cols-[1fr_auto_1fr] md:grid-cols-12 gap-2 items-center text-sm">
-                                                            <div className="flex items-center justify-end gap-2 text-white md:col-span-5">
+                                                    <div key={match.id} className={`p-3 space-y-3 ${isDisabled ? 'bg-slate-800/50' : 'bg-slate-900/50'}`}>
+                                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm">
+                                                            {/* Team 1 */}
+                                                            <div className="flex-1 flex items-center justify-end gap-2">
                                                                 <OutcomeBadge outcome={team1Outcome} />
-                                                                <span className="hidden md:inline text-right">{match.team1.name}</span>
-                                                                <span className="md:hidden font-semibold">{match.team1.code}</span>
-                                                                <Flag code={match.team1.code} />
+                                                                <span className="text-right text-white w-full">{match.team1.flag} {match.team1.name}</span>
                                                             </div>
-                                                            <div className="flex items-center justify-center gap-1 md:col-span-2">
-                                                                <input type="number" min="0" value={pred?.team1Score > -1 ? pred.team1Score : ''} onChange={e => handleScoreChange(match.id, 'team1Score', e.target.value)} disabled={isDisabled} className="w-10 text-center bg-slate-800 border border-slate-600 text-white font-bold disabled:opacity-50" />
-                                                                <span className="text-slate-500">-</span>
-                                                                <input type="number" min="0" value={pred?.team2Score > -1 ? pred.team2Score : ''} onChange={e => handleScoreChange(match.id, 'team2Score', e.target.value)} disabled={isDisabled} className="w-10 text-center bg-slate-800 border border-slate-600 text-white font-bold disabled:opacity-50" />
+
+                                                            {/* Score Inputs */}
+                                                            <div className="flex items-center justify-center gap-1 order-first sm:order-none w-full sm:w-auto">
+                                                                <input type="number" min="0" value={pred?.team1Score > -1 ? pred.team1Score : ''} onChange={e => handleScoreChange(match.id, 'team1Score', e.target.value)} disabled={isDisabled} className="w-full sm:w-12 text-center bg-slate-800 border border-slate-600 text-white font-bold p-1 disabled:opacity-50" />
+                                                                <span className="text-slate-500 font-bold text-lg">-</span>
+                                                                <input type="number" min="0" value={pred?.team2Score > -1 ? pred.team2Score : ''} onChange={e => handleScoreChange(match.id, 'team2Score', e.target.value)} disabled={isDisabled} className="w-full sm:w-12 text-center bg-slate-800 border border-slate-600 text-white font-bold p-1 disabled:opacity-50" />
                                                             </div>
-                                                            <div className="flex items-center gap-2 text-white md:col-span-5">
-                                                                <Flag code={match.team2.code} />
-                                                                <span className="hidden md:inline">{match.team2.name}</span>
-                                                                <span className="md:hidden font-semibold">{match.team2.code}</span>
+
+                                                            {/* Team 2 */}
+                                                            <div className="flex-1 flex items-center gap-2">
+                                                                <span className="text-left text-white w-full">{match.team2.name} {match.team2.flag}</span>
                                                                 <OutcomeBadge outcome={team2Outcome} />
                                                             </div>
                                                         </div>
