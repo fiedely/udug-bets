@@ -14,13 +14,13 @@ interface PredictionEntryProps {
 const STAGE_ORDER: MatchStage[] = ['Group Stage', 'Round of 32', 'Round of 16', 'Quarter-final', 'Semi-final', 'Third Place Match', 'Final'];
 
 const OutcomeBadge = ({ outcome }: { outcome: 'WIN' | 'LOSE' | 'DRAW' | null }) => {
-    if (!outcome) return null;
-    const baseClasses = "text-xs font-bold px-2 py-0.5";
+    if (!outcome) return <span className="text-xs font-bold py-0.5 w-12 flex items-center justify-center bg-transparent"></span>;
+    const baseClasses = "text-xs font-bold py-0.5 w-12 flex items-center justify-center";
     switch (outcome) {
         case 'WIN': return <span className={`${baseClasses} bg-green-500 text-white`}>WIN</span>;
         case 'LOSE': return <span className={`${baseClasses} bg-red-500 text-white`}>LOSE</span>;
         case 'DRAW': return <span className={`${baseClasses} bg-slate-600 text-white`}>DRAW</span>;
-        default: return null;
+        default: return <span className={`${baseClasses} bg-transparent`}></span>;
     }
 };
 
@@ -221,26 +221,45 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
 
                                                 return (
                                                     <div key={match.id} className={`p-3 space-y-3 ${isDisabled ? 'bg-slate-800/50' : 'bg-slate-900/50'}`}>
-                                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm">
-                                                            {/* Team 1 */}
-                                                            <div className="flex-1 flex items-center justify-end gap-2">
-                                                                <OutcomeBadge outcome={team1Outcome} />
-                                                                <span className="text-right text-white w-full">{match.team1.flag} {match.team1.name}</span>
+                                                        {/* Main container for layout */}
+                                                        <div>
+                                                            {/* Desktop Layout: Grid */}
+                                                            <div className="hidden sm:grid grid-cols-[1fr_auto_1fr] gap-3 items-center text-sm">
+                                                                <div className="flex items-center justify-end gap-2">
+                                                                    <span className="text-right text-white">{match.team1.flag} {match.team1.name}</span>
+                                                                </div>
+                                                                <div className="flex items-center justify-center gap-2">
+                                                                    <OutcomeBadge outcome={team1Outcome} />
+                                                                    <input type="number" min="0" value={pred?.team1Score > -1 ? pred.team1Score : ''} onChange={e => handleScoreChange(match.id, 'team1Score', e.target.value)} disabled={isDisabled} className="w-12 text-center bg-slate-800 border border-slate-600 text-white font-bold p-1 disabled:opacity-50" />
+                                                                    <span className="text-slate-500 font-bold text-lg">-</span>
+                                                                    <input type="number" min="0" value={pred?.team2Score > -1 ? pred.team2Score : ''} onChange={e => handleScoreChange(match.id, 'team2Score', e.target.value)} disabled={isDisabled} className="w-12 text-center bg-slate-800 border border-slate-600 text-white font-bold p-1 disabled:opacity-50" />
+                                                                    <OutcomeBadge outcome={team2Outcome} />
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-left text-white">{match.team2.name} {match.team2.flag}</span>
+                                                                </div>
                                                             </div>
 
-                                                            {/* Score Inputs */}
-                                                            <div className="flex items-center justify-center gap-1 order-first sm:order-none w-full sm:w-auto">
-                                                                <input type="number" min="0" value={pred?.team1Score > -1 ? pred.team1Score : ''} onChange={e => handleScoreChange(match.id, 'team1Score', e.target.value)} disabled={isDisabled} className="w-full sm:w-12 text-center bg-slate-800 border border-slate-600 text-white font-bold p-1 disabled:opacity-50" />
-                                                                <span className="text-slate-500 font-bold text-lg">-</span>
-                                                                <input type="number" min="0" value={pred?.team2Score > -1 ? pred.team2Score : ''} onChange={e => handleScoreChange(match.id, 'team2Score', e.target.value)} disabled={isDisabled} className="w-full sm:w-12 text-center bg-slate-800 border border-slate-600 text-white font-bold p-1 disabled:opacity-50" />
-                                                            </div>
-
-                                                            {/* Team 2 */}
-                                                            <div className="flex-1 flex items-center gap-2">
-                                                                <span className="text-left text-white w-full">{match.team2.name} {match.team2.flag}</span>
-                                                                <OutcomeBadge outcome={team2Outcome} />
+                                                            {/* Mobile Layout: Flexbox Columns */}
+                                                            <div className="sm:hidden space-y-2 text-sm">
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <span className="text-white truncate flex-1 min-w-0">{match.team1.flag} {match.team1.name}</span>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <OutcomeBadge outcome={team1Outcome} />
+                                                                        <input type="number" min="0" value={pred?.team1Score > -1 ? pred.team1Score : ''} onChange={e => handleScoreChange(match.id, 'team1Score', e.target.value)} disabled={isDisabled} className="w-16 text-center bg-slate-800 border border-slate-600 text-white font-bold p-1 disabled:opacity-50" />
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <span className="text-white truncate flex-1 min-w-0">{match.team2.flag} {match.team2.name}</span>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <OutcomeBadge outcome={team2Outcome} />
+                                                                        <input type="number" min="0" value={pred?.team2Score > -1 ? pred.team2Score : ''} onChange={e => handleScoreChange(match.id, 'team2Score', e.target.value)} disabled={isDisabled} className="w-16 text-center bg-slate-800 border border-slate-600 text-white font-bold p-1 disabled:opacity-50" />
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         </div>
+
+                                                        {/* Meta info */}
                                                         <div className="text-center text-xs text-slate-500 flex flex-wrap justify-center items-center gap-x-2">
                                                             <span>{new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                                             <span className="text-slate-600 hidden sm:inline">•</span>
