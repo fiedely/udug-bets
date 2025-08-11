@@ -271,11 +271,13 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                         <tbody className="bg-slate-800">
                             {enrichedMatches.map((match) => (
                                 <tr key={match.id} className="border-b border-slate-700">
-                                    <td className="p-3 font-medium text-white sticky left-0 bg-slate-800 z-10 w-48">
-                                        <div className="flex items-center gap-2">
-                                            <Flag code={match.team1.code} /> {match.team1.name} vs <Flag code={match.team2.code} /> {match.team2.name}
+                                    <td className="p-3 font-medium text-white sticky left-0 bg-slate-800 z-10 w-48 align-top">
+                                        <div className="flex flex-col items-center text-center">
+                                            <div className="flex items-center gap-2"><Flag code={match.team1.code} /> {match.team1.name}</div>
+                                            <div className="text-xs text-slate-400 my-1">vs</div>
+                                            <div className="flex items-center gap-2"><Flag code={match.team2.code} /> {match.team2.name}</div>
                                         </div>
-                                        <div className="text-xs text-slate-400">Actual: {typeof match.team1Score === 'number' ? `${match.team1Score} - ${match.team2Score}` : 'Not Played'}</div>
+                                        <div className="text-xs text-slate-400 mt-2 text-center">Actual: {typeof match.team1Score === 'number' ? `${match.team1Score} - ${match.team2Score}` : 'Not Played'}</div>
                                     </td>
                                     {match.participantPredictions.map(p => (
                                         <Fragment key={p.userId}>

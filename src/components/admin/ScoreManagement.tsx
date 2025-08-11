@@ -184,7 +184,7 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
 
                                                 return (
                                                     <div key={match.id} className="p-3 bg-slate-900/50 space-y-2">
-                                                        <div className="grid grid-cols-[1fr_auto_1fr] md:grid-cols-12 gap-2 items-center text-sm">
+                                                        <div className="grid grid-cols-[1fr_auto_1fr] md:grid-cols-12 gap-x-2 gap-y-3 items-center text-sm">
                                                             <div className="flex items-center justify-end gap-2 md:col-span-5">
                                                                 <OutcomeBadge outcome={team1Outcome} />
                                                                 <select value={match.team1.code} onChange={e => handleTeamChange(match.id, 'team1', e.target.value)} disabled={!isKnockout} className="w-full bg-slate-800 border border-slate-600 text-white p-1 text-xs disabled:opacity-70 disabled:cursor-not-allowed">
