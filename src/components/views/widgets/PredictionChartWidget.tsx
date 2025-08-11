@@ -5,7 +5,6 @@ import { db } from '../../../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Tournament, UserPredictions, Match } from '../../../types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import Flag from '../../common/Flag';
 
 interface PredictionChartWidgetProps {
     tournamentId?: string;
@@ -123,7 +122,7 @@ const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexCh
                     <button onClick={handlePrev} disabled={currentMatchIndex === 0} className="px-2 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50">&lt;</button>
                     <div className="text-center">
                         <p className="font-bold text-white text-sm flex items-center justify-center gap-2">
-                            <Flag code={currentMatch.team1.code} /> {currentMatch.team1.name} vs <Flag code={currentMatch.team2.code} /> {currentMatch.team2.name}
+                            {currentMatch.team1.flag} {currentMatch.team1.name} vs {currentMatch.team2.flag} {currentMatch.team2.name}
                         </p>
                         <p className="text-slate-400 text-xs">Match {currentMatch.matchNumber} &bull; {new Date(currentMatch.date).toLocaleDateString()}</p>
                     </div>
@@ -131,12 +130,12 @@ const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexCh
                 </div>
             </div>
 
-            <div className="flex-grow flex flex-col md:flex-row gap-4 overflow-hidden">
+            <div className="flex-grow flex flex-col sm:flex-row gap-4 overflow-hidden">
                 <div className="flex-1 flex flex-col min-w-0">
                     <h5 className="text-center font-bold text-slate-400 mb-1">Predicted Outcome</h5>
                     <div className="flex-grow">
                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData.outcomeData} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
+                            <BarChart data={chartData.outcomeData} layout="vertical" margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
                                 <XAxis type="number" stroke="#94a3b8" tick={{ fontSize: 10 }} allowDecimals={false} />
                                 <YAxis type="category" dataKey="name" stroke="#94a3b8" width={80} tick={{ fontSize: 10 }} />
                                 <Tooltip cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }} contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} />
@@ -149,7 +148,7 @@ const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexCh
                      <h5 className="text-center font-bold text-slate-400 mb-1">Exact Score Guesses</h5>
                     <div className="flex-grow">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData.scoreData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                            <BarChart data={chartData.scoreData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                                 <XAxis dataKey="score" stroke="#94a3b8" tick={{ fontSize: 10 }} />
                                 <YAxis stroke="#94a3b8" tick={{ fontSize: 10 }} allowDecimals={false} />

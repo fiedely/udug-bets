@@ -61,11 +61,16 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
         await setDoc(layoutDocRef, { widgets: newWidgets });
     };
 
-    const handleLayoutChange = (layout: ReactGridLayout.Layout[]) => {
-        if (!isMounted) return;
+    const handleLayoutChange = (_: ReactGridLayout.Layout[], allLayouts: ReactGridLayout.Layouts) => {
+        const isMobile = breakpoint === 'xs' || breakpoint === 'xxs';
+        // Do not save layout changes on mobile breakpoints to preserve the desktop layout
+        if (!isMounted || isMobile) return;
+
+        const lgLayout = allLayouts.lg || [];
+
         setWidgets(currentWidgets => {
-            if (currentWidgets.length === 0) return currentWidgets;
-            const layoutMap = new Map(layout.map(item => [item.i, item]));
+            if (currentWidgets.length === 0 || lgLayout.length === 0) return currentWidgets;
+            const layoutMap = new Map(lgLayout.map(item => [item.i, item]));
             let hasChanges = false;
             const updatedWidgets = currentWidgets.map(w => {
                 const newLayout = layoutMap.get(w.i);
@@ -182,7 +187,15 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
         return <div className="text-center p-8"><svg className="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>;
     }
     
-    const isMobile = breakpoint === 'xs';
+    const isMobile = breakpoint === 'xs' || breakpoint === 'xxs';
+
+    const mobileLayout = widgets.map((widget, index) => ({
+      ...widget,
+      x: 0,
+      y: index * 12, 
+      w: 1, 
+      h: (widget.type === 'leaderboard' || widget.type === 'championPredictionChart') ? 14 : 12,
+    }));
 
     return (
         <div>
@@ -197,7 +210,7 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
             </div>
 
             <ResponsiveGridLayout
-                layouts={{ lg: widgets, md: widgets, sm: widgets, xs: widgets, xxs: widgets }}
+                layouts={{ lg: widgets, md: widgets, sm: widgets, xs: mobileLayout, xxs: mobileLayout }}
                 onLayoutChange={handleLayoutChange}
                 onBreakpointChange={(newBreakpoint) => setBreakpoint(newBreakpoint)}
                 className="layout"
