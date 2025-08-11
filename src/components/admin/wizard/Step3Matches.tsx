@@ -174,7 +174,7 @@ const Step3Matches = ({ tournament, onNext, onBack, setIsDirty }: Step3MatchesPr
                                 <p className="text-xs text-slate-500 mt-1">{match.group} - Match {match.matchNumber}</p>
                            </div>
                            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-                               <div className="sm:col-span-1">
+                               <div className="sm:col-span-1 min-w-0">
                                     <label className="block text-xs font-medium text-slate-400">Date & Time</label>
                                     <input
                                         type="datetime-local"
@@ -183,7 +183,7 @@ const Step3Matches = ({ tournament, onNext, onBack, setIsDirty }: Step3MatchesPr
                                         className="mt-1 w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100"
                                     />
                                </div>
-                               <div className="sm:col-span-1">
+                               <div className="sm:col-span-1 min-w-0">
                                     <label className="block text-xs font-medium text-slate-400">Venue</label>
                                    <select
                                         value={match.stadium.name}

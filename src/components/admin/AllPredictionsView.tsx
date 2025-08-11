@@ -8,7 +8,6 @@ import type { Tournament, UserProfile, UserPredictions, Match, Team, PointRule, 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { CellDef, UserOptions } from 'jspdf-autotable';
-import Flag from '../common/Flag';
 
 interface AllPredictionsViewProps {
     tournament: Tournament;
@@ -273,9 +272,9 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                                 <tr key={match.id} className="border-b border-slate-700">
                                     <td className="p-2 font-medium text-white sticky left-0 bg-slate-800 z-10 w-48 align-top">
                                         <div className="flex flex-col">
-                                            <div className="flex items-center gap-2"><Flag code={match.team1.code} className="w-4 h-auto" /> {match.team1.name}</div>
+                                            <div className="flex items-center gap-2"><span>{match.team1.flag}</span> {match.team1.name}</div>
                                             <div className="text-xs text-slate-500 my-1 pl-6">vs</div>
-                                            <div className="flex items-center gap-2"><Flag code={match.team2.code} className="w-4 h-auto" /> {match.team2.name}</div>
+                                            <div className="flex items-center gap-2"><span>{match.team2.flag}</span> {match.team2.name}</div>
                                         </div>
                                         <div className="text-[10px] text-slate-400 mt-1">Actual: {typeof match.team1Score === 'number' ? `${match.team1Score} - ${match.team2Score}` : 'N/A'}</div>
                                     </td>
@@ -299,7 +298,7 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                                 {championPredictions.map(p => (
                                     <Fragment key={p.userId}>
                                         <td className="p-2 text-center text-xs border-l border-slate-600">
-                                            {p.team ? <span className="flex items-center justify-center gap-2"><Flag code={p.team.code} className="w-4 h-auto" /> {p.team.name}</span> : <span className="text-slate-500">-</span>}
+                                            {p.team ? <span className="flex items-center justify-center gap-2"><span>{p.team.flag}</span> {p.team.name}</span> : <span className="text-slate-500">-</span>}
                                         </td>
                                         <td className="p-2 text-center font-mono text-blue-400 w-10">{p.points}</td>
                                     </Fragment>

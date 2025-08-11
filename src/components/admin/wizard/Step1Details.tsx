@@ -193,11 +193,11 @@ const Step1Details = ({ tournament, onNext, onBack, setIsDirty }: Step1DetailsPr
                  <div>
                     <h3 className="text-lg font-semibold text-slate-100">Date Period</h3>
                     <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                             <label htmlFor="start-date" className="block text-sm font-medium text-slate-300">Start Date & Time</label>
                             <input type="datetime-local" id="start-date" value={startDate} onChange={e => { setStartDate(e.target.value); markDirty(); }} className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400" />
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                             <label htmlFor="end-date" className="block text-sm font-medium text-slate-300">End Date & Time</label>
                             <input type="datetime-local" id="end-date" value={endDate} onChange={e => { setEndDate(e.target.value); markDirty(); }} className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400" />
                         </div>
