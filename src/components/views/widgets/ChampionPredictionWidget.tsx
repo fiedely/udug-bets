@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { db } from '../../../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Tournament, UserPredictions, Team, UserProfile, Leaderboard } from '../../../types';
-import Flag from '../../common/Flag';
 import AiSummary from './AiSummary';
+import { FIFA_COUNTRIES } from '../../../data/countries';
 
 interface ChampionPredictionWidgetProps {
     userProfile: UserProfile;
@@ -18,6 +18,8 @@ interface ChampionPick {
     count: number;
     isEliminated: boolean;
 }
+
+const fifaCountriesMap = new Map(FIFA_COUNTRIES.map(c => [c.code, c]));
 
 const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }: ChampionPredictionWidgetProps) => {
     const [picks, setPicks] = useState<ChampionPick[]>([]);
@@ -71,11 +73,17 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
             }
         });
 
-        const formattedPicks: ChampionPick[] = Array.from(counts.entries()).map(([teamCode, count]) => ({
-            team: teamsMap.get(teamCode) || { name: 'Unknown', code: teamCode, flag: '❓' },
-            count,
-            isEliminated: eliminatedCodes.has(teamCode),
-        }));
+        const formattedPicks: ChampionPick[] = Array.from(counts.entries()).map(([teamCode, count]) => {
+            const team = teamsMap.get(teamCode) 
+                         || fifaCountriesMap.get(teamCode) 
+                         || { name: 'Unknown', code: teamCode, flag: '❓' };
+
+            return {
+                team,
+                count,
+                isEliminated: eliminatedCodes.has(teamCode),
+            };
+        });
 
         // Corrected sort function
         formattedPicks.sort((a, b) => b.count - a.count || a.team.name.localeCompare(b.team.name));
@@ -117,7 +125,7 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
                             >
                                 <td className="p-2 text-center w-10">{index + 1}</td>
                                 <td className="p-2 truncate flex items-center gap-2">
-                                    <Flag code={pick.team.code} className="w-5 h-auto" />
+                                    <span className="w-5 h-auto">{pick.team.flag}</span>
                                     <span className={pick.isEliminated ? 'text-slate-500 line-through' : ''}>
                                         {pick.team.name}
                                     </span>
