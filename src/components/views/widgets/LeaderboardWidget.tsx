@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { db } from '../../../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import type { UserProfile, Leaderboard } from '../../../types';
-import AiSummary from './AiSummary'; // Import the new component
+import AiSummary from './AiSummary';
 
 interface LeaderboardWidgetProps {
     userProfile: UserProfile;

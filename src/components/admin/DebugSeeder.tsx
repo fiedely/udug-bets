@@ -35,29 +35,27 @@ const createFakeUser = () => {
   };
 };
 
-// --- NEW: Initialize the callable function ---
 const generateStagePredictions = httpsCallable(functions, 'generateStagePredictions');
 
 const DebugSeeder = () => {
     // State for full tournament seeder
     const [isSeedingTournament, setIsSeedingTournament] = useState(false);
     const [tournamentLog, setTournamentLog] = useState<string[]>([]);
-    const [numTeams, setNumTeams] = useState(32);
-    const [numParticipants, setNumParticipants] = useState(20);
+    const [numTeams, setNumTeams] = useState(0);
+    const [numParticipants, setNumParticipants] = useState(0);
 
     // State for user-only seeder
     const [isSeedingUsers, setIsSeedingUsers] = useState(false);
     const [userSeedLog, setUserSeedLog] = useState<string[]>([]);
-    const [numUsersToSeed, setNumUsersToSeed] = useState(50);
+    const [numUsersToSeed, setNumUsersToSeed] = useState(0);
 
-    // --- NEW: State for stage prediction seeder ---
+    // State for stage prediction seeder
     const [isSeedingStage, setIsSeedingStage] = useState(false);
     const [stageSeedLog, setStageSeedLog] = useState<string[]>([]);
     const [allTournaments, setAllTournaments] = useState<Tournament[]>([]);
     const [selectedTournamentId, setSelectedTournamentId] = useState('');
     const [selectedStage, setSelectedStage] = useState<MatchStage | ''>('');
 
-    // --- NEW: Fetch tournaments for the dropdown ---
     useEffect(() => {
         const fetchTournaments = async () => {
             const tourneySnapshot = await getDocs(collection(db, 'tournaments'));
@@ -80,7 +78,6 @@ const DebugSeeder = () => {
         setUserSeedLog(prev => [...prev, message]);
     };
 
-    // --- NEW: Logger for stage seeder ---
     const addStageSeedLog = (message: string) => {
         console.log(`[Stage Seed] ${message}`);
         setStageSeedLog(prev => [...prev, message]);
@@ -204,7 +201,6 @@ const DebugSeeder = () => {
         }
     };
 
-    // --- NEW: Handler for the new seeder button ---
     const handleSeedStagePredictions = async () => {
         if (!selectedTournamentId || !selectedStage) {
             addStageSeedLog("❌ Error: Please select a tournament and a stage.");
@@ -240,68 +236,24 @@ const DebugSeeder = () => {
                 <p className="mt-2 text-slate-400 text-sm">Use these tools for testing purposes. (Visible to superadmins only)</p>
             </div>
 
-            {/* --- NEW: Section for Stage Prediction Seeding --- */}
-            <div className="border-t border-slate-700 pt-6">
-                <h3 className="text-lg font-semibold text-white">Generate Stage Predictions</h3>
-                <p className="mt-1 text-slate-400 text-sm mb-4">
-                    Select a tournament and a specific stage to fill with random predictions for all participants.
-                </p>
-                <div className="flex items-end gap-4">
-                    <div>
-                        <label className="text-xs text-slate-400">Tournament</label>
-                        <select
-                            value={selectedTournamentId}
-                            onChange={e => setSelectedTournamentId(e.target.value)}
-                            className="w-64 px-2 py-1 bg-slate-900 border border-slate-600 text-white"
-                        >
-                            {allTournaments.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                        </select>
-                    </div>
-                    <div>
-                        <label className="text-xs text-slate-400">Stage</label>
-                        <select
-                            value={selectedStage}
-                            onChange={e => setSelectedStage(e.target.value as MatchStage)}
-                            className="w-48 px-2 py-1 bg-slate-900 border border-slate-600 text-white"
-                            disabled={!selectedTournamentId}
-                        >
-                            <option value="">-- Select Stage --</option>
-                            {availableStages.map(stage => <option key={stage} value={stage}>{stage}</option>)}
-                        </select>
-                    </div>
-                    <button
-                        onClick={handleSeedStagePredictions}
-                        disabled={isSeedingStage || !selectedTournamentId || !selectedStage}
-                        className="px-4 py-2 bg-orange-600 hover:bg-orange-500 font-semibold text-white disabled:bg-orange-800 disabled:cursor-not-allowed"
-                    >
-                        {isSeedingStage ? 'Generating...' : 'Generate Predictions'}
-                    </button>
-                </div>
-                {stageSeedLog.length > 0 && (
-                    <div className="mt-4 p-4 bg-slate-900 text-xs text-slate-300 font-mono h-48 overflow-y-auto">
-                        {stageSeedLog.map((line, index) => <p key={index}>{line}</p>)}
-                    </div>
-                )}
-            </div>
-
             <div className="border-t border-slate-700 pt-6">
                 <h3 className="text-lg font-semibold text-white">Generate Full Test Tournament</h3>
                 <p className="mt-1 text-slate-400 text-sm mb-4">
                     Creates a new tournament, adds existing users, and generates random predictions.
                 </p>
-                <div className="flex items-end gap-4">
-                    <div>
+                <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+                    <div className="w-full sm:w-auto">
                         <label className="text-xs text-slate-400"># of Teams</label>
-                        <input type="number" value={numTeams} onChange={e => setNumTeams(Number(e.target.value))} step="4" className="w-24 px-2 py-1 bg-slate-900 border border-slate-600 text-white" />
+                        <input type="number" value={numTeams} onChange={e => setNumTeams(Number(e.target.value))} step="4" className="w-full mt-1 px-2 py-2 bg-slate-900 border border-slate-600 text-white" />
                     </div>
-                    <div>
+                    <div className="w-full sm:w-auto">
                         <label className="text-xs text-slate-400"># of Participants</label>
-                        <input type="number" value={numParticipants} onChange={e => setNumParticipants(Number(e.target.value))} className="w-24 px-2 py-1 bg-slate-900 border border-slate-600 text-white" />
+                        <input type="number" value={numParticipants} onChange={e => setNumParticipants(Number(e.target.value))} className="w-full mt-1 px-2 py-2 bg-slate-900 border border-slate-600 text-white" />
                     </div>
                     <button
                         onClick={handleSeedTournament}
                         disabled={isSeedingTournament}
-                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 font-semibold text-white disabled:bg-indigo-800 disabled:cursor-not-allowed"
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 font-semibold text-white disabled:bg-indigo-800 disabled:cursor-not-allowed w-full sm:w-auto"
                     >
                         {isSeedingTournament ? 'Seeding...' : 'Generate Tournament'}
                     </button>
@@ -313,21 +265,64 @@ const DebugSeeder = () => {
                     </div>
                 )}
             </div>
+
+            <div className="border-t border-slate-700 pt-6">
+                <h3 className="text-lg font-semibold text-white">Generate Stage Predictions</h3>
+                <p className="mt-1 text-slate-400 text-sm mb-4">
+                    Select a tournament and a specific stage to fill with random predictions for all participants.
+                </p>
+                <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+                    <div className="flex-1 min-w-0">
+                        <label className="text-xs text-slate-400">Tournament</label>
+                        <select
+                            value={selectedTournamentId}
+                            onChange={e => setSelectedTournamentId(e.target.value)}
+                            className="w-full mt-1 px-2 py-2 bg-slate-900 border border-slate-600 text-white"
+                        >
+                            {allTournaments.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                        </select>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <label className="text-xs text-slate-400">Stage</label>
+                        <select
+                            value={selectedStage}
+                            onChange={e => setSelectedStage(e.target.value as MatchStage)}
+                            className="w-full mt-1 px-2 py-2 bg-slate-900 border border-slate-600 text-white"
+                            disabled={!selectedTournamentId}
+                        >
+                            <option value="">-- Select Stage --</option>
+                            {availableStages.map(stage => <option key={stage} value={stage}>{stage}</option>)}
+                        </select>
+                    </div>
+                    <button
+                        onClick={handleSeedStagePredictions}
+                        disabled={isSeedingStage || !selectedTournamentId || !selectedStage}
+                        className="px-4 py-2 bg-orange-600 hover:bg-orange-500 font-semibold text-white disabled:bg-orange-800 disabled:cursor-not-allowed w-full sm:w-auto"
+                    >
+                        {isSeedingStage ? 'Generating...' : 'Generate Predictions'}
+                    </button>
+                </div>
+                {stageSeedLog.length > 0 && (
+                    <div className="mt-4 p-4 bg-slate-900 text-xs text-slate-300 font-mono h-48 overflow-y-auto">
+                        {stageSeedLog.map((line, index) => <p key={index}>{line}</p>)}
+                    </div>
+                )}
+            </div>
             
             <div className="border-t border-slate-700 pt-6">
                 <h3 className="text-lg font-semibold text-white">Seed Fake Users</h3>
                 <p className="mt-1 text-slate-400 text-sm mb-4">
                     Creates new fake user accounts in the 'users' collection with the 'user' role.
                 </p>
-                <div className="flex items-end gap-4">
-                     <div>
+                <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+                     <div className="w-full sm:w-auto">
                         <label className="text-xs text-slate-400"># of Users to Create</label>
-                        <input type="number" value={numUsersToSeed} onChange={e => setNumUsersToSeed(Number(e.target.value))} className="w-24 px-2 py-1 bg-slate-900 border border-slate-600 text-white" />
+                        <input type="number" value={numUsersToSeed} onChange={e => setNumUsersToSeed(Number(e.target.value))} className="w-full mt-1 px-2 py-2 bg-slate-900 border border-slate-600 text-white" />
                     </div>
                     <button
                         onClick={handleSeedUsers}
                         disabled={isSeedingUsers}
-                        className="px-4 py-2 bg-teal-600 hover:bg-teal-500 font-semibold text-white disabled:bg-teal-800 disabled:cursor-not-allowed"
+                        className="px-4 py-2 bg-teal-600 hover:bg-teal-500 font-semibold text-white disabled:bg-teal-800 disabled:cursor-not-allowed w-full sm:w-auto"
                     >
                         {isSeedingUsers ? 'Creating...' : 'Seed Users'}
                     </button>
