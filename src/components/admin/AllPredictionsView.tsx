@@ -250,20 +250,20 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                 <div className="text-center p-8 bg-slate-900/50 border border-slate-700"><p className="text-slate-300">This tournament has no participants.</p></div>
             ) : (
                 <div ref={scrollContainerRef} className="overflow-auto border border-slate-700 flex-grow min-h-0">
-                    <table ref={tableRef} className="w-full text-sm text-left text-slate-300 border-collapse min-w-[1200px]">
+                    <table ref={tableRef} className="w-full text-xs text-left text-slate-300 border-collapse min-w-[1200px]">
                         <thead className="sticky top-0 z-20">
                             <tr>
-                                <th scope="col" className="p-3 font-semibold text-slate-300 sticky left-0 bg-slate-700 z-30 w-48">Match</th>
+                                <th scope="col" className="p-2 font-semibold text-slate-300 sticky left-0 bg-slate-700 z-30 w-48">Match</th>
                                 {participants.map(p => (
-                                    <th key={p.uid} scope="col" colSpan={2} className="p-3 font-semibold text-center w-32 bg-slate-700 border-l border-slate-600">{p.name}</th>
+                                    <th key={p.uid} scope="col" colSpan={2} className="p-2 font-semibold text-center w-28 bg-slate-700 border-l border-slate-600">{p.name}</th>
                                 ))}
                             </tr>
                             <tr>
-                                <th scope="col" className="p-2 text-xs text-slate-400 sticky left-0 bg-slate-700 z-30 w-48"></th>
+                                <th scope="col" className="p-1 text-xs text-slate-400 sticky left-0 bg-slate-700 z-30 w-48"></th>
                                 {participants.map(p => (
                                     <Fragment key={p.uid}>
-                                        <th scope="col" className="p-2 text-xs text-slate-400 text-center font-normal bg-slate-700 border-l border-slate-600">Prediction</th>
-                                        <th scope="col" className="p-2 text-xs text-slate-400 text-center font-normal w-12 bg-slate-700">Points</th>
+                                        <th scope="col" className="p-1 text-xs text-slate-400 text-center font-normal bg-slate-700 border-l border-slate-600">Prediction</th>
+                                        <th scope="col" className="p-1 text-xs text-slate-400 text-center font-normal w-10 bg-slate-700">Pts</th>
                                     </Fragment>
                                 ))}
                             </tr>
@@ -271,37 +271,37 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                         <tbody className="bg-slate-800">
                             {enrichedMatches.map((match) => (
                                 <tr key={match.id} className="border-b border-slate-700">
-                                    <td className="p-3 font-medium text-white sticky left-0 bg-slate-800 z-10 w-48 align-top">
-                                        <div className="flex flex-col items-center text-center">
-                                            <div className="flex items-center gap-2"><Flag code={match.team1.code} /> {match.team1.name}</div>
-                                            <div className="text-xs text-slate-400 my-1">vs</div>
-                                            <div className="flex items-center gap-2"><Flag code={match.team2.code} /> {match.team2.name}</div>
+                                    <td className="p-2 font-medium text-white sticky left-0 bg-slate-800 z-10 w-48 align-top">
+                                        <div className="flex flex-col">
+                                            <div className="flex items-center gap-2"><Flag code={match.team1.code} className="w-4 h-auto" /> {match.team1.name}</div>
+                                            <div className="text-xs text-slate-500 my-1 pl-6">vs</div>
+                                            <div className="flex items-center gap-2"><Flag code={match.team2.code} className="w-4 h-auto" /> {match.team2.name}</div>
                                         </div>
-                                        <div className="text-xs text-slate-400 mt-2 text-center">Actual: {typeof match.team1Score === 'number' ? `${match.team1Score} - ${match.team2Score}` : 'Not Played'}</div>
+                                        <div className="text-[10px] text-slate-400 mt-1">Actual: {typeof match.team1Score === 'number' ? `${match.team1Score} - ${match.team2Score}` : 'N/A'}</div>
                                     </td>
                                     {match.participantPredictions.map(p => (
                                         <Fragment key={p.userId}>
-                                            <td className="p-3 text-center font-mono border-l border-slate-700">
+                                            <td className="p-2 text-center font-mono border-l border-slate-700">
                                                 <PredictionCell actual={match.team1Score} prediction={p.prediction?.team1Score} />
                                                 {' - '}
                                                 <PredictionCell actual={match.team2Score} prediction={p.prediction?.team2Score} />
                                             </td>
-                                            <td className="p-3 text-center font-mono text-blue-400 w-12">{p.points}</td>
+                                            <td className="p-2 text-center font-mono text-blue-400 w-10">{p.points}</td>
                                         </Fragment>
                                     ))}
                                 </tr>
                             ))}
                             <tr className="border-t-2 border-blue-500 bg-slate-700">
-                                <td className="p-3 font-bold text-white sticky left-0 bg-slate-700 z-10 w-48">
+                                <td className="p-2 font-bold text-white sticky left-0 bg-slate-700 z-10 w-48">
                                     Champion
                                     <div className="text-xs text-slate-400">Actual: {tournament.champion ? tournament.teams?.find(t => t.code === tournament.champion)?.name : 'TBD'}</div>
                                 </td>
                                 {championPredictions.map(p => (
                                     <Fragment key={p.userId}>
-                                        <td className="p-3 text-center text-xs border-l border-slate-600">
-                                            {p.team ? <span className="flex items-center justify-center gap-2"><Flag code={p.team.code} /> {p.team.name}</span> : <span className="text-slate-500">-</span>}
+                                        <td className="p-2 text-center text-xs border-l border-slate-600">
+                                            {p.team ? <span className="flex items-center justify-center gap-2"><Flag code={p.team.code} className="w-4 h-auto" /> {p.team.name}</span> : <span className="text-slate-500">-</span>}
                                         </td>
-                                        <td className="p-3 text-center font-mono text-blue-400 w-12">{p.points}</td>
+                                        <td className="p-2 text-center font-mono text-blue-400 w-10">{p.points}</td>
                                     </Fragment>
                                 ))}
                             </tr>

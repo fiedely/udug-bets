@@ -126,7 +126,7 @@ const Step1Details = ({ tournament, onNext, onBack, setIsDirty }: Step1DetailsPr
             <button onClick={onBack} className="text-sm text-blue-400 hover:text-blue-300 mb-4 flex items-center">
                 &larr; Back to List
             </button>
-            <form className="mt-4 space-y-6 max-w-2xl" onSubmit={e => e.preventDefault()}>
+            <form className="mt-4 space-y-6 max-w-4xl mx-auto" onSubmit={e => e.preventDefault()}>
                 <h2 className="text-2xl font-bold text-blue-400">Step 1: Tournament Details</h2>
                 <div>
                     <label htmlFor="tourney-name" className="block text-sm font-medium text-slate-300">Tournament Name</label>
@@ -135,7 +135,6 @@ const Step1Details = ({ tournament, onNext, onBack, setIsDirty }: Step1DetailsPr
                 <div>
                     <label htmlFor="tourney-desc" className="block text-sm font-medium text-slate-300">Description</label>
                     <textarea id="tourney-desc" value={description} onChange={e => { setDescription(e.target.value); markDirty(); }} rows={5} className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                    {/* NEW: Added instruction for Markdown support */}
                     <p className="mt-2 text-xs text-slate-400">
                         You can use Markdown for formatting (e.g., `**bold**`, `*italic*`, `[link](url)`).
                     </p>
@@ -148,7 +147,7 @@ const Step1Details = ({ tournament, onNext, onBack, setIsDirty }: Step1DetailsPr
                         <input type="number" id="champion-bonus" value={championBonus} onChange={e => { setChampionBonus(Number(e.target.value)); markDirty(); }} className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400" />
                     </div>
 
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row gap-4">
                         <div className="flex-1">
                             <label className="block text-sm font-medium text-slate-300">Group Stage (Correct Score)</label>
                             <input type="number" value={pointRules.groupStage.correctScore} onChange={e => handlePointsChange('groupStage', 'correctScore', Number(e.target.value))} className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400" />
@@ -166,7 +165,7 @@ const Step1Details = ({ tournament, onNext, onBack, setIsDirty }: Step1DetailsPr
 
                     <div className="space-y-4 pt-2">
                         {KNOCKOUT_STAGES.map(stage => (
-                            <div key={stage} className="flex gap-4">
+                            <div key={stage} className="flex flex-col sm:flex-row gap-4">
                                 <div className="flex-1">
                                     <label className="block text-sm font-medium text-slate-300">{formatStageName(stage)} (Correct Score)</label>
                                     <input
@@ -193,7 +192,7 @@ const Step1Details = ({ tournament, onNext, onBack, setIsDirty }: Step1DetailsPr
                 </div>
                  <div>
                     <h3 className="text-lg font-semibold text-slate-100">Date Period</h3>
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row gap-4">
                         <div className="flex-1">
                             <label htmlFor="start-date" className="block text-sm font-medium text-slate-300">Start Date & Time</label>
                             <input type="datetime-local" id="start-date" value={startDate} onChange={e => { setStartDate(e.target.value); markDirty(); }} className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400" />

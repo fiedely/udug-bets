@@ -183,20 +183,25 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
                                                 }
 
                                                 return (
-                                                    <div key={match.id} className="p-3 bg-slate-900/50 space-y-2">
-                                                        <div className="grid grid-cols-[1fr_auto_1fr] md:grid-cols-12 gap-x-2 gap-y-3 items-center text-sm">
-                                                            <div className="flex items-center justify-end gap-2 md:col-span-5">
+                                                    <div key={match.id} className="p-3 bg-slate-900/50 space-y-3">
+                                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm">
+                                                            {/* Team 1 */}
+                                                            <div className="flex-1 flex items-center justify-end gap-2">
                                                                 <OutcomeBadge outcome={team1Outcome} />
                                                                 <select value={match.team1.code} onChange={e => handleTeamChange(match.id, 'team1', e.target.value)} disabled={!isKnockout} className="w-full bg-slate-800 border border-slate-600 text-white p-1 text-xs disabled:opacity-70 disabled:cursor-not-allowed">
                                                                     {isKnockout ? selectableTeams.map(t => <SelectOption key={`t1-${match.id}-${t.code}`} team={t} />) : <SelectOption team={match.team1} />}
                                                                 </select>
                                                             </div>
-                                                            <div className="flex items-center justify-center gap-1 md:col-span-2">
-                                                                <input type="number" min="0" value={match.team1Score ?? ''} onChange={e => handleScoreChange(match.id, isKnockout, 'team1Score', e.target.value)} className="w-10 text-center bg-slate-800 border border-slate-600 text-white font-bold" />
-                                                                <span className="text-slate-500">-</span>
-                                                                <input type="number" min="0" value={match.team2Score ?? ''} onChange={e => handleScoreChange(match.id, isKnockout, 'team2Score', e.target.value)} className="w-10 text-center bg-slate-800 border border-slate-600 text-white font-bold" />
+
+                                                            {/* Score Inputs */}
+                                                            <div className="flex items-center justify-center gap-1 order-first sm:order-none w-full sm:w-auto">
+                                                                <input type="number" min="0" value={match.team1Score ?? ''} onChange={e => handleScoreChange(match.id, isKnockout, 'team1Score', e.target.value)} className="w-full sm:w-12 text-center bg-slate-800 border border-slate-600 text-white font-bold p-1" />
+                                                                <span className="text-slate-500 font-bold text-lg">-</span>
+                                                                <input type="number" min="0" value={match.team2Score ?? ''} onChange={e => handleScoreChange(match.id, isKnockout, 'team2Score', e.target.value)} className="w-full sm:w-12 text-center bg-slate-800 border border-slate-600 text-white font-bold p-1" />
                                                             </div>
-                                                            <div className="flex items-center gap-2 md:col-span-5">
+
+                                                            {/* Team 2 */}
+                                                            <div className="flex-1 flex items-center gap-2">
                                                                 <select value={match.team2.code} onChange={e => handleTeamChange(match.id, 'team2', e.target.value)} disabled={!isKnockout} className="w-full bg-slate-800 border border-slate-600 text-white p-1 text-xs disabled:opacity-70 disabled:cursor-not-allowed">
                                                                      {isKnockout ? selectableTeams.map(t => <SelectOption key={`t2-${match.id}-${t.code}`} team={t} />) : <SelectOption team={match.team2} />}
                                                                 </select>

@@ -173,7 +173,7 @@ const Step4Knockout = ({ tournament, onNext, onBack, setIsDirty }: Step4Knockout
                                                 </select>
                                             </div>
                                        </div>
-                                       <div className="md:col-span-2 grid grid-cols-2 gap-4 items-center">
+                                       <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
                                            <div>
                                                 <label className="block text-xs font-medium text-slate-400">Date & Time</label>
                                                 <input type="datetime-local" value={new Date(new Date(match.date).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)} onChange={e => handleMatchChange(match.id, 'date', new Date(e.target.value).toISOString())} className="mt-1 w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100" />

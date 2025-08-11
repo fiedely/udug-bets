@@ -80,15 +80,24 @@ const TournamentWizard = ({ tournamentId, onBackToList, reportDirtyState }: Tour
         return <div className="bg-slate-800 border border-slate-700 p-8 text-center"><svg className="animate-spin h-6 w-6 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>;
     }
 
+    const STEPS = [
+        { num: 1, label: 'Details' },
+        { num: 2, label: 'Participants' },
+        { num: 3, label: 'Group Matches' },
+        { num: 4, label: 'Knockout' },
+        { num: 5, label: 'Confirmation' },
+    ];
+
     return (
-        <div className="bg-slate-800 border border-slate-700 p-8">
+        <div className="bg-slate-800 border border-slate-700 p-4 md:p-8">
             <div className="mb-6">
-                <div className="flex justify-between text-sm font-medium text-slate-400 max-w-4xl mx-auto">
-                    <span className={currentStep >= 1 ? 'text-blue-400 font-bold' : ''}>1. Details</span>
-                    <span className={currentStep >= 2 ? 'text-blue-400 font-bold' : ''}>2. Participants</span>
-                    <span className={currentStep >= 3 ? 'text-blue-400 font-bold' : ''}>3. Group Matches</span>
-                    <span className={currentStep >= 4 ? 'text-blue-400 font-bold' : ''}>4. Knockout</span>
-                    <span className={currentStep >= 5 ? 'text-blue-400 font-bold' : ''}>5. Confirmation</span>
+                <div className="flex justify-between text-xs sm:text-sm font-medium text-slate-400 max-w-4xl mx-auto">
+                    {STEPS.map(({num, label}) => (
+                        <span key={num} className={`text-center ${currentStep >= num ? 'text-blue-400 font-bold' : ''}`}>
+                            <span className="sm:hidden">{num}</span>
+                            <span className="hidden sm:inline">{num}. {label}</span>
+                        </span>
+                    ))}
                 </div>
             </div>
 

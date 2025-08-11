@@ -173,8 +173,8 @@ const Step3Matches = ({ tournament, onNext, onBack, setIsDirty }: Step3MatchesPr
                                 </div>
                                 <p className="text-xs text-slate-500 mt-1">{match.group} - Match {match.matchNumber}</p>
                            </div>
-                           <div className="md:col-span-2 grid grid-cols-3 gap-4 items-center">
-                               <div>
+                           <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                               <div className="sm:col-span-1">
                                     <label className="block text-xs font-medium text-slate-400">Date & Time</label>
                                     <input
                                         type="datetime-local"
@@ -183,7 +183,7 @@ const Step3Matches = ({ tournament, onNext, onBack, setIsDirty }: Step3MatchesPr
                                         className="mt-1 w-full px-2 py-1 bg-slate-800 border border-slate-600 text-slate-100"
                                     />
                                </div>
-                               <div>
+                               <div className="sm:col-span-1">
                                     <label className="block text-xs font-medium text-slate-400">Venue</label>
                                    <select
                                         value={match.stadium.name}
@@ -193,7 +193,7 @@ const Step3Matches = ({ tournament, onNext, onBack, setIsDirty }: Step3MatchesPr
                                         {STADIUMS.map((s) => <option key={s.name} value={s.name}>{s.name}, {s.city}</option>)}
                                     </select>
                                </div>
-                               <div className="text-right">
+                               <div className="sm:col-span-1 text-right">
                                     <button onClick={() => handleDeleteMatch(match.id)} className="px-3 py-2 bg-red-800 hover:bg-red-700 text-white text-xs font-semibold transition-colors">
                                         Delete
                                     </button>
@@ -208,8 +208,8 @@ const Step3Matches = ({ tournament, onNext, onBack, setIsDirty }: Step3MatchesPr
 
             <div className="flex gap-4 pt-4 mt-6 border-t border-slate-700">
                 <button type="button" onClick={onBack} className="w-1/4 px-4 py-3 bg-slate-700 hover:bg-slate-600 font-semibold text-white transition-colors">Back</button>
-                <button type="button" onClick={() => handleSave(false)} disabled={isSaving} className="w-full px-4 py-3 bg-slate-600 hover:bg-slate-500 font-semibold text-white transition-colors disabled:bg-slate-700 disabled:cursor-not-allowed">Save Progress</button>
-                <button type="button" onClick={() => handleSave(true)} disabled={isSaving || matches.length === 0} className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-white disabled:bg-blue-800 disabled:cursor-not-allowed transition-colors">Save & Continue</button>
+                <button type="button" onClick={() => handleSave(false)} disabled={isSaving} className="w-full flex justify-center items-center px-4 py-3 bg-slate-600 hover:bg-slate-500 font-semibold text-white transition-colors disabled:bg-slate-700 disabled:cursor-not-allowed">Save Progress</button>
+                <button type="button" onClick={() => handleSave(true)} disabled={isSaving || matches.length === 0} className="w-full flex justify-center items-center px-4 py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-white disabled:bg-blue-800 disabled:cursor-not-allowed transition-colors">Save & Continue</button>
             </div>
         </div>
     );
