@@ -15,9 +15,9 @@ interface MyPredictionsChartWidgetProps {
 }
 
 const COLORS = {
-    correct: '#86efac', // pastel green (green-300)
-    wrong: '#fca5a5',   // pastel red (red-300)
-    notYet: '#94a3b8', // lighter grey (slate-400)
+    correct: '#66BB6A',
+    wrong: '#EF5350',
+    notYet: '#94a3b8',
 };
 
 const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, onSelectedUserChange, setRefreshFunc }: MyPredictionsChartWidgetProps) => {
