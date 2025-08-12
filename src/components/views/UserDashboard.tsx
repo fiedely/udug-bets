@@ -11,6 +11,7 @@ import LeaderboardWidget from './widgets/LeaderboardWidget';
 import PredictionChartWidget from './widgets/PredictionChartWidget';
 import MyPredictionsChartWidget from './widgets/MyPredictionsChartWidget';
 import ChampionPredictionWidget from './widgets/ChampionPredictionWidget';
+import GroupStandingsWidget from './widgets/GroupStandingsWidget';
 import WidgetConfigModal from './WidgetConfigModal';
 import AddWidgetModal from './AddWidgetModal';
 
@@ -63,7 +64,6 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
 
     const handleLayoutChange = (_: ReactGridLayout.Layout[], allLayouts: ReactGridLayout.Layouts) => {
         const isMobile = breakpoint === 'xs' || breakpoint === 'xxs';
-        // Do not save layout changes on mobile breakpoints to preserve the desktop layout
         if (!isMounted || isMobile) return;
 
         const lgLayout = allLayouts.lg || [];
@@ -91,12 +91,24 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
 
     const handleSelectWidgetType = (type: WidgetType) => {
         setIsAddModalOpen(false);
+
+        const newWidgetTitles: Record<WidgetType, string> = {
+            leaderboard: 'New Leaderboard',
+            groupStandings: 'New Group Standings',
+            predictionChart: 'New All Predictions Chart',
+            myPredictionsChart: 'New My Prediction Chart',
+            championPredictionChart: 'New Champion Prediction',
+        };
+
         const newWidget: Partial<Widget> = {
             i: `${type}-${new Date().getTime()}`,
             type: type,
-            title: `New ${type.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}`,
+            title: newWidgetTitles[type] || 'New Widget',
             x: (widgets.length * 4) % 12, y: Infinity,
-            w: 6, h: 10, minW: 4, minH: 8,
+            w: type === 'groupStandings' ? 12 : 6, 
+            h: 10, 
+            minW: type === 'groupStandings' ? 8 : 4,
+            minH: 8,
             props: {
                 currentMatchIndex: 0,
                 selectedUserId: userProfile.uid,
@@ -157,6 +169,11 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
                     tournamentId={widget.props?.tournamentId}
                     setRefreshFunc={(func) => refreshFuncs.set(widget.i, func)}
                 />;
+            case 'groupStandings':
+                return <GroupStandingsWidget
+                    tournamentId={widget.props?.tournamentId}
+                    setRefreshFunc={(func) => refreshFuncs.set(widget.i, func)}
+                />;
             case 'predictionChart':
                 return <PredictionChartWidget
                     tournamentId={widget.props?.tournamentId}
@@ -194,7 +211,7 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
       x: 0,
       y: index * 12, 
       w: 1, 
-      h: (widget.type === 'leaderboard' || widget.type === 'championPredictionChart') ? 14 : 12,
+      h: (widget.type === 'leaderboard' || widget.type === 'championPredictionChart' || widget.type === 'groupStandings') ? 14 : 12,
     }));
 
     return (

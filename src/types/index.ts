@@ -18,7 +18,7 @@ export interface Widget {
   };
 }
 
-export type WidgetType = 'leaderboard' | 'predictionChart' | 'myPredictionsChart' | 'championPredictionChart';
+export type WidgetType = 'leaderboard' | 'predictionChart' | 'myPredictionsChart' | 'championPredictionChart' | 'groupStandings';
 
 export type View = 'User Dashboard' | 'My Tournaments' | 'Join Tournament' | 'Leaderboard' | 'Create Tournament' | 'Manage Users' | 'List Tournaments' | 'Edit Tournament' | 'Manage Scores' | 'Debug';
 
@@ -70,7 +70,7 @@ export interface Match {
     team2Score?: number | null;
     date: string;
     stadium: Stadium;
-    winnerTeamCode?: string; // This team won after a draw (e.g., penalties)
+    winnerTeamCode?: string;
 }
 
 export interface PredictionStatus {
@@ -116,13 +116,26 @@ export interface UserPredictions {
     matchPredictions: Record<string, MatchPrediction>;
 }
 
+export interface TeamStanding {
+    team: Team;
+    mp: number;
+    w: number;
+    d: number;
+    l: number;
+    gf: number;
+    ga: number;
+    gd: number;
+    pts: number;
+}
+
 export interface Leaderboard {
     entries: LeaderboardEntry[];
     lastUpdated: Date;
     tournamentAiSummary?: string;
-    championAiSummary?: string; // Unified summary field
+    championAiSummary?: string;
     eliminatedTeamCodes?: string[];
     currentTournamentStage?: MatchStage | "Not Started" | "Completed";
+    groupStandings?: Record<string, TeamStanding[]>;
 }
 
 export interface LeaderboardEntry {

@@ -6,6 +6,9 @@ import { signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import type { View, UserProfile, Tournament } from '../types';
 
+// Import your new logo
+import udugBetsLogo from '../assets/udug_bets_logo.png';
+
 // Admin Components
 import CreateTournamentContent from './admin/CreateTournamentContent';
 import ListTournamentsContent from './admin/ListTournamentsContent';
@@ -223,9 +226,14 @@ const Dashboard = () => {
             </div>
           )}
         </nav>
-        <div className="px-4 py-2 border-t border-slate-700">
-          <p className="text-sm font-semibold truncate">{user?.displayName || 'User'}</p>
-          <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+        
+        {/* User Info Section with Logo */}
+        <div className="px-4 py-4 border-t border-slate-700">
+            <div className="flex justify-center mb-2">
+                <img src={udugBetsLogo} alt="Udug Bets Logo" className="w-28 h-28 object-cover" />
+            </div>
+            <p className="text-sm font-semibold truncate text-center">{user?.displayName || 'User'}</p>
+            <p className="text-xs text-slate-400 truncate text-center">{user?.email}</p>
         </div>
       </aside>
       

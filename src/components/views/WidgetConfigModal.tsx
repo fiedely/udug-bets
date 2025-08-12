@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { db } from '../../firebaseConfig';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import type { Widget, Tournament, UserProfile } from '../../types';
+import type { Widget, Tournament, UserProfile, WidgetType } from '../../types';
 
 interface WidgetConfigModalProps {
     isOpen: boolean;
@@ -15,13 +15,25 @@ interface WidgetConfigModalProps {
 
 const HEADER_COLORS = [
     { name: 'Default', class: 'bg-slate-700/50' },
+    { name: 'Gray', class: 'bg-gray-900' },
+    { name: 'Stone', class: 'bg-stone-900' },
     { name: 'Red', class: 'bg-red-900' },
     { name: 'Orange', class: 'bg-orange-900' },
+    { name: 'Amber', class: 'bg-amber-900' },
     { name: 'Yellow', class: 'bg-yellow-900' },
+    { name: 'Lime', class: 'bg-lime-900' },
     { name: 'Green', class: 'bg-green-900' },
+    { name: 'Emerald', class: 'bg-emerald-900' },
+    { name: 'Teal', class: 'bg-teal-900' },
+    { name: 'Cyan', class: 'bg-cyan-900' },
+    { name: 'Sky', class: 'bg-sky-900' },
     { name: 'Blue', class: 'bg-blue-900' },
     { name: 'Indigo', class: 'bg-indigo-900' },
     { name: 'Violet', class: 'bg-violet-900' },
+    { name: 'Purple', class: 'bg-purple-900' },
+    { name: 'Fuchsia', class: 'bg-fuchsia-900' },
+    { name: 'Pink', class: 'bg-pink-900' },
+    { name: 'Rose', class: 'bg-rose-900' },
 ];
 
 const WidgetConfigModal = ({ isOpen, widget, userProfile, onClose, onSave }: WidgetConfigModalProps) => {
@@ -30,7 +42,14 @@ const WidgetConfigModal = ({ isOpen, widget, userProfile, onClose, onSave }: Wid
     const [title, setTitle] = useState('');
     const [headerColor, setHeaderColor] = useState(HEADER_COLORS[0].class);
 
-    const defaultTitle = widget?.type === 'predictionChart' ? 'Prediction Chart' : 'Leaderboard';
+    const defaultTitles: Record<WidgetType, string> = {
+        leaderboard: 'Leaderboard',
+        groupStandings: 'Group Standings',
+        predictionChart: 'All Predictions Chart',
+        myPredictionsChart: 'My Prediction Chart',
+        championPredictionChart: 'Champion Prediction',
+    };
+    const defaultTitle = widget?.type ? defaultTitles[widget.type] : 'Widget';
 
     useEffect(() => {
         if (widget) {
@@ -102,8 +121,17 @@ const WidgetConfigModal = ({ isOpen, widget, userProfile, onClose, onSave }: Wid
                                     key={color.name}
                                     title={color.name}
                                     onClick={() => setHeaderColor(color.class)}
-                                    className={`w-8 h-8 border-2 ${headerColor === color.class ? 'border-white' : 'border-transparent'} ${color.class}`}
-                                />
+                                    className={`w-8 h-8 border-2 ${headerColor === color.class ? 'border-white' : 'border-transparent'}`}
+                                >
+                                    {color.name === 'Default' ? (
+                                        <svg className="w-full h-full bg-slate-700/50 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <rect x="3" y="3" width="18" height="18" fill="currentColor" fillOpacity="0.2" />
+                                            <line x1="4" y1="20" x2="20" y2="4" />
+                                        </svg>
+                                    ) : (
+                                        <div className={`w-full h-full ${color.class}`}></div>
+                                    )}
+                                </button>
                             ))}
                         </div>
                     </div>

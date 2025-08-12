@@ -2,7 +2,7 @@
 
 import * as logger from "firebase-functions/logger";
 import { Timestamp } from "firebase-admin/firestore";
-import { db, generateAiSummary, Leaderboard, LeaderboardEntry, Match, MatchStage, PointRule, PointRules, Tournament, UserPredictions, UserProfile, Team } from "./common";
+import { db, generateAiSummary, Leaderboard, LeaderboardEntry, Match, MatchStage, PointRule, PointRules, Tournament, UserPredictions, UserProfile, Team, TeamStanding } from "./common";
 import { FIFA_COUNTRIES } from "./data/countries";
 
 const fifaCountriesMap = new Map(FIFA_COUNTRIES.map((c: Team) => [c.code, c]));
@@ -53,6 +53,69 @@ function determineCurrentStage(allMatches: Match[], tournament: Tournament): Lea
     return "Completed";
 }
 
+// --- NEW: Function to calculate group standings ---
+function calculateGroupStandings(tournament: Tournament): Record<string, TeamStanding[]> {
+    const standings: Record<string, Record<string, TeamStanding>> = {};
+    const groups = tournament.groups || {};
+    const groupMatches = (tournament.matches || []).filter(m => m.stage === 'Group Stage');
+
+    // Initialize standings for all teams in groups
+    for (const groupName in groups) {
+        standings[groupName] = {};
+        for (const team of groups[groupName]) {
+            standings[groupName][team.code] = { team, mp: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0 };
+        }
+    }
+
+    // Process each group stage match
+    for (const match of groupMatches) {
+        if (typeof match.team1Score !== 'number' || typeof match.team2Score !== 'number') continue;
+
+        const groupName = Object.keys(groups).find(gn => groups[gn].some(t => t.code === match.team1.code));
+        if (!groupName) continue;
+
+        const team1Stats = standings[groupName][match.team1.code];
+        const team2Stats = standings[groupName][match.team2.code];
+
+        team1Stats.mp++;
+        team2Stats.mp++;
+        team1Stats.gf += match.team1Score;
+        team1Stats.ga += match.team2Score;
+        team2Stats.gf += match.team2Score;
+        team2Stats.ga += match.team1Score;
+        team1Stats.gd = team1Stats.gf - team1Stats.ga;
+        team2Stats.gd = team2Stats.gf - team2Stats.ga;
+
+        if (match.team1Score > match.team2Score) {
+            team1Stats.w++;
+            team1Stats.pts += 3;
+            team2Stats.l++;
+        } else if (match.team2Score > match.team1Score) {
+            team2Stats.w++;
+            team2Stats.pts += 3;
+            team1Stats.l++;
+        } else {
+            team1Stats.d++;
+            team2Stats.d++;
+            team1Stats.pts += 1;
+            team2Stats.pts += 1;
+        }
+    }
+
+    // Convert to sorted arrays
+    const sortedStandings: Record<string, TeamStanding[]> = {};
+    for (const groupName in standings) {
+        sortedStandings[groupName] = Object.values(standings[groupName]).sort((a, b) => {
+            if (b.pts !== a.pts) return b.pts - a.pts;
+            if (b.gd !== a.gd) return b.gd - a.gd;
+            if (b.gf !== a.gf) return b.gf - a.gf;
+            return a.team.name.localeCompare(b.team.name);
+        });
+    }
+
+    return sortedStandings;
+}
+
 
 export async function recalculateLeaderboard(tournamentId: string) {
     logger.info(`Recalculating leaderboard for tournament: ${tournamentId}`);
@@ -89,12 +152,16 @@ export async function recalculateLeaderboard(tournamentId: string) {
     const tournamentCompletion = allMatches.length > 0 ? Math.round((completedMatches.length / allMatches.length) * 100) : 0;
     const isFinalConcluded = currentTournamentStage === "Completed";
 
+    // --- NEW: Calculate group standings ---
+    const groupStandings = calculateGroupStandings(tournamentData);
+
     if (completedMatches.length === 0) {
         await db.collection("leaderboards").doc(tournamentId).set({
             entries: [],
             tournamentAiSummary: "The stage is set and predictions are rolling in! The leaderboard is currently empty, but it will update as soon as the first match results are posted. Good luck to all participants!",
             championAiSummary: "You've made your champion pick! Now, let the games begin. Check back here after the first matches to see how the community's predictions are shaping up.",
             currentTournamentStage: "Not Started",
+            groupStandings: groupStandings,
             lastUpdated: Timestamp.now(),
         }, { merge: true });
         logger.info("No matches have been scored yet. Set pre-game summary.");
@@ -264,6 +331,7 @@ export async function recalculateLeaderboard(tournamentId: string) {
         championAiSummary: championAiSummary,
         eliminatedTeamCodes: Array.from(eliminatedTeamCodes),
         currentTournamentStage: currentTournamentStage,
+        groupStandings: groupStandings,
         lastUpdated: Timestamp.now(),
     });
     logger.info(`Leaderboard for tournament ${tournamentId} successfully updated.`);

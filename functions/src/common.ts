@@ -33,18 +33,32 @@ export interface Match {
     date: string; 
     winnerTeamCode?: string;
 }
-export interface Tournament { id: string; name: string; pointRules?: PointRules; matches?: Match[]; knockoutMatches?: Match[]; participants?: string[]; champion?: string; teams?: Team[]; knockoutStartStage?: MatchStage; }
+export interface Tournament { id: string; name: string; pointRules?: PointRules; matches?: Match[]; knockoutMatches?: Match[]; participants?: string[]; champion?: string; teams?: Team[]; knockoutStartStage?: MatchStage; groups?: Record<string, Team[]>; }
 export interface MatchPrediction { team1Score: number; team2Score: number; }
 export interface UserPredictions { tournamentId: string; userId: string; championPrediction?: string; matchPredictions: Record<string, MatchPrediction>; }
 export interface UserProfile { uid: string; name: string; email: string; role: 'user' | 'admin' | 'superadmin'; }
+
+// --- NEW: Type definition for a single team's standing in a group ---
+export interface TeamStanding {
+    team: Team;
+    mp: number; // Matches Played
+    w: number;  // Wins
+    d: number;  // Draws
+    l: number;  // Losses
+    gf: number; // Goals For
+    ga: number; // Goals Against
+    gd: number; // Goal Difference
+    pts: number;// Points
+}
 
 export interface Leaderboard {
     entries: LeaderboardEntry[];
     lastUpdated: Date;
     tournamentAiSummary?: string;
-    championAiSummary?: string; // Unified summary field
+    championAiSummary?: string;
     eliminatedTeamCodes?: string[];
     currentTournamentStage?: MatchStage | "Not Started" | "Completed";
+    groupStandings?: Record<string, TeamStanding[]>; // Add group standings to the leaderboard
 }
 
 export interface LeaderboardEntry { 
