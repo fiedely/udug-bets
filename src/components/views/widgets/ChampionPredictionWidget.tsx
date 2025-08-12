@@ -45,8 +45,7 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
         const participants = tournament.participants || [];
         const eliminatedCodes = new Set(leaderboardData?.eliminatedTeamCodes || []);
         
-        const isAdmin = userProfile.role === 'admin' || userProfile.role === 'superadmin';
-        setAiSummary(isAdmin ? leaderboardData?.championAdminSummary || null : leaderboardData?.championUserSummary || null);
+        setAiSummary(leaderboardData?.championAiSummary || null);
 
         if (participants.length === 0) {
             setPicks([]);
@@ -61,7 +60,7 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
 
         setTotalPredictions(predictions.length);
 
-        if (!isAdmin) {
+        if (userProfile.role === 'user') {
             const myPred = predictions.find(p => p.userId === userProfile.uid);
             setMyChampionPick(myPred?.championPrediction || null);
         }
@@ -85,7 +84,6 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
             };
         });
 
-        // Corrected sort function
         formattedPicks.sort((a, b) => b.count - a.count || a.team.name.localeCompare(b.team.name));
         
         setPicks(formattedPicks);
@@ -110,11 +108,9 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
         return <div className="flex items-center justify-center h-full"><p className="text-slate-400 text-sm text-center">No champion predictions have been made yet.</p></div>;
     }
 
-    const isAdmin = userProfile.role === 'admin' || userProfile.role === 'superadmin';
-
     return (
         <div className="h-full flex flex-col text-slate-300 text-xs">
-            {aiSummary && <AiSummary title={isAdmin ? "Admin Sentiment Analysis" : "Community Sentiment"} text={aiSummary} colorClass="border-slate-600 text-blue-400" />}
+            {aiSummary && <AiSummary title="Community Sentiment" text={aiSummary} colorClass="border-slate-600 text-blue-400" />}
             <div className="flex-grow overflow-y-auto">
                 <table className="w-full text-xs">
                     <tbody>

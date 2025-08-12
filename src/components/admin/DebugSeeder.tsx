@@ -1,6 +1,6 @@
 // src/components/admin/DebugSeeder.tsx
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { db, functions } from '../../firebaseConfig';
 import { httpsCallable } from 'firebase/functions';
 import { collection, getDocs, query, where, writeBatch, doc } from 'firebase/firestore';
@@ -224,9 +224,22 @@ const DebugSeeder = () => {
         }
     };
 
-    const availableStages = allTournaments.find(t => t.id === selectedTournamentId)?.knockoutMatches
-        ?.map(m => m.stage)
-        .filter((value, index, self) => self.indexOf(value) === index) || [];
+    const availableStages = useMemo(() => {
+        const tournament = allTournaments.find(t => t.id === selectedTournamentId);
+        if (!tournament) return [];
+
+        const stages = new Set<MatchStage>();
+
+        if (tournament.matches && tournament.matches.length > 0) {
+            stages.add('Group Stage');
+        }
+
+        if (tournament.knockoutMatches) {
+            tournament.knockoutMatches.forEach(m => stages.add(m.stage));
+        }
+
+        return Array.from(stages);
+    }, [allTournaments, selectedTournamentId]);
 
 
     return (

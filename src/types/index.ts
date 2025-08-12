@@ -120,8 +120,7 @@ export interface Leaderboard {
     entries: LeaderboardEntry[];
     lastUpdated: Date;
     tournamentAiSummary?: string;
-    championUserSummary?: string;
-    championAdminSummary?: string;
+    championAiSummary?: string; // Unified summary field
     eliminatedTeamCodes?: string[];
     currentTournamentStage?: MatchStage | "Not Started" | "Completed";
 }
@@ -133,5 +132,4 @@ export interface LeaderboardEntry {
     rank: number;
     previousRank?: number | null;
     rankChange: "up" | "down" | "same";
-    aiSummary?: string;
 }

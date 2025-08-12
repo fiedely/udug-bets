@@ -83,7 +83,8 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                 const enriched = allMatches.map(match => {
                     const participantPredictions = participantProfiles.map(participant => {
                         const predictionDoc = userPredictionsMap.get(participant.uid);
-                        const prediction = predictionDoc?.matchPredictions[match.id];
+                        // FIX: Use optional chaining to safely access nested matchPredictions
+                        const prediction = predictionDoc?.matchPredictions?.[match.id];
                         let points = 0;
 
                         if (prediction && pointRules && typeof match.team1Score === 'number' && typeof match.team2Score === 'number') {

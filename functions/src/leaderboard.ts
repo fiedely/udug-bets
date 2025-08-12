@@ -2,8 +2,10 @@
 
 import * as logger from "firebase-functions/logger";
 import { Timestamp } from "firebase-admin/firestore";
-import { db, generateAiSummary, Leaderboard, LeaderboardEntry, Match, MatchStage, PointRule, PointRules, Tournament, UserPredictions, UserProfile } from "./common";
+import { db, generateAiSummary, Leaderboard, LeaderboardEntry, Match, MatchStage, PointRule, PointRules, Tournament, UserPredictions, UserProfile, Team } from "./common";
+import { FIFA_COUNTRIES } from "./data/countries";
 
+const fifaCountriesMap = new Map(FIFA_COUNTRIES.map((c: Team) => [c.code, c]));
 
 const stageToRuleKeyMap: { [key in MatchStage]?: keyof PointRules } = {
     "Group Stage": "groupStage", "Round of 32": "round32", "Round of 16": "round16",
@@ -67,7 +69,7 @@ export async function recalculateLeaderboard(tournamentId: string) {
         await db.collection("leaderboards").doc(tournamentId).set({
             entries: [],
             tournamentAiSummary: "The tournament is all set up! Get ready for an exciting competition. The leaderboard will come alive as soon as participants join and make their predictions.",
-            championUserSummary: "Welcome to the tournament! Who will you pick as the champion? Make your prediction to see how your choice stacks up against the community.",
+            championAiSummary: "Welcome to the tournament! Who will you pick as the champion? Make your prediction to see how your choice stacks up against the community.",
             lastUpdated: Timestamp.now(),
         }, { merge: true });
         return;
@@ -91,7 +93,7 @@ export async function recalculateLeaderboard(tournamentId: string) {
         await db.collection("leaderboards").doc(tournamentId).set({
             entries: [],
             tournamentAiSummary: "The stage is set and predictions are rolling in! The leaderboard is currently empty, but it will update as soon as the first match results are posted. Good luck to all participants!",
-            championUserSummary: "You've made your champion pick! Now, let the games begin. Check back here after the first matches to see how the community's predictions are shaping up.",
+            championAiSummary: "You've made your champion pick! Now, let the games begin. Check back here after the first matches to see how the community's predictions are shaping up.",
             currentTournamentStage: "Not Started",
             lastUpdated: Timestamp.now(),
         }, { merge: true });
@@ -134,8 +136,6 @@ export async function recalculateLeaderboard(tournamentId: string) {
         }
     }
 
-    const maxPossibleRemainingPoints = calculateRemainingMatchPoints(allMatches, pointRules);
-
     const leaderboardData: any[] = [];
     for (const userId of tournamentData.participants) {
         const predictions = userPredictionsMap.get(userId);
@@ -143,7 +143,6 @@ export async function recalculateLeaderboard(tournamentId: string) {
         if (!userProfile || !predictions) continue;
 
         let totalPoints = 0;
-        let bestPick = { points: 0, description: "N/A" };
 
         for (const match of completedMatches) {
             const prediction = predictions.matchPredictions[match.id];
@@ -162,22 +161,15 @@ export async function recalculateLeaderboard(tournamentId: string) {
                 }
             }
             totalPoints += matchPoints;
-            if (matchPoints > bestPick.points) {
-                bestPick = { points: matchPoints, description: `${match.team1.name} vs ${match.team2.name}` };
-            }
         }
         
-        let userRemainingPoints = maxPossibleRemainingPoints;
         const championPick = predictions?.championPrediction;
         if (championPick) {
-            const isChampionEliminated = eliminatedTeamCodes.has(championPick);
             if (isFinalConcluded && tournamentData.champion === championPick) {
                 totalPoints += pointRules.championBonus || 0;
-            } else if (!isChampionEliminated && !isFinalConcluded) {
-                userRemainingPoints += pointRules.championBonus || 0;
             }
         }
-        leaderboardData.push({ userId, userName: userProfile.name, totalPoints, userRemainingPoints, bestPick });
+        leaderboardData.push({ userId, userName: userProfile.name, totalPoints });
     }
 
     const oldLeaderboardSnap = await db.collection("leaderboards").doc(tournamentId).get();
@@ -185,147 +177,94 @@ export async function recalculateLeaderboard(tournamentId: string) {
     const oldEntriesMap = new Map<string, LeaderboardEntry>(oldLeaderboardData?.entries.map(e => [e.userId, e]) || []);
     
     leaderboardData.sort((a, b) => b.totalPoints - a.totalPoints);
-    const leaderPoints = leaderboardData.length > 0 ? leaderboardData[0].totalPoints : 0;
     
-    const newLeaderboardPromises = leaderboardData.map(async (data, index) => {
+    const newLeaderboard: LeaderboardEntry[] = leaderboardData.map((data, index) => {
         const rank = index + 1;
         const oldEntry = oldEntriesMap.get(data.userId);
         const previousRank = oldEntry?.rank;
         let rankChange: "up" | "down" | "same" = "same";
         
-        let rankChangePromptText = "unchanged";
         if (typeof previousRank === 'number') {
             if (rank < previousRank) {
                 rankChange = "up";
-                rankChangePromptText = `up ${previousRank - rank} spots`;
             } else if (rank > previousRank) {
                 rankChange = "down";
-                rankChangePromptText = `down ${rank - previousRank} spots`;
             }
         }
-
-        // --- EFFICIENCY LOGIC ---
-        // Only generate a new AI summary if the user's rank or points have changed.
-        let aiSummary = oldEntry?.aiSummary || "";
-        const hasChanged = !oldEntry || oldEntry.rank !== rank || oldEntry.totalPoints !== data.totalPoints;
-
-        if (hasChanged) {
-            const pointDifferenceToLeader = leaderPoints - data.totalPoints;
-            const isMathematicallyPossibleToWin = data.totalPoints + data.userRemainingPoints >= leaderPoints;
-
-            let contextSpecificInstruction = "";
-            if (isFinalConcluded) {
-                contextSpecificInstruction = `The tournament is over! Summarize their final standing.`;
-            } else if (!isMathematicallyPossibleToWin) {
-                contextSpecificInstruction = `The user is mathematically eliminated from winning. Encourage them to focus on achieving their best possible rank.`;
-            } else {
-                contextSpecificInstruction = `The user can still win. Analyze their chances based on the '${currentTournamentStage}' stage and the point gap to the leader.`;
-            }
-
-            // --- CONCISE PROMPT ---
-            const prompt = `You are a supportive sport journalist. Write a concise, supportive, and slightly humorous summary (2-3 sentences) for a user named '**${data.userName}**'.
-
-            User Data:
-            - Rank: ${rank} of ${leaderboardData.length}
-            - Points: ${data.totalPoints}
-            - Points Behind Leader: ${pointDifferenceToLeader}
-            - Rank Change: ${rankChangePromptText}
-
-            Instructions:
-            - ${contextSpecificInstruction}
-            - Maintain your persona. Ensure the user's name is bolded using markdown.`;
-            
-            aiSummary = await generateAiSummary(prompt);
-        }
-
-        return { userId: data.userId, userName: data.userName, totalPoints: data.totalPoints, rank, previousRank: previousRank ?? null, rankChange, aiSummary };
+        return { userId: data.userId, userName: data.userName, totalPoints: data.totalPoints, rank, previousRank: previousRank ?? null, rankChange };
     });
 
-    const newLeaderboard = await Promise.all(newLeaderboardPromises);
+    let tournamentAiSummary = oldLeaderboardData?.tournamentAiSummary || "";
+    let championAiSummary = oldLeaderboardData?.championAiSummary || "";
 
-    let adminSummary = oldLeaderboardData?.tournamentAiSummary || "";
-    let championUserSummary = oldLeaderboardData?.championUserSummary || "";
-    let championAdminSummary = oldLeaderboardData?.championAdminSummary || "";
+    const oldTop3 = oldLeaderboardData?.entries.slice(0, 3).map(e => e.userId).join(',');
+    const newTop3 = newLeaderboard.slice(0, 3).map(e => e.userId).join(',');
+    const shouldUpdateLeaderboardSummary = (oldTop3 !== newTop3) || !tournamentAiSummary;
 
-    if (newLeaderboard.length > 2) {
+    if (shouldUpdateLeaderboardSummary && newLeaderboard.length > 2) {
         const leader = newLeaderboard[0];
         const secondPlace = newLeaderboard[1];
         const thirdPlace = newLeaderboard[2];
+        const maxPossibleRemainingPoints = calculateRemainingMatchPoints(allMatches, pointRules);
         
-        const adminPrompt = `You are a sport journalist providing a concise, analytical summary (2-3 sentences) of a tournament leaderboard for an administrator.
-        
+        const prompt = `You are a sharp but humorous sports analyst. Write a concise, analytical summary (2-3 sentences) of a tournament leaderboard.
+
         Data:
-        - Tournament Completion: ${tournamentCompletion}%
+        - Tournament Progress: ${tournamentCompletion}% complete
         - Current Stage: ${currentTournamentStage}
+        - Points Still Available: ${maxPossibleRemainingPoints}
         - Top 3: 1st **${leader.userName}** (${leader.totalPoints} pts), 2nd **${secondPlace.userName}** (${secondPlace.totalPoints} pts), 3rd **${thirdPlace.userName}** (${thirdPlace.totalPoints} pts).
 
         Instructions:
-        - Start with the tournament completion and current stage.
-        - Analyze the top 3 and conclude with a look ahead.
-        - Maintain an insightful, slightly humorous, and professional tone. Ensure all user names are bolded using markdown.`;
-        adminSummary = await generateAiSummary(adminPrompt);
+        - Analyze the top 3 and the current stage to give a witty and insightful overview for all participants.
+        - You can mention the points still available to add context about how the leaderboard could still change.
+        - Ensure all user names are bolded using markdown.`;
+        tournamentAiSummary = await generateAiSummary(prompt);
     }
     
     const championPicks = Array.from(userPredictionsMap.values()).map(p => p.championPrediction).filter(Boolean) as string[];
     if (championPicks.length > 0) {
-        const pickCounts = championPicks.reduce((acc, code) => {
-            acc[code] = (acc[code] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
-
-        const eliminatedPicks = Object.entries(pickCounts).filter(([code]) => eliminatedTeamCodes.has(code));
-        
         const previouslyEliminated = new Set(oldLeaderboardData?.eliminatedTeamCodes || []);
-        const newlyEliminatedPicks = eliminatedPicks.filter(([code]) => !previouslyEliminated.has(code));
-        
-        // --- EFFICIENCY LOGIC FOR CHAMPION SUMMARY ---
-        // Only generate a new summary if a new team was eliminated or if summaries don't exist yet.
-        const shouldUpdateChampionSummary = newlyEliminatedPicks.length > 0 || !oldLeaderboardData?.championUserSummary || !oldLeaderboardData?.championAdminSummary;
+        const currentEliminated = new Set(eliminatedTeamCodes);
+        const hasNewEliminations = ![...currentEliminated].every(code => previouslyEliminated.has(code));
+
+        const shouldUpdateChampionSummary = hasNewEliminations || !championAiSummary;
 
         if (shouldUpdateChampionSummary) {
+            const pickCounts = championPicks.reduce((acc, code) => {
+                acc[code] = (acc[code] || 0) + 1;
+                return acc;
+            }, {} as Record<string, number>);
+
             const activePicks = Object.entries(pickCounts).filter(([code]) => !eliminatedTeamCodes.has(code));
             const sortedActivePicks = activePicks.sort(([, a], [, b]) => b - a).map(([code, count]) => ({ code, count }));
-            newlyEliminatedPicks.sort(([,a], [,b]) => b-a);
-
-            let eliminatedMention = "";
-            if (newlyEliminatedPicks.length > 0) {
-                const mostVotedEliminated = newlyEliminatedPicks[0];
-                const teamName = tournamentData.teams?.find(t => t.code === mostVotedEliminated[0])?.name;
-                eliminatedMention = `A major upset! **${teamName}**, a fan favorite with ${mostVotedEliminated[1]} votes, has been knocked out!`;
-            }
-
+            
             let topPickAnalysis = "The field is wide open!";
             if(sortedActivePicks.length > 0) {
                 const topPick = sortedActivePicks[0];
-                const topPickTeam = tournamentData.teams?.find(t => t.code === topPick.code)?.name;
+                const teamData = tournamentData.teams?.find(t => t.code === topPick.code) || fifaCountriesMap.get(topPick.code);
+                const topPickTeam = teamData ? teamData.name : 'An unknown team';
                 const topPickPercent = Math.round((topPick.count / championPicks.length) * 100);
-                topPickAnalysis = `The current favorite is **${topPickTeam}**, backed by ${topPickPercent}% of participants.`;
+                topPickAnalysis = `The community favorite is **${topPickTeam}**, backed by ${topPickPercent}% of participants.`;
             }
 
-            const champContext = isFinalConcluded ? `The final is over! Let's see how the final predictions panned out.` : `The tournament is in the '${currentTournamentStage}' stage.`;
+            const champContext = isFinalConcluded ? `The tournament is over!` : `We're in the '${currentTournamentStage}'.`;
 
-            const userChampPrompt = `You are a sport journalist. Summarize the champion predictions in a concise 2-3 sentences.
+            const prompt = `You are a sharp but humorous sports analyst. Write a concise summary (2-3 sentences) of the community's champion predictions.
             Context: ${champContext}
-            Analysis: ${eliminatedMention} ${topPickAnalysis}
-            Instruction: Combine the context and analysis into a cohesive, engaging and slightly humorous summary. Ensure all team names are bolded using markdown.`;
-            championUserSummary = await generateAiSummary(userChampPrompt);
-
-            const adminChampPrompt = `You are a sport journalist. Summarize the champion predictions for an admin in a concise 2-3 sentences.
-            Context: ${champContext}
-            Analysis: ${eliminatedMention} ${topPickAnalysis}
-            Instruction: Combine the context and analysis into a cohesive, engaging and slightly humorous summary. Be more analytical about what these trends mean for the overall leaderboard. Ensure all team names are bolded using markdown.`;
-            championAdminSummary = await generateAiSummary(adminChampPrompt);
+            Analysis: ${topPickAnalysis}
+            Instruction: Combine the context and analysis into a witty, engaging summary for all participants. Ensure all team names are bolded using markdown.`;
+            championAiSummary = await generateAiSummary(prompt);
         }
     }
 
     await db.collection("leaderboards").doc(tournamentId).set({
         entries: newLeaderboard,
-        tournamentAiSummary: adminSummary,
-        championUserSummary: championUserSummary,
-        championAdminSummary: championAdminSummary,
+        tournamentAiSummary: tournamentAiSummary,
+        championAiSummary: championAiSummary,
         eliminatedTeamCodes: Array.from(eliminatedTeamCodes),
         currentTournamentStage: currentTournamentStage,
         lastUpdated: Timestamp.now(),
     });
-    logger.info(`Leaderboard for tournament ${tournamentId} successfully updated with AI summaries.`);
+    logger.info(`Leaderboard for tournament ${tournamentId} successfully updated.`);
 }

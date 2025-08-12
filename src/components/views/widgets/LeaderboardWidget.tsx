@@ -57,16 +57,13 @@ const LeaderboardWidget = ({ userProfile, tournamentId, setRefreshFunc }: Leader
         );
     }
 
-    const isAdmin = userProfile.role === 'admin' || userProfile.role === 'superadmin';
     const userRank = leaderboardData?.entries.find(entry => entry.userId === userProfile.uid);
     const entries = leaderboardData?.entries || [];
 
     return (
         <div className="h-full flex flex-col">
-            {isAdmin && leaderboardData?.tournamentAiSummary ? (
+            {leaderboardData?.tournamentAiSummary ? (
                 <AiSummary title="Tournament Overview" text={leaderboardData.tournamentAiSummary} colorClass="border-slate-600 text-blue-400" />
-            ) : userRank && userRank.aiSummary ? (
-                <AiSummary title="Your Analyst Report" text={userRank.aiSummary} colorClass="border-slate-600 text-blue-400" userName={userProfile.name} />
             ) : null}
 
             <div className="flex-grow overflow-y-auto">

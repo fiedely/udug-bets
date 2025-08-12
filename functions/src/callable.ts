@@ -57,17 +57,28 @@ export const generateStagePredictions = onCall(async (request) => {
 
         for (const userId of participants) {
             const predictionRef = predictionsCollection.doc(`${tournamentId}_${userId}`);
-            const matchPredictionsUpdate: { [key: string]: any } = {};
+            
+            // This object will hold the data for the set operation.
+            // It includes base fields to ensure document consistency.
+            const setData: { [key: string]: any } = {
+                tournamentId: tournamentId,
+                userId: userId
+            };
 
+            // Use dot notation to specify nested fields for the match predictions.
+            // This is crucial for the { merge: true } option to work correctly.
             stageMatches.forEach(match => {
                 const predictionPath = `matchPredictions.${match.id}`;
-                matchPredictionsUpdate[predictionPath] = {
+                setData[predictionPath] = {
                     team1Score: getRandomInt(0, 4),
                     team2Score: getRandomInt(0, 4),
                 };
             });
 
-            batch.update(predictionRef, matchPredictionsUpdate);
+            // Use set with { merge: true } instead of update.
+            // This will create the document if it doesn't exist, or merge the new
+            // prediction data into it if it does, preventing the crash.
+            batch.set(predictionRef, setData, { merge: true });
         }
 
         await batch.commit();
