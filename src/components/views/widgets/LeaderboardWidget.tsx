@@ -52,7 +52,7 @@ const LeaderboardWidget = ({ userProfile, tournamentId, setRefreshFunc }: Leader
     if (!tournamentId) {
         return (
             <div className="h-full flex items-center justify-center p-4">
-                <p className="text-slate-400 text-sm text-center">Please configure this widget to select a tournament.</p>
+                <p className="text-slate-400 text-sm text-center">Please join a tournament or select one in the widget settings.</p>
             </div>
         );
     }

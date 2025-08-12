@@ -15,8 +15,8 @@ interface MyPredictionsChartWidgetProps {
 }
 
 const COLORS = {
-    correct: '#5F8B4C', // pastel green (green-300)
-    wrong: '#E55050',   // pastel red (red-300)
+    correct: '#86efac', // pastel green (green-300)
+    wrong: '#fca5a5',   // pastel red (red-300)
     notYet: '#94a3b8', // lighter grey (slate-400)
 };
 
@@ -36,14 +36,12 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
         }
         setIsLoading(true);
 
-        // Fetch tournament data
         const tourneyRef = doc(db, "tournaments", tournamentId);
         const tourneySnap = await getDoc(tourneyRef);
         if (tourneySnap.exists()) {
             const tourneyData = { id: tourneySnap.id, ...tourneySnap.data() } as Tournament;
             setTournament(tourneyData);
 
-            // If admin, fetch all participant profiles for the dropdown
             if (isAdmin && tourneyData.participants && tourneyData.participants.length > 0) {
                 const userPromises = tourneyData.participants.map(uid => getDoc(doc(db, 'users', uid)));
                 const userDocs = await Promise.all(userPromises);
@@ -55,7 +53,6 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
             }
         }
 
-        // Fetch the specific user's predictions
         if (targetUserId) {
             const predRef = doc(db, "predictions", `${tournamentId}_${targetUserId}`);
             const predSnap = await getDoc(predRef);
@@ -134,7 +131,7 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
         return <div className="flex items-center justify-center h-full"><p className="text-slate-400">Loading Chart Data...</p></div>;
     }
     if (!tournamentId) {
-        return <div className="flex items-center justify-center h-full"><p className="text-slate-400 text-sm text-center">Please configure this widget.</p></div>;
+        return <div className="h-full flex items-center justify-center p-4"><p className="text-slate-400 text-sm text-center">Please join a tournament or select one in the widget settings.</p></div>;
     }
 
     return (

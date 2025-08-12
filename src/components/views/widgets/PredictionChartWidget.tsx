@@ -108,8 +108,8 @@ const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexCh
     if (isLoading) {
         return <div className="flex items-center justify-center h-full"><p className="text-slate-400">Loading Chart Data...</p></div>;
     }
-    if (!tournamentId || !tournament) {
-        return <div className="flex items-center justify-center h-full"><p className="text-slate-400 text-sm text-center">Please configure this widget.</p></div>;
+    if (!tournamentId) {
+        return <div className="h-full flex items-center justify-center p-4"><p className="text-slate-400 text-sm text-center">Please join a tournament or select one in the widget settings.</p></div>;
     }
      if (!currentMatch) {
         return <div className="flex items-center justify-center h-full"><p className="text-slate-400 text-sm text-center">No matches found in this tournament.</p></div>;

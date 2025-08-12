@@ -1,31 +1,49 @@
 // src/components/Login.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   signInWithPopup, 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
+  sendEmailVerification,
   updateProfile
 } from 'firebase/auth';
-import { auth, googleProvider, db } from '../firebaseConfig'; // Import db
-import { doc, setDoc, getDoc } from 'firebase/firestore'; // Import Firestore functions
+import { auth, googleProvider, db } from '../firebaseConfig';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
-const Login = () => {
-  // State to manage the component's mode
+interface LoginProps {
+  initialError?: string | null;
+}
+
+const Login: React.FC<LoginProps> = ({ initialError }) => {
   const [isLoginMode, setIsLoginMode] = useState(true); 
-  
-  // State for form inputs
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [reenterPassword, setReenterPassword] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  
-  // State for user feedback
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (initialError) {
+      setError(initialError);
+    }
+  }, [initialError]);
+
+  const setupNewUserDashboard = async (userId: string) => {
+      try {
+          const layoutDocRef = doc(db, "dashboardLayouts", userId);
+          // Create a completely empty dashboard for a new user.
+          await setDoc(layoutDocRef, { widgets: [] });
+      } catch (err) {
+          console.error("Failed to set up default dashboard:", err);
+          setError("Could not create the initial dashboard layout.");
+      }
+  };
 
   const handleGoogleSignIn = async () => {
     setError('');
@@ -35,18 +53,17 @@ const Login = () => {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
-      // Check if user document already exists in Firestore
       const userDocRef = doc(db, "users", user.uid);
       const docSnap = await getDoc(userDocRef);
 
       if (!docSnap.exists()) {
-        // If user is new, create a new document for them in Firestore
         await setDoc(userDocRef, {
           uid: user.uid,
           name: user.displayName,
           email: user.email,
-          role: 'user' // Default role for all new sign-ups
+          role: 'user'
         });
+        await setupNewUserDashboard(user.uid);
       }
     } catch (err: any) {
       setError(err.message);
@@ -62,7 +79,6 @@ const Login = () => {
     setIsLoading(true);
 
     if (isLoginMode) {
-      // --- SIGN IN LOGIC ---
       try {
         await signInWithEmailAndPassword(auth, email, password);
       } catch (err: any) {
@@ -71,7 +87,6 @@ const Login = () => {
         setIsLoading(false);
       }
     } else {
-      // --- SIGN UP LOGIC ---
       if (password !== reenterPassword) {
         setError('Passwords do not match.');
         setIsLoading(false);
@@ -92,21 +107,25 @@ const Login = () => {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
-        // Update the user's profile display name
         await updateProfile(user, { displayName: name });
-
-        // Create a new document for the user in Firestore
         await setDoc(doc(db, "users", user.uid), {
           uid: user.uid,
           name: name,
           email: user.email,
-          role: 'user' // Default role
+          role: 'user'
         });
+        await setupNewUserDashboard(user.uid);
+        await sendEmailVerification(user);
 
-        setIsLoginMode(true);
-        setMessage('Account created successfully! Please sign in.');
+        toggleMode();
+        setMessage('Account created! Please check your email to verify your account before signing in.');
+
       } catch (err: any) {
-        setError('Failed to create account. The email might already be in use.');
+        if (err.code === 'auth/email-already-in-use') {
+            setError('Failed to create account. The email is already in use.');
+        } else {
+            setError('An unknown error occurred during sign up.');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -114,7 +133,6 @@ const Login = () => {
   };
   
   const handleForgotPassword = async () => {
-    // ... (rest of the function is unchanged)
     setError('');
     setMessage('');
     if (!email) {
@@ -130,7 +148,6 @@ const Login = () => {
   };
 
   const toggleMode = () => {
-    // ... (rest of the function is unchanged)
     setIsLoginMode(!isLoginMode);
     setError('');
     setMessage('');
@@ -139,11 +156,11 @@ const Login = () => {
     setReenterPassword('');
     setName('');
     setAgreedToTerms(false);
+    setShowPassword(false);
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-slate-900 p-4">
-      {/* The rest of the JSX is unchanged... */}
       <div className="w-full max-w-sm p-8 space-y-5 bg-slate-800 border border-slate-700">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-blue-400">Udug Bets</h1>
@@ -168,29 +185,36 @@ const Login = () => {
             </div>
           </div>
           <div className="relative">
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required className="w-full pl-4 pr-10 py-2 bg-slate-900 border border-slate-700 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+            <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required className="w-full pl-4 pr-10 py-2 bg-slate-900 border border-slate-700 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400" />
              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
               <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
             </div>
           </div>
           {!isLoginMode && (
              <div className="relative">
-              <input type="password" value={reenterPassword} onChange={(e) => setReenterPassword(e.target.value)} placeholder="Re-enter Password" required className="w-full pl-4 pr-10 py-2 bg-slate-900 border border-slate-700 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+              <input type={showPassword ? 'text' : 'password'} value={reenterPassword} onChange={(e) => setReenterPassword(e.target.value)} placeholder="Re-enter Password" required className="w-full pl-4 pr-10 py-2 bg-slate-900 border border-slate-700 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400" />
               <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                 <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
               </div>
             </div>
           )}
-          {isLoginMode ? (
-            <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center text-slate-400 cursor-pointer"><input type="checkbox" className="h-4 w-4 bg-slate-700 border-slate-600 text-blue-600 focus:ring-blue-500" /><span className="ml-2">Save Password</span></label>
+          
+          <div className="flex items-center justify-between text-sm">
+            <label className="flex items-center text-slate-400 cursor-pointer">
+                <input type="checkbox" checked={showPassword} onChange={() => setShowPassword(!showPassword)} className="h-4 w-4 bg-slate-700 border-slate-600 text-blue-600 focus:ring-blue-500" />
+                <span className="ml-2">Show Password</span>
+            </label>
+            {isLoginMode && (
               <button type="button" onClick={handleForgotPassword} className="font-medium text-blue-500 hover:text-blue-400">Forgot Password?</button>
-            </div>
-          ) : (
-            <div className="flex items-center text-sm">
+            )}
+          </div>
+
+          {!isLoginMode && (
+            <div className="flex items-center text-sm pt-2">
                <label className="flex items-center text-slate-400 cursor-pointer"><input type="checkbox" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)} required className="h-4 w-4 bg-slate-700 border-slate-600 text-blue-600 focus:ring-blue-500" /><span className="ml-2">Agree <del>with Terms & Conditions</del> to have fun!</span></label>
             </div>
           )}
+
           {error && <p className="text-red-400 text-sm text-center pt-1">{error}</p>}
           {message && <p className="text-green-400 text-sm text-center pt-1">{message}</p>}
           <button type="submit" disabled={isLoading} className="w-full flex justify-center items-center px-4 py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-white transition-colors disabled:bg-blue-800 disabled:cursor-not-allowed">

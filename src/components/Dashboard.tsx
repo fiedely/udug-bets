@@ -1,9 +1,8 @@
 // src/components/Dashboard.tsx
 
 import { useState, useEffect } from 'react';
-import { auth, db } from '../firebaseConfig';
+import { auth } from '../firebaseConfig';
 import { signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
 import type { View, UserProfile, Tournament } from '../types';
 
 // Import your new logo
@@ -26,12 +25,13 @@ import PredictionEntry from './views/PredictionEntry';
 import UserDashboard from './views/UserDashboard';
 const LeaderboardContent = () => <div className="bg-slate-800 p-8">Leaderboard View - Coming Soon!</div>;
 
+interface DashboardProps {
+    userProfile: UserProfile;
+}
 
-const Dashboard = () => {
+const Dashboard = ({ userProfile }: DashboardProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeView, setActiveView] = useState<View>('User Dashboard');
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
   const [editingTournamentId, setEditingTournamentId] = useState<string | null>(null);
   const [isEditorDirty, setIsEditorDirty] = useState(false);
@@ -44,24 +44,12 @@ const Dashboard = () => {
   const user = auth.currentUser;
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (user) {
-        const userDocRef = doc(db, "users", user.uid);
-        const docSnap = await getDoc(userDocRef);
-        if (docSnap.exists()) {
-          const profile = docSnap.data() as UserProfile;
-          setUserProfile(profile);
-          if (profile.role === 'admin' || profile.role === 'superadmin') {
-            setActiveView('List Tournaments');
-          } else {
-            setActiveView('User Dashboard');
-          }
-        }
+      if (userProfile.role === 'admin' || userProfile.role === 'superadmin') {
+        setActiveView('List Tournaments');
+      } else {
+        setActiveView('User Dashboard');
       }
-      setIsLoadingProfile(false);
-    };
-    fetchUserProfile();
-  }, [user]);
+  }, [userProfile]);
 
   const handleSignOut = async () => {
     try {
@@ -119,14 +107,6 @@ const Dashboard = () => {
   };
 
   const renderContent = () => {
-    if (isLoadingProfile || !userProfile) {
-      return (
-        <div className="flex items-center justify-center h-full">
-           <svg className="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-        </div>
-      );
-    }
-    
     if (viewingAllPredictionsFor) {
         return <AllPredictionsView tournament={viewingAllPredictionsFor} onBack={() => setViewingAllPredictionsFor(null)} />;
     }
@@ -180,7 +160,6 @@ const Dashboard = () => {
 
   return (
     <div className="relative min-h-screen md:flex bg-slate-900">
-      {/* Mobile overlay */}
       {isSidebarOpen && (
         <div 
             className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
@@ -188,7 +167,6 @@ const Dashboard = () => {
         ></div>
       )}
 
-      {/* Sidebar */}
       <aside
         className={`
           bg-slate-800 border-r border-slate-700 text-slate-300 w-64 space-y-2 py-7 px-2
@@ -227,7 +205,6 @@ const Dashboard = () => {
           )}
         </nav>
         
-        {/* User Info Section with Logo */}
         <div className="px-4 py-4 border-t border-slate-700">
             <div className="flex justify-center mb-2">
                 <img src={udugBetsLogo} alt="Udug Bets Logo" className="w-28 h-28 object-cover" />
@@ -239,12 +216,10 @@ const Dashboard = () => {
       
       <div className="flex-1 flex flex-col min-w-0">
         <header className="bg-slate-800 border-b border-slate-700 p-4 flex justify-between items-center">
-          {/* Hamburger Menu - only show on mobile */}
           <button className="text-slate-300 md:hidden" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
           </button>
           
-          {/* Header Title - ensure it doesn't push other elements */}
           <div className="text-lg md:text-xl font-semibold text-slate-100 truncate">{getHeaderTitle()}</div>
           
           <button onClick={handleSignOut} className="px-3 py-2 md:px-4 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-sm transition-colors whitespace-nowrap">Sign Out</button>

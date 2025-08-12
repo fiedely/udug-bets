@@ -110,12 +110,30 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
             minW: type === 'groupStandings' ? 8 : 4,
             minH: 8,
             props: {
+                tournamentId: "",
                 currentMatchIndex: 0,
                 selectedUserId: userProfile.uid,
             }
         };
         setEditingWidget(newWidget);
         setIsConfigModalOpen(true);
+    };
+
+    // New function to handle adding the template
+    const handleSelectTemplate = () => {
+        const now = new Date().getTime();
+        const templateWidgets: Widget[] = [
+            { i: `leaderboard-${now}`, type: 'leaderboard', title: 'Leaderboard', x: 0, y: 0, w: 4, h: 16, minW: 4, minH: 8, props: { tournamentId: "", selectedUserId: userProfile.uid } },
+            { i: `myPredictionsChart-${now + 1}`, type: 'myPredictionsChart', title: 'My Prediction Chart', x: 4, y: 0, w: 4, h: 8, minW: 4, minH: 8, props: { tournamentId: "", selectedUserId: userProfile.uid } },
+            { i: `predictionChart-${now + 2}`, type: 'predictionChart', title: 'All Predictions Chart', x: 4, y: 8, w: 4, h: 8, minW: 4, minH: 8, props: { tournamentId: "", currentMatchIndex: 0, selectedUserId: userProfile.uid } },
+            { i: `championPredictionChart-${now + 3}`, type: 'championPredictionChart', title: 'Champion Prediction', x: 8, y: 0, w: 4, h: 16, minW: 4, minH: 8, props: { tournamentId: "", selectedUserId: userProfile.uid } },
+            { i: `groupStandings-${now + 4}`, type: 'groupStandings', title: 'Group Standings', x: 0, y: 16, w: 12, h: 9, minW: 8, minH: 8, props: { tournamentId: "", selectedUserId: userProfile.uid } },
+        ];
+
+        const newWidgets = [...widgets, ...templateWidgets];
+        setWidgets(newWidgets);
+        saveLayout(newWidgets);
+        setIsAddModalOpen(false);
     };
 
     const handleEditWidget = (widgetId: string) => {
@@ -216,7 +234,7 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
 
     return (
         <div>
-            <AddWidgetModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSelect={handleSelectWidgetType} />
+            <AddWidgetModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSelect={handleSelectWidgetType} onSelectTemplate={handleSelectTemplate} />
             <WidgetConfigModal isOpen={isConfigModalOpen} widget={editingWidget} userProfile={userProfile} onClose={() => setIsConfigModalOpen(false)} onSave={handleSaveWidgetConfig} />
 
             <div className="flex justify-between items-center mb-4">

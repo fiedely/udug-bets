@@ -44,7 +44,7 @@ const GroupStandingsWidget = ({ tournamentId, setRefreshFunc }: GroupStandingsWi
         return <div className="flex items-center justify-center h-full"><p className="text-slate-400">Loading Standings...</p></div>;
     }
     if (!tournamentId) {
-        return <div className="flex items-center justify-center h-full"><p className="text-slate-400 text-sm text-center">Please configure this widget.</p></div>;
+        return <div className="h-full flex items-center justify-center p-4"><p className="text-slate-400 text-sm text-center">Please join a tournament or select one in the widget settings.</p></div>;
     }
     if (!standings || Object.keys(standings).length === 0) {
         return <div className="flex items-center justify-center h-full"><p className="text-slate-400 text-sm text-center">Group standings are not available yet.</p></div>;

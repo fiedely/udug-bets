@@ -29,14 +29,22 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
     const [myChampionPick, setMyChampionPick] = useState<string | null>(null);
 
     const fetchData = useCallback(async () => {
-        if (!tournamentId) { setIsLoading(false); return; }
+        if (!tournamentId) { 
+            setIsLoading(false); 
+            setPicks([]);
+            return; 
+        }
         setIsLoading(true);
 
         const tourneyRef = doc(db, "tournaments", tournamentId);
         const leaderboardRef = doc(db, "leaderboards", tournamentId);
         const [tourneySnap, leaderboardSnap] = await Promise.all([getDoc(tourneyRef), getDoc(leaderboardRef)]);
 
-        if (!tourneySnap.exists()) { setIsLoading(false); return; }
+        if (!tourneySnap.exists()) { 
+            setIsLoading(false); 
+            setPicks([]);
+            return; 
+        }
         
         const tournament = tourneySnap.data() as Tournament;
         const leaderboardData = leaderboardSnap.data() as Leaderboard | undefined;
@@ -102,7 +110,7 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
         return <div className="flex items-center justify-center h-full"><p className="text-slate-400">Loading...</p></div>;
     }
     if (!tournamentId) {
-        return <div className="flex items-center justify-center h-full"><p className="text-slate-400 text-sm text-center">Please configure this widget.</p></div>;
+        return <div className="h-full flex items-center justify-center p-4"><p className="text-slate-400 text-sm text-center">Please join a tournament or select one in the widget settings.</p></div>;
     }
     if (picks.length === 0) {
         return <div className="flex items-center justify-center h-full"><p className="text-slate-400 text-sm text-center">No champion predictions have been made yet.</p></div>;
