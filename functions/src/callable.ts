@@ -58,26 +58,24 @@ export const generateStagePredictions = onCall(async (request) => {
         for (const userId of participants) {
             const predictionRef = predictionsCollection.doc(`${tournamentId}_${userId}`);
             
-            // This object will hold the data for the set operation.
-            // It includes base fields to ensure document consistency.
-            const setData: { [key: string]: any } = {
-                tournamentId: tournamentId,
-                userId: userId
-            };
-
-            // Use dot notation to specify nested fields for the match predictions.
-            // This is crucial for the { merge: true } option to work correctly.
+            // FIX: Instead of using dot notation in the keys, we build a proper nested object.
+            // This ensures Firestore correctly merges the data into the 'matchPredictions' map.
+            const matchPredictions: { [key: string]: any } = {};
             stageMatches.forEach(match => {
-                const predictionPath = `matchPredictions.${match.id}`;
-                setData[predictionPath] = {
+                matchPredictions[match.id] = {
                     team1Score: getRandomInt(0, 4),
                     team2Score: getRandomInt(0, 4),
                 };
             });
 
-            // Use set with { merge: true } instead of update.
-            // This will create the document if it doesn't exist, or merge the new
-            // prediction data into it if it does, preventing the crash.
+            const setData = {
+                tournamentId: tournamentId,
+                userId: userId,
+                matchPredictions: matchPredictions
+            };
+
+            // Use set with { merge: true }. This will create the document if it doesn't exist,
+            // or correctly merge the new matchPredictions map into it if it does.
             batch.set(predictionRef, setData, { merge: true });
         }
 
