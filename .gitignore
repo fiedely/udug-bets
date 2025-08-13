@@ -26,4 +26,3 @@ seed.js
 seedTeams.js
 seedTournament.js
 serviceAccountKey.json
-.firebase/*
