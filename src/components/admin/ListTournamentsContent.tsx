@@ -117,6 +117,8 @@ const ListTournamentsContent = ({ onEditTournament, onManageTournament, onViewLe
         </label>
     );
 
+    const baseButtonClasses = "w-full px-3 py-2 font-semibold text-white text-xs sm:text-sm transition-colors disabled:cursor-not-allowed";
+
     return (
         <>
             <div className="bg-slate-800 border border-slate-700 p-4 md:p-8">
@@ -133,35 +135,31 @@ const ListTournamentsContent = ({ onEditTournament, onManageTournament, onViewLe
                                 <p><strong>Period:</strong> {formatDate(t.startDate)} - {formatDate(t.endDate)}</p>
                                 <p><strong>Participants:</strong> {t.participants?.length || 0} users</p>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="flex flex-col gap-2">
-                                    <button onClick={() => onManageTournament(t)} className="w-full px-3 py-2 bg-purple-600 hover:bg-purple-500 font-semibold text-white text-xs sm:text-sm disabled:bg-slate-700 disabled:cursor-not-allowed" disabled={t.status === 'draft'}>
-                                        Manage Scores
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="relative col-span-2">
+                                    <button onClick={() => setManagingPredictionsFor(managingPredictionsFor === t.id ? null : t.id)} className={`${baseButtonClasses} bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700`} disabled={!isAdmin || t.status === 'draft'}>
+                                        Manage Predictions
                                     </button>
-                                    <div className="relative">
-                                        <button onClick={() => setManagingPredictionsFor(managingPredictionsFor === t.id ? null : t.id)} className="w-full px-3 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-xs sm:text-sm disabled:bg-slate-700 disabled:cursor-not-allowed" disabled={!isAdmin || t.status === 'draft'}>
-                                            Manage Predictions
-                                        </button>
-                                        {managingPredictionsFor === t.id && (
-                                            <div ref={predictionMenuRef} className="absolute bottom-full mb-2 w-full bg-slate-700 border border-slate-600 shadow-lg p-2 z-10 space-y-1">
-                                                <PredictionToggle t={t} stage="allowChampion" label="Champion" />
-                                                <PredictionToggle t={t} stage="allowGroupStage" label="Group Stage" />
-                                                <PredictionToggle t={t} stage="allowRoundOf32" label="Round of 32" />
-                                                <PredictionToggle t={t} stage="allowRoundOf16" label="Round of 16" />
-                                                <PredictionToggle t={t} stage="allowQuarterFinal" label="Quarter-finals" />
-                                                <PredictionToggle t={t} stage="allowSemiFinal" label="Semi-finals" />
-                                                <PredictionToggle t={t} stage="allowFinals" label="Finals" />
-                                            </div>
-                                        )}
-                                    </div>
+                                    {managingPredictionsFor === t.id && (
+                                        <div ref={predictionMenuRef} className="absolute bottom-full mb-2 w-full bg-slate-700 border border-slate-600 shadow-lg p-2 z-10 space-y-1">
+                                            <PredictionToggle t={t} stage="allowChampion" label="Champion" />
+                                            <PredictionToggle t={t} stage="allowGroupStage" label="Group Stage" />
+                                            <PredictionToggle t={t} stage="allowRoundOf32" label="Round of 32" />
+                                            <PredictionToggle t={t} stage="allowRoundOf16" label="Round of 16" />
+                                            <PredictionToggle t={t} stage="allowQuarterFinal" label="Quarter-finals" />
+                                            <PredictionToggle t={t} stage="allowSemiFinal" label="Semi-finals" />
+                                            <PredictionToggle t={t} stage="allowFinals" label="Finals" />
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="grid grid-cols-2 grid-rows-2 gap-2">
-                                    <button onClick={() => onViewLeaderboard(t)} className="px-3 py-2 bg-cyan-600 hover:bg-cyan-500 font-semibold text-white text-xs disabled:bg-slate-700 disabled:cursor-not-allowed" disabled={t.status === 'draft'}>Leaderboard</button>
-                                    <button onClick={() => onViewAllPredictions(t)} className="px-3 py-2 bg-gray-500 hover:bg-gray-400 font-semibold text-white text-xs disabled:bg-slate-700 disabled:cursor-not-allowed" disabled={t.status === 'draft'}>Predictions</button>
-                                    <button onClick={() => setInvitingTournament(t)} className="px-3 py-2 bg-green-600 hover:bg-green-500 font-semibold text-white text-xs">Invite</button>
-                                    <button onClick={() => onEditTournament(t.id)} className="px-3 py-2 bg-blue-600 hover:bg-blue-500 font-semibold text-white text-xs">Edit</button>
-                                    <button onClick={() => setDeletingTournament(t)} className="col-span-2 px-3 py-2 bg-red-600 hover:bg-red-500 font-semibold text-white text-xs">Delete</button>
-                                </div>
+                                <button onClick={() => onManageTournament(t)} className={`${baseButtonClasses} bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 col-span-2`} disabled={t.status === 'draft'}>
+                                    Manage Scores
+                                </button>
+                                <button onClick={() => onViewLeaderboard(t)} className={`${baseButtonClasses} bg-slate-600 hover:bg-slate-500 disabled:bg-slate-700`} disabled={t.status === 'draft'}>Leaderboard</button>
+                                <button onClick={() => onViewAllPredictions(t)} className={`${baseButtonClasses} bg-slate-600 hover:bg-slate-500 disabled:bg-slate-700`} disabled={t.status === 'draft'}>Predictions</button>
+                                <button onClick={() => setInvitingTournament(t)} className={`${baseButtonClasses} bg-slate-600 hover:bg-slate-500`}>Invite</button>
+                                <button onClick={() => onEditTournament(t.id)} className={`${baseButtonClasses} bg-slate-600 hover:bg-slate-500`}>Edit</button>
+                                <button onClick={() => setDeletingTournament(t)} className={`${baseButtonClasses} bg-red-800 hover:bg-red-700 col-span-2`}>Delete</button>
                             </div>
                         </div>
                     ))}
@@ -178,7 +176,7 @@ const ListTournamentsContent = ({ onEditTournament, onManageTournament, onViewLe
                         </p>
                         <div className="mt-6 flex justify-end gap-4">
                             <button onClick={() => setDeletingTournament(null)} disabled={isDeleting} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white disabled:opacity-50">Cancel</button>
-                            <button onClick={() => handleDelete(deletingTournament.id)} disabled={isDeleting} className="px-4 py-2 bg-red-600 hover:bg-red-500 font-semibold text-white disabled:bg-red-800 disabled:cursor-not-allowed">
+                            <button onClick={() => handleDelete(deletingTournament.id)} disabled={isDeleting} className="px-4 py-2 bg-red-800 hover:bg-red-700 font-semibold text-white disabled:bg-red-900 disabled:cursor-not-allowed">
                                 {isDeleting ? 'Deleting...' : 'Delete'}
                             </button>
                         </div>

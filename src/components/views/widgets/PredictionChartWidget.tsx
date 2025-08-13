@@ -100,7 +100,14 @@ const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexCh
 
         const scoreData = Object.entries(scoreCounts)
             .map(([score, count]) => ({ score, count }))
-            .sort((a, b) => b.count - a.count);
+            .sort((a, b) => {
+                const [a1, a2] = a.score.split('-').map(Number);
+                const [b1, b2] = b.score.split('-').map(Number);
+                if (a1 !== b1) {
+                    return a1 - b1;
+                }
+                return a2 - b2;
+            });
 
         return { outcomeData, scoreData };
     }, [currentMatch, predictions]);
