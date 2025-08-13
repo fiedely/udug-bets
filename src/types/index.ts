@@ -27,6 +27,9 @@ export interface UserProfile {
   name: string;
   email: string;
   role: 'user' | 'admin' | 'superadmin';
+  dob?: string | null;
+  sex?: string | null;
+  favouriteTeam?: string | null;
 }
 
 export interface Team {
@@ -57,7 +60,17 @@ export interface PointRules {
 }
 
 export type MatchStage = "Group Stage" | "Round of 32" | "Round of 16" | "Quarter-final" | "Semi-final" | "Third Place Match" | "Final";
-export type KnockoutStartStage = 'Final' | 'Semi-final' | 'Quarter-final' | 'Round of 16' | 'Round of 32';
+export type KnockoutStartStage = "Round of 32" | "Round of 16" | "Quarter-final" | "Semi-final" | "Final";
+
+export interface PredictionStatus {
+    allowChampion: boolean;
+    allowGroupStage: boolean;
+    allowRoundOf32: boolean;
+    allowRoundOf16: boolean;
+    allowQuarterFinal: boolean;
+    allowSemiFinal: boolean;
+    allowFinals: boolean;
+}
 
 export interface Match {
     id: string;
@@ -71,16 +84,6 @@ export interface Match {
     date: string;
     stadium: Stadium;
     winnerTeamCode?: string;
-}
-
-export interface PredictionStatus {
-    allowChampion: boolean;
-    allowGroupStage: boolean;
-    allowRoundOf32: boolean;
-    allowRoundOf16: boolean;
-    allowQuarterFinal: boolean;
-    allowSemiFinal: boolean;
-    allowFinals: boolean;
 }
 
 export interface Tournament {
@@ -138,11 +141,11 @@ export interface Leaderboard {
     groupStandings?: Record<string, TeamStanding[]>;
 }
 
-export interface LeaderboardEntry {
-    userId: string;
-    userName: string;
-    totalPoints: number;
-    rank: number;
-    previousRank?: number | null;
-    rankChange: "up" | "down" | "same";
+export interface LeaderboardEntry { 
+    userId: string; 
+    userName: string; 
+    totalPoints: number; 
+    rank: number; 
+    previousRank?: number | null; 
+    rankChange: "up" | "down" | "same"; 
 }
