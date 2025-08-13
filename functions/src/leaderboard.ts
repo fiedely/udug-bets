@@ -310,15 +310,18 @@ export async function recalculateLeaderboard(tournamentId: string) {
                 const teamData = tournamentData.teams?.find(t => t.code === topPick.code) || fifaCountriesMap.get(topPick.code);
                 const topPickTeam = teamData ? teamData.name : 'An unknown team';
                 const topPickPercent = Math.round((topPick.count / championPicks.length) * 100);
-                topPickAnalysis = `The community favorite is **${topPickTeam}**, backed by ${topPickPercent}% of participants.`;
+                topPickAnalysis = `The community favorite was **${topPickTeam}**, backed by ${topPickPercent}% of participants before the tournament.`;
             }
 
-            const champContext = isFinalConcluded ? `The tournament is over!` : `We're in the '${currentTournamentStage}'.`;
+            const eliminatedCount = championPicks.filter(code => eliminatedTeamCodes.has(code)).length;
+            const eliminatedPercent = Math.round((eliminatedCount / championPicks.length) * 100);
 
-            const prompt = `You are a sharp with dry "dad-jokes" humorous sports analyst. Write a concise summary (2-3 sentences) of the community's champion predictions.
-            Context: ${champContext}
-            Analysis: ${topPickAnalysis}
-            Instruction: Combine the context and analysis into a witty, engaging summary for all participants. Ensure all team names are bolded using markdown.`;
+            const prompt = `You are a sharp with dry "dad-jokes" humorous sports analyst. Write a concise summary (2-3 sentences) about the community's pre-tournament champion predictions.
+            
+            Context: These predictions were locked in before the first group stage match. The tournament is currently in the '${currentTournamentStage}' stage.
+            Analysis: ${topPickAnalysis} So far, ${eliminatedPercent}% of the community's champion picks have already been eliminated.
+            
+            Instruction: Combine the context and analysis into a witty, engaging summary. Comment on how the initial predictions are holding up against the reality of the tournament. Ensure all team names are bolded using markdown.`;
             championAiSummary = await generateAiSummary(prompt);
         }
     }
