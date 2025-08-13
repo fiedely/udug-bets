@@ -4,11 +4,7 @@ import { useState, useEffect } from 'react';
 import { auth } from '../firebaseConfig';
 import { signOut } from 'firebase/auth';
 import type { View, UserProfile, Tournament } from '../types';
-
-// Import your new logo
 import udugBetsLogo from '../assets/udug_bets_logo.png';
-
-// Admin Components
 import CreateTournamentContent from './admin/CreateTournamentContent';
 import ListTournamentsContent from './admin/ListTournamentsContent';
 import TournamentWizard from './admin/TournamentWizard';
@@ -17,13 +13,11 @@ import ScoreManagement from './admin/ScoreManagement';
 import TournamentLeaderboard from './admin/TournamentLeaderboard';
 import AllPredictionsView from './admin/AllPredictionsView';
 import DebugSeeder from './admin/DebugSeeder';
-
-// User Components
 import JoinTournament from './views/JoinTournament';
 import MyTournaments from './views/MyTournaments';
 import PredictionEntry from './views/PredictionEntry';
 import UserDashboard from './views/UserDashboard';
-import UserProfileModal from './views/UserProfileModal'; // Import the new modal
+import UserProfileModal from './views/UserProfileModal';
 const LeaderboardContent = () => <div className="bg-slate-800 p-8">Leaderboard View - Coming Soon!</div>;
 
 interface DashboardProps {
@@ -42,7 +36,7 @@ const Dashboard = ({ userProfile: initialProfile }: DashboardProps) => {
   const [viewingLeaderboardFor, setViewingLeaderboardFor] = useState<Tournament | null>(null);
   const [viewingAllPredictionsFor, setViewingAllPredictionsFor] = useState<Tournament | null>(null);
   const [isScoreManagerDirty, setIsScoreManagerDirty] = useState(false);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false); // State for the new modal
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const user = auth.currentUser;
 

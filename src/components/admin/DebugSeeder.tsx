@@ -37,22 +37,18 @@ const createFakeUser = () => {
 
 const generateStagePredictions = httpsCallable(functions, 'generateStagePredictions');
 
-// New type to include 'Champion' as a seedable stage
 type SeedStage = MatchStage | 'Champion' | '';
 
 const DebugSeeder = () => {
-    // State for full tournament seeder
     const [isSeedingTournament, setIsSeedingTournament] = useState(false);
     const [tournamentLog, setTournamentLog] = useState<string[]>([]);
     const [numTeams, setNumTeams] = useState(0);
     const [numParticipants, setNumParticipants] = useState(0);
 
-    // State for user-only seeder
     const [isSeedingUsers, setIsSeedingUsers] = useState(false);
     const [userSeedLog, setUserSeedLog] = useState<string[]>([]);
     const [numUsersToSeed, setNumUsersToSeed] = useState(0);
 
-    // State for stage prediction seeder
     const [isSeedingStage, setIsSeedingStage] = useState(false);
     const [stageSeedLog, setStageSeedLog] = useState<string[]>([]);
     const [allTournaments, setAllTournaments] = useState<Tournament[]>([]);
@@ -241,7 +237,6 @@ const DebugSeeder = () => {
             tournament.knockoutMatches.forEach(m => stages.add(m.stage));
         }
         
-        // Always add Champion as an option
         return ['Champion', ...Array.from(stages)];
     }, [allTournaments, selectedTournamentId]);
 

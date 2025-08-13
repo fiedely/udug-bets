@@ -79,8 +79,6 @@ const WidgetConfigModal = ({ isOpen, widget, userProfile, onClose, onSave }: Wid
                 const currentId = widget?.props?.tournamentId;
                 const isCurrentIdValid = tourneyList.some(t => t.id === currentId);
 
-                // If the current ID is invalid (e.g., tournament deleted) or not set,
-                // default to the first available tournament.
                 if (!currentId || !isCurrentIdValid) {
                     setSelectedTournamentId(tourneyList[0].id);
                 }

@@ -90,18 +90,15 @@ const ManageUsersContent = ({ userProfile }: ManageUsersContentProps) => {
         </div>
       </div>
       <div className="mt-4">
-        {/* Header for larger screens */}
         <div className="hidden md:grid md:grid-cols-12 gap-4 px-4 py-2 text-xs text-slate-400 uppercase bg-slate-700 font-medium">
           <div className="col-span-4">Name</div>
           <div className="col-span-4">Email</div>
           <div className="col-span-2">Role</div>
           {userProfile?.role === 'superadmin' && <div className="col-span-2">Actions</div>}
         </div>
-        {/* User List */}
         <div className="space-y-4 md:space-y-0">
           {filteredUsers.map((u) => (
             <div key={u.uid} className="bg-slate-900/50 md:bg-transparent border md:border-t md:border-b-0 border-slate-700 p-4 md:p-0 md:grid md:grid-cols-12 md:gap-4 md:px-4 md:py-3 items-center text-sm">
-              {/* Name */}
               <div className="col-span-4 flex items-center">
                  <span className="md:hidden font-semibold text-slate-400 w-20">Name:</span>
                  {editingUid === u.uid && userProfile?.role === 'superadmin' ? (
@@ -110,12 +107,10 @@ const ManageUsersContent = ({ userProfile }: ManageUsersContentProps) => {
                     <span className="text-white font-medium">{u.name}</span>
                   )}
               </div>
-               {/* Email */}
               <div className="col-span-4 mt-2 md:mt-0 flex items-center">
                  <span className="md:hidden font-semibold text-slate-400 w-20">Email:</span>
                  <span className="text-slate-300 truncate">{u.email}</span>
               </div>
-               {/* Role */}
               <div className="col-span-2 mt-2 md:mt-0 flex items-center">
                  <span className="md:hidden font-semibold text-slate-400 w-20">Role:</span>
                  {u.role === 'superadmin' ? (
@@ -127,7 +122,6 @@ const ManageUsersContent = ({ userProfile }: ManageUsersContentProps) => {
                     </select>
                   )}
               </div>
-               {/* Actions */}
               {userProfile?.role === 'superadmin' && (
                 <div className="col-span-2 mt-4 md:mt-0 pt-4 md:pt-0 border-t border-slate-700 md:border-0">
                   {u.role !== 'superadmin' && (

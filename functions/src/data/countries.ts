@@ -1,5 +1,4 @@
 // functions/src/data/countries.ts
-// A copy of the frontend's country data for use in the backend.
 
 export const FIFA_COUNTRIES = [
     { code: 'AF', name: 'Afghanistan', flag: '🇦🇫' },

@@ -37,7 +37,6 @@ const Login: React.FC<LoginProps> = ({ initialError }) => {
   const setupNewUserDashboard = async (userId: string) => {
       try {
           const layoutDocRef = doc(db, "dashboardLayouts", userId);
-          // Create a completely empty dashboard for a new user.
           await setDoc(layoutDocRef, { widgets: [] });
       } catch (err) {
           console.error("Failed to set up default dashboard:", err);

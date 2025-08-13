@@ -14,7 +14,6 @@ const VerificationMessage: React.FC<VerificationMessageProps> = ({ onVerified })
   const [isResending, setIsResending] = useState(false);
   const user = auth.currentUser;
 
-  // This effect will periodically check if the user has verified their email
   useEffect(() => {
     const interval = setInterval(async () => {
       if (auth.currentUser) {

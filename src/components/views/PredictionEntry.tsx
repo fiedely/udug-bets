@@ -221,9 +221,7 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
 
                                                 return (
                                                     <div key={match.id} className={`p-3 space-y-3 ${isDisabled ? 'bg-slate-800/50' : 'bg-slate-900/50'}`}>
-                                                        {/* Main container for layout */}
                                                         <div>
-                                                            {/* Desktop Layout: Grid */}
                                                             <div className="hidden sm:grid grid-cols-[1fr_auto_1fr] gap-3 items-center text-sm">
                                                                 <div className="flex items-center justify-end gap-2">
                                                                     <span className="text-right text-white">{match.team1.flag} {match.team1.name}</span>
@@ -240,7 +238,6 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
                                                                 </div>
                                                             </div>
 
-                                                            {/* Mobile Layout: Flexbox Columns */}
                                                             <div className="sm:hidden space-y-2 text-sm">
                                                                 <div className="flex items-center justify-between gap-2">
                                                                     <span className="text-white truncate flex-1 min-w-0">{match.team1.flag} {match.team1.name}</span>
@@ -259,7 +256,6 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
                                                             </div>
                                                         </div>
 
-                                                        {/* Meta info */}
                                                         <div className="text-center text-xs text-slate-500 flex flex-wrap justify-center items-center gap-x-2">
                                                             <span>{new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                                             <span className="text-slate-600 hidden sm:inline">•</span>

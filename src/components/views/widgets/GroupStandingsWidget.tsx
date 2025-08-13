@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../../../firebaseConfig';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore'; // Import onSnapshot
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import type { Leaderboard, TeamStanding } from '../../../types';
 
 interface GroupStandingsWidgetProps {
@@ -16,7 +16,6 @@ const GroupStandingsWidget = ({ tournamentId, setRefreshFunc }: GroupStandingsWi
     const [tournamentNotFound, setTournamentNotFound] = useState(false);
 
     const fetchData = useCallback(async () => {
-        // This function can be kept for the manual refresh button
         if (!tournamentId) return;
         setIsLoading(true);
         const leaderboardRef = doc(db, "leaderboards", tournamentId);
@@ -36,7 +35,6 @@ const GroupStandingsWidget = ({ tournamentId, setRefreshFunc }: GroupStandingsWi
     }, [tournamentId]);
 
     useEffect(() => {
-        // Set up the real-time listener
         if (!tournamentId) {
             setIsLoading(false);
             setStandings(null);
@@ -53,7 +51,6 @@ const GroupStandingsWidget = ({ tournamentId, setRefreshFunc }: GroupStandingsWi
                 const data = docSnap.data() as Leaderboard;
                 setStandings(data.groupStandings || null);
             } else {
-                // If the leaderboard doc is gone, check if the tournament is also gone
                 getDoc(doc(db, "tournaments", tournamentId)).then(tourneySnap => {
                     if (!tourneySnap.exists()) {
                         setTournamentNotFound(true);
@@ -67,12 +64,10 @@ const GroupStandingsWidget = ({ tournamentId, setRefreshFunc }: GroupStandingsWi
             setIsLoading(false);
         });
 
-        // Clean up the listener when the component unmounts or tournamentId changes
         return () => unsubscribe();
     }, [tournamentId]);
     
     useEffect(() => {
-        // The refresh function will re-trigger the one-time fetch
         setRefreshFunc(fetchData);
     }, [fetchData, setRefreshFunc]);
 

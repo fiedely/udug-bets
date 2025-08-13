@@ -5,7 +5,6 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    // By setting all default border radius values to '0', we enforce sharp corners globally.
     borderRadius: {
       'none': '0',
       'sm': '0',

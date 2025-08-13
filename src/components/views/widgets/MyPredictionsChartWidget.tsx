@@ -15,16 +15,14 @@ interface MyPredictionsChartWidgetProps {
 }
 
 const COLORS = {
-    correct: '#22c55e', // Green 500
-    wrong: '#ef4444',   // Red 500
-    notYet: '#64748b',  // Slate 500
+    correct: '#22c55e',
+    wrong: '#ef4444',
+    notYet: '#64748b',
 };
 
-// Custom label renderer function for the pie chart
 const renderCustomizedLabel = (props: any) => {
     const { cx, cy, midAngle, outerRadius, percent, value } = props;
 
-    // Don't render a label for slices with no value
     if (value === 0) {
         return null;
     }
@@ -33,12 +31,10 @@ const renderCustomizedLabel = (props: any) => {
     const percentage = Math.round(percent * 100);
     const labelText = `${value} (${percentage}%)`;
 
-    // Always render the label outside the pie
     const radius = outerRadius + 7;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
     
-    // Adjust text anchor for labels outside the pie to prevent them from overlapping the chart
     const textAnchor = x > cx ? 'start' : 'end';
 
     return (

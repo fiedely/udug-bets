@@ -5,7 +5,6 @@ import { db } from '../../firebaseConfig';
 import { doc, onSnapshot } from 'firebase/firestore';
 import type { Tournament } from '../../types';
 
-// Define the type for a single entry in the leaderboard
 interface LeaderboardEntry {
     userId: string;
     userName: string;
@@ -15,13 +14,11 @@ interface LeaderboardEntry {
     rankChange: 'up' | 'down' | 'same';
 }
 
-// Props for our component
 interface TournamentLeaderboardProps {
     tournament: Tournament;
     onBack: () => void;
 }
 
-// A small component to render the rank change indicator
 const RankChangeIndicator = ({ change }: { change: 'up' | 'down' | 'same' }) => {
     switch (change) {
         case 'up':
@@ -40,7 +37,6 @@ const TournamentLeaderboard = ({ tournament, onBack }: TournamentLeaderboardProp
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
     useEffect(() => {
-        // Set up a real-time listener on the leaderboard document
         const leaderboardRef = doc(db, "leaderboards", tournament.id);
         
         const unsubscribe = onSnapshot(leaderboardRef, (docSnap) => {
@@ -51,13 +47,11 @@ const TournamentLeaderboard = ({ tournament, onBack }: TournamentLeaderboardProp
                     setLastUpdated(data.lastUpdated.toDate());
                 }
             } else {
-                // If the document doesn't exist yet, it means no scores have been saved
                 setLeaderboard([]);
             }
             setIsLoading(false);
         });
 
-        // Clean up the listener when the component unmounts
         return () => unsubscribe();
     }, [tournament.id]);
 

@@ -27,7 +27,6 @@ const UserProfileModal = ({ userProfile, onClose, onProfileUpdate }: UserProfile
     const [isSavingProfile, setIsSavingProfile] = useState(false);
     const [isChangingPassword, setIsChangingPassword] = useState(false);
     
-    // Separate state for messages and errors for each form
     const [profileMessage, setProfileMessage] = useState('');
     const [profileError, setProfileError] = useState('');
     const [passwordMessage, setPasswordMessage] = useState('');

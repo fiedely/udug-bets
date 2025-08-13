@@ -10,10 +10,6 @@ setGlobalOptions({ region: "asia-southeast2" });
 const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 const getRandomElement = (arr: any[]) => arr[Math.floor(Math.random() * arr.length)];
 
-/**
- * Callable function to generate random predictions for a specific stage of a tournament.
- * Can now also handle champion predictions.
- */
 export const generateStagePredictions = onCall(async (request) => {
     const uid = request.auth?.uid;
     if (!uid) {
@@ -73,7 +69,6 @@ export const generateStagePredictions = onCall(async (request) => {
             return { success: true, message };
 
         } else {
-            // Handle match stage predictions
             const allMatches = [...(tournament.matches || []), ...(tournament.knockoutMatches || [])];
             const stageMatches = allMatches.filter(m => m.stage === stage);
 

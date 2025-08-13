@@ -6,7 +6,6 @@ interface AddWidgetModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSelect: (type: WidgetType) => void;
-    // New prop to handle the template selection
     onSelectTemplate: () => void;
 }
 
@@ -29,7 +28,6 @@ const AddWidgetModal = ({ isOpen, onClose, onSelect, onSelectTemplate }: AddWidg
                     <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl">&times;</button>
                 </div>
                 <div className="space-y-4">
-                    {/* Template Section */}
                     <div className="border border-blue-500 bg-blue-900/30 p-4">
                          <button
                             onClick={onSelectTemplate}
@@ -40,7 +38,6 @@ const AddWidgetModal = ({ isOpen, onClose, onSelect, onSelectTemplate }: AddWidg
                         </button>
                     </div>
 
-                    {/* Individual Widget Section */}
                     <div className="pt-4 border-t border-slate-700">
                         <h4 className="text-md font-semibold text-white mb-3">Add Individual Widget</h4>
                         <div className="space-y-3">

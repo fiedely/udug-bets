@@ -21,7 +21,6 @@ const InviteModal = ({ tournament, onClose, onParticipantsChange }: InviteModalP
             setIsLoading(true);
             const usersSnapshot = await getDocs(collection(db, 'users'));
             const usersList = usersSnapshot.docs.map(d => d.data() as UserProfile);
-            // Filter out admins and superadmins from the general user pool
             setAllUsers(usersList.filter(u => u.role === 'user'));
             setIsLoading(false);
         };
@@ -81,7 +80,6 @@ const InviteModal = ({ tournament, onClose, onParticipantsChange }: InviteModalP
                     <p className="text-center text-slate-400">Loading users...</p>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[60vh] overflow-y-auto">
-                        {/* Available Users */}
                         <div className="space-y-2">
                             <h4 className="text-lg font-semibold text-blue-400 border-b border-slate-600 pb-2">Available to Invite ({availableUsers.length})</h4>
                             <ul className="space-y-2 pr-2">
@@ -97,7 +95,6 @@ const InviteModal = ({ tournament, onClose, onParticipantsChange }: InviteModalP
                             </ul>
                         </div>
 
-                        {/* Joined Users */}
                         <div className="space-y-2">
                             <h4 className="text-lg font-semibold text-green-400 border-b border-slate-600 pb-2">Already Joined ({joinedUsers.length})</h4>
                             <ul className="space-y-2 pr-2">

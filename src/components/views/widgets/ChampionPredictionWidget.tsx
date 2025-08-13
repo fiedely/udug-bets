@@ -27,7 +27,7 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
     const [isLoading, setIsLoading] = useState(true);
     const [totalPredictions, setTotalPredictions] = useState(0);
     const [myChampionPick, setMyChampionPick] = useState<string | null>(null);
-    const [tournamentNotFound, setTournamentNotFound] = useState(false); // State to track if the tournament is deleted
+    const [tournamentNotFound, setTournamentNotFound] = useState(false);
 
     const fetchData = useCallback(async () => {
         setTournamentNotFound(false);

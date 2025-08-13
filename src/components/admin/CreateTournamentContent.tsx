@@ -5,14 +5,12 @@ import { db } from '../../firebaseConfig';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { type User } from 'firebase/auth';
 
-// Define props interface for clarity
 interface CreateTournamentContentProps {
     user: User | null;
     onTournamentCreated: (id: string) => void;
 }
 
 const CreateTournamentContent = ({ user, onTournamentCreated }: CreateTournamentContentProps) => {
-    // ... (The rest of the component logic remains the same)
     const [tournamentName, setTournamentName] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');

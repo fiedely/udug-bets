@@ -184,7 +184,6 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
 
                                                 return (
                                                     <div key={match.id} className="p-3 bg-slate-900/50 space-y-3">
-                                                        {/* Desktop Layout */}
                                                         <div className="hidden sm:flex flex-row items-center justify-between gap-3 text-sm">
                                                             <div className="flex-1 text-right">
                                                                 <select value={match.team1.code} onChange={e => handleTeamChange(match.id, 'team1', e.target.value)} disabled={!isKnockout} className="w-full bg-slate-800 border border-slate-600 text-white p-1 text-xs disabled:opacity-70 disabled:cursor-not-allowed">
@@ -205,7 +204,6 @@ const ScoreManagement = ({ tournament, onBack, reportDirtyState }: ScoreManageme
                                                             </div>
                                                         </div>
 
-                                                        {/* Mobile Layout */}
                                                         <div className="sm:hidden space-y-2 text-sm">
                                                             <div className="flex items-center justify-between gap-2">
                                                                 <select value={match.team1.code} onChange={e => handleTeamChange(match.id, 'team1', e.target.value)} disabled={!isKnockout} className="flex-1 min-w-0 bg-slate-800 border border-slate-600 text-white p-1 text-xs disabled:opacity-70 disabled:cursor-not-allowed">

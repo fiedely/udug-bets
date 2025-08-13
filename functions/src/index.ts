@@ -2,17 +2,12 @@
 
 import { setGlobalOptions } from "firebase-functions/v2";
 import { onDocumentUpdated, onDocumentWritten } from "firebase-functions/v2/firestore";
-
-// Import the modularized logic
 import { recalculateLeaderboard } from "./leaderboard";
 import { deleteTournamentAndData, getTournamentParticipants, generateStagePredictions } from "./callable";
 import { Tournament, UserPredictions } from "./common";
 
-// --- INITIALIZATION ---
 setGlobalOptions({ region: "asia-southeast2" });
 
-
-// --- DATABASE TRIGGERS ---
 
 export const onTournamentUpdate = onDocumentUpdated("tournaments/{tournamentId}", async (event) => {
     const beforeData = event.data?.before.data() as Tournament | undefined;
@@ -39,7 +34,5 @@ export const onPredictionWrite = onDocumentWritten("predictions/{predictionId}",
     }
 });
 
-
-// --- CALLABLE FUNCTIONS ---
 
 export { deleteTournamentAndData, getTournamentParticipants, generateStagePredictions };

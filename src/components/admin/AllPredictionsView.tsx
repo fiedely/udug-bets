@@ -83,7 +83,6 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                 const enriched = allMatches.map(match => {
                     const participantPredictions = participantProfiles.map(participant => {
                         const predictionDoc = userPredictionsMap.get(participant.uid);
-                        // FIX: Use optional chaining to safely access nested matchPredictions
                         const prediction = predictionDoc?.matchPredictions?.[match.id];
                         let points = 0;
 

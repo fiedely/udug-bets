@@ -5,7 +5,6 @@ import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { VertexAI } from "@google-cloud/vertexai";
 
-// --- INITIALIZATION ---
 try {
     initializeApp();
 } catch (e) {
@@ -18,7 +17,6 @@ const generativeModel = vertexAI.getGenerativeModel({
 });
 
 
-// --- SHARED TYPE DEFINITIONS ---
 export interface Team { name: string; flag: string; code: string; }
 export interface PointRule { correctScore: number; correctOutcome: number; }
 export interface PointRules { groupStage: PointRule; round32?: PointRule; round16?: PointRule; quarterFinal?: PointRule; semiFinal?: PointRule; thirdPlaceMatch?: PointRule; final?: PointRule; championBonus?: number; }
@@ -38,17 +36,16 @@ export interface MatchPrediction { team1Score: number; team2Score: number; }
 export interface UserPredictions { tournamentId: string; userId: string; championPrediction?: string; matchPredictions: Record<string, MatchPrediction>; }
 export interface UserProfile { uid: string; name: string; email: string; role: 'user' | 'admin' | 'superadmin'; }
 
-// --- NEW: Type definition for a single team's standing in a group ---
 export interface TeamStanding {
     team: Team;
-    mp: number; // Matches Played
-    w: number;  // Wins
-    d: number;  // Draws
-    l: number;  // Losses
-    gf: number; // Goals For
-    ga: number; // Goals Against
-    gd: number; // Goal Difference
-    pts: number;// Points
+    mp: number;
+    w: number;
+    d: number;
+    l: number;
+    gf: number;
+    ga: number;
+    gd: number;
+    pts: number;
 }
 
 export interface Leaderboard {
@@ -58,7 +55,7 @@ export interface Leaderboard {
     championAiSummary?: string;
     eliminatedTeamCodes?: string[];
     currentTournamentStage?: MatchStage | "Not Started" | "Completed";
-    groupStandings?: Record<string, TeamStanding[]>; // Add group standings to the leaderboard
+    groupStandings?: Record<string, TeamStanding[]>;
 }
 
 export interface LeaderboardEntry { 
@@ -71,7 +68,6 @@ export interface LeaderboardEntry {
 }
 
 
-// --- SHARED AI HELPER FUNCTION ---
 export async function generateAiSummary(prompt: string): Promise<string> {
     try {
         const resp = await generativeModel.generateContent(prompt);

@@ -1,5 +1,4 @@
 // src/data/countries.ts
-// A comprehensive list of all countries and territories with their ISO codes and flags.
 
 export const FIFA_COUNTRIES = [
     { code: 'AF', name: 'Afghanistan', flag: '🇦🇫' },

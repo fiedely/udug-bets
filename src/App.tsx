@@ -30,24 +30,21 @@ function App() {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setIsLoading(true);
       if (currentUser) {
-        await currentUser.reload(); // Get the latest user state from Firebase
+        await currentUser.reload();
         if (currentUser.emailVerified) {
           setUser(currentUser);
           setIsAwaitingVerification(false);
           await fetchUserProfile(currentUser.uid);
         } else if (currentUser.providerData.some(p => p.providerId === 'password')) {
-          // Email/password user, but not verified
           setUser(currentUser);
           setIsAwaitingVerification(true);
           setUserProfile(null);
         } else {
-          // Social login (Google), considered verified by default
           setUser(currentUser);
           setIsAwaitingVerification(false);
           await fetchUserProfile(currentUser.uid);
         }
       } else {
-        // No user is signed in
         setUser(null);
         setUserProfile(null);
         setIsAwaitingVerification(false);

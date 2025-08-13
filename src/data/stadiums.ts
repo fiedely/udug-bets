@@ -1,7 +1,6 @@
 // src/data/stadiums.ts
 import type { Stadium } from "../types";
 
-// An expanded list of major stadiums from around the world.
 export const STADIUMS: Stadium[] = [
     // Argentina
     { name: "Estadio Monumental", city: "Buenos Aires" },

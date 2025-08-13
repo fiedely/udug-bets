@@ -119,7 +119,6 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
         setIsConfigModalOpen(true);
     };
 
-    // New function to handle adding the template
     const handleSelectTemplate = () => {
         const now = new Date().getTime();
         const templateWidgets: Widget[] = [
