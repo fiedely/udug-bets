@@ -15,21 +15,60 @@ interface MyPredictionsChartWidgetProps {
 }
 
 const COLORS = {
-    correct: '#66BB6A',
-    wrong: '#EF5350',
-    notYet: '#94a3b8',
+    correct: '#22c55e', // Green 500
+    wrong: '#ef4444',   // Red 500
+    notYet: '#64748b',  // Slate 500
 };
+
+// Custom label renderer function for the pie chart
+const renderCustomizedLabel = (props: any) => {
+    const { cx, cy, midAngle, outerRadius, percent, value } = props;
+
+    // Don't render a label for slices with no value
+    if (value === 0) {
+        return null;
+    }
+    
+    const RADIAN = Math.PI / 180;
+    const percentage = Math.round(percent * 100);
+    const labelText = `${value} (${percentage}%)`;
+
+    // Always render the label outside the pie
+    const radius = outerRadius + 7;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    
+    // Adjust text anchor for labels outside the pie to prevent them from overlapping the chart
+    const textAnchor = x > cx ? 'start' : 'end';
+
+    return (
+        <text
+            x={x}
+            y={y}
+            fill="white"
+            textAnchor={textAnchor}
+            dominantBaseline="central"
+            fontSize="10px"
+            fontWeight="normal"
+        >
+            {labelText}
+        </text>
+    );
+};
+
 
 const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, onSelectedUserChange, setRefreshFunc }: MyPredictionsChartWidgetProps) => {
     const [tournament, setTournament] = useState<Tournament | null>(null);
     const [predictions, setPredictions] = useState<UserPredictions | null>(null);
     const [allParticipants, setAllParticipants] = useState<UserProfile[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [tournamentNotFound, setTournamentNotFound] = useState(false);
 
     const isAdmin = userProfile.role === 'admin' || userProfile.role === 'superadmin';
     const targetUserId = isAdmin ? selectedUserId : userProfile.uid;
 
     const fetchData = useCallback(async () => {
+        setTournamentNotFound(false);
         if (!tournamentId) {
             setIsLoading(false);
             return;
@@ -51,6 +90,12 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
                     .sort((a,b) => a.name.localeCompare(b.name));
                 setAllParticipants(participantProfiles);
             }
+        } else {
+            setTournamentNotFound(true);
+            setTournament(null);
+            setPredictions(null);
+            setIsLoading(false);
+            return;
         }
 
         if (targetUserId) {
@@ -126,6 +171,16 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
             ].filter(d => d.value > 0),
         };
     }, [tournament, predictions]);
+    
+    if (tournamentNotFound) {
+        return (
+            <div className="h-full flex items-center justify-center p-4 text-center">
+                <p className="text-yellow-400 text-sm">
+                    The tournament associated with this widget could not be found. It may have been deleted. Please edit the widget to select a new tournament.
+                </p>
+            </div>
+        );
+    }
 
     if (isLoading) {
         return <div className="flex items-center justify-center h-full"><p className="text-slate-400">Loading Chart Data...</p></div>;
@@ -153,7 +208,7 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
                     <h5 className="font-bold text-slate-400 mb-1">Outcome Accuracy</h5>
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                            <Pie data={chartData.outcomeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} label={(entry) => entry.value}>
+                            <Pie data={chartData.outcomeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} label={renderCustomizedLabel} labelLine={false}>
                                 {chartData.outcomeData.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[entry.name.toLowerCase().replace(' ', '') as keyof typeof COLORS]} />
                                 ))}
@@ -167,7 +222,7 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
                     <h5 className="font-bold text-slate-400 mb-1">Score Accuracy</h5>
                     <ResponsiveContainer width="100%" height="100%">
                          <PieChart>
-                            <Pie data={chartData.scoreData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} label={(entry) => entry.value}>
+                            <Pie data={chartData.scoreData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} label={renderCustomizedLabel} labelLine={false}>
                                 {chartData.scoreData.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[entry.name.toLowerCase().replace(' ', '') as keyof typeof COLORS]} />
                                 ))}

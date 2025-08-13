@@ -53,13 +53,11 @@ function determineCurrentStage(allMatches: Match[], tournament: Tournament): Lea
     return "Completed";
 }
 
-// --- NEW: Function to calculate group standings ---
 function calculateGroupStandings(tournament: Tournament): Record<string, TeamStanding[]> {
     const standings: Record<string, Record<string, TeamStanding>> = {};
     const groups = tournament.groups || {};
     const groupMatches = (tournament.matches || []).filter(m => m.stage === 'Group Stage');
 
-    // Initialize standings for all teams in groups
     for (const groupName in groups) {
         standings[groupName] = {};
         for (const team of groups[groupName]) {
@@ -67,7 +65,6 @@ function calculateGroupStandings(tournament: Tournament): Record<string, TeamSta
         }
     }
 
-    // Process each group stage match
     for (const match of groupMatches) {
         if (typeof match.team1Score !== 'number' || typeof match.team2Score !== 'number') continue;
 
@@ -102,7 +99,6 @@ function calculateGroupStandings(tournament: Tournament): Record<string, TeamSta
         }
     }
 
-    // Convert to sorted arrays
     const sortedStandings: Record<string, TeamStanding[]> = {};
     for (const groupName in standings) {
         sortedStandings[groupName] = Object.values(standings[groupName]).sort((a, b) => {
@@ -152,14 +148,13 @@ export async function recalculateLeaderboard(tournamentId: string) {
     const tournamentCompletion = allMatches.length > 0 ? Math.round((completedMatches.length / allMatches.length) * 100) : 0;
     const isFinalConcluded = currentTournamentStage === "Completed";
 
-    // --- NEW: Calculate group standings ---
     const groupStandings = calculateGroupStandings(tournamentData);
 
     if (completedMatches.length === 0) {
         await db.collection("leaderboards").doc(tournamentId).set({
             entries: [],
             tournamentAiSummary: "The stage is set and predictions are rolling in! The leaderboard is currently empty, but it will update as soon as the first match results are posted. Good luck to all participants!",
-            championAiSummary: "You've made your champion pick! Now, let the games begin. Check back here after the first matches to see how the community's predictions are shaping up.",
+            championAiSummary: "You've made your champion pick! Now, let the games begin. Check back here as the tournament progresses to see how community sentiment changes.",
             currentTournamentStage: "Not Started",
             groupStandings: groupStandings,
             lastUpdated: Timestamp.now(),
@@ -170,9 +165,10 @@ export async function recalculateLeaderboard(tournamentId: string) {
 
     const groupStageMatches = allMatches.filter(m => m.stage === 'Group Stage');
     const isGroupStageOver = groupStageMatches.length > 0 && groupStageMatches.every(m => typeof m.team1Score === 'number');
+    const knockoutSeeded = (tournamentData.knockoutMatches || []).some(m => m.team1.code.substring(0, 3) !== 'TBD' && m.team2.code.substring(0, 3) !== 'TBD');
 
     const eliminatedTeamCodes = new Set<string>();
-    if (isGroupStageOver) {
+    if (isGroupStageOver && knockoutSeeded) {
         const teamsInKnockout = new Set<string>();
         if (tournamentData.knockoutMatches) {
             tournamentData.knockoutMatches.forEach(match => {
@@ -184,7 +180,7 @@ export async function recalculateLeaderboard(tournamentId: string) {
                         eliminatedTeamCodes.add(match.team2.code);
                     } else if (match.team2Score > match.team1Score) {
                         eliminatedTeamCodes.add(match.team1.code);
-                    } else { // It's a draw, so check for the declared winner
+                    } else {
                         if (match.winnerTeamCode === match.team1.code) {
                             eliminatedTeamCodes.add(match.team2.code);
                         } else if (match.winnerTeamCode === match.team2.code) {
@@ -266,7 +262,9 @@ export async function recalculateLeaderboard(tournamentId: string) {
 
     const oldTop3 = oldLeaderboardData?.entries.slice(0, 3).map(e => e.userId).join(',');
     const newTop3 = newLeaderboard.slice(0, 3).map(e => e.userId).join(',');
-    const shouldUpdateLeaderboardSummary = (oldTop3 !== newTop3) || !tournamentAiSummary;
+    
+    const isFirstFill = (oldLeaderboardData?.entries.length === 0 && newLeaderboard.length > 0);
+    const shouldUpdateLeaderboardSummary = (oldTop3 !== newTop3) || isFirstFill || !tournamentAiSummary;
 
     if (shouldUpdateLeaderboardSummary && newLeaderboard.length > 2) {
         const leader = newLeaderboard[0];
@@ -274,7 +272,7 @@ export async function recalculateLeaderboard(tournamentId: string) {
         const thirdPlace = newLeaderboard[2];
         const maxPossibleRemainingPoints = calculateRemainingMatchPoints(allMatches, pointRules);
         
-        const prompt = `You are a sharp but humorous sports analyst. Write a concise, analytical summary (2-3 sentences) of a tournament leaderboard.
+        const prompt = `You are a sharp with dry "dad-jokes" humorous sports analyst. Write a concise, analytical summary (2-3 sentences) of a tournament leaderboard.
 
         Data:
         - Tournament Progress: ${tournamentCompletion}% complete
@@ -317,7 +315,7 @@ export async function recalculateLeaderboard(tournamentId: string) {
 
             const champContext = isFinalConcluded ? `The tournament is over!` : `We're in the '${currentTournamentStage}'.`;
 
-            const prompt = `You are a sharp but humorous sports analyst. Write a concise summary (2-3 sentences) of the community's champion predictions.
+            const prompt = `You are a sharp with dry "dad-jokes" humorous sports analyst. Write a concise summary (2-3 sentences) of the community's champion predictions.
             Context: ${champContext}
             Analysis: ${topPickAnalysis}
             Instruction: Combine the context and analysis into a witty, engaging summary for all participants. Ensure all team names are bolded using markdown.`;

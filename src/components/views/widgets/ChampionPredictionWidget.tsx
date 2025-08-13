@@ -27,8 +27,10 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
     const [isLoading, setIsLoading] = useState(true);
     const [totalPredictions, setTotalPredictions] = useState(0);
     const [myChampionPick, setMyChampionPick] = useState<string | null>(null);
+    const [tournamentNotFound, setTournamentNotFound] = useState(false); // State to track if the tournament is deleted
 
     const fetchData = useCallback(async () => {
+        setTournamentNotFound(false);
         if (!tournamentId) { 
             setIsLoading(false); 
             setPicks([]);
@@ -41,6 +43,7 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
         const [tourneySnap, leaderboardSnap] = await Promise.all([getDoc(tourneyRef), getDoc(leaderboardRef)]);
 
         if (!tourneySnap.exists()) { 
+            setTournamentNotFound(true);
             setIsLoading(false); 
             setPicks([]);
             return; 
@@ -106,6 +109,16 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
         setRefreshFunc(fetchData);
     }, [fetchData, setRefreshFunc]);
     
+    if (tournamentNotFound) {
+        return (
+            <div className="h-full flex items-center justify-center p-4 text-center">
+                <p className="text-yellow-400 text-sm">
+                    The tournament associated with this widget could not be found. It may have been deleted. Please edit the widget to select a new tournament.
+                </p>
+            </div>
+        );
+    }
+
     if (isLoading) {
         return <div className="flex items-center justify-center h-full"><p className="text-slate-400">Loading...</p></div>;
     }

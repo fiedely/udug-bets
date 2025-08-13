@@ -8,9 +8,11 @@ import { db, Tournament, UserProfile } from "./common";
 setGlobalOptions({ region: "asia-southeast2" });
 
 const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+const getRandomElement = (arr: any[]) => arr[Math.floor(Math.random() * arr.length)];
 
 /**
- * NEW: Callable function to generate random predictions for a specific stage of a tournament.
+ * Callable function to generate random predictions for a specific stage of a tournament.
+ * Can now also handle champion predictions.
  */
 export const generateStagePredictions = onCall(async (request) => {
     const uid = request.auth?.uid;
@@ -39,14 +41,7 @@ export const generateStagePredictions = onCall(async (request) => {
             throw new HttpsError("not-found", "Tournament not found.");
         }
         const tournament = tournamentSnap.data() as Tournament;
-
-        const allMatches = [...(tournament.matches || []), ...(tournament.knockoutMatches || [])];
-        const stageMatches = allMatches.filter(m => m.stage === stage);
-
-        if (stageMatches.length === 0) {
-            return { success: false, message: `No matches found for stage '${stage}'.` };
-        }
-
+        
         const participants = tournament.participants || [];
         if (participants.length === 0) {
             return { success: false, message: "Tournament has no participants." };
@@ -55,35 +50,60 @@ export const generateStagePredictions = onCall(async (request) => {
         const batch = db.batch();
         const predictionsCollection = db.collection("predictions");
 
-        for (const userId of participants) {
-            const predictionRef = predictionsCollection.doc(`${tournamentId}_${userId}`);
-            
-            // FIX: Instead of using dot notation in the keys, we build a proper nested object.
-            // This ensures Firestore correctly merges the data into the 'matchPredictions' map.
-            const matchPredictions: { [key: string]: any } = {};
-            stageMatches.forEach(match => {
-                matchPredictions[match.id] = {
-                    team1Score: getRandomInt(0, 4),
-                    team2Score: getRandomInt(0, 4),
+        if (stage === 'Champion') {
+            const teams = tournament.teams || [];
+            if (teams.length === 0) {
+                return { success: false, message: "Tournament has no teams to select a champion from." };
+            }
+
+            for (const userId of participants) {
+                const predictionRef = predictionsCollection.doc(`${tournamentId}_${userId}`);
+                const randomChampion = getRandomElement(teams);
+                const setData = {
+                    tournamentId: tournamentId,
+                    userId: userId,
+                    championPrediction: randomChampion.code
                 };
-            });
+                batch.set(predictionRef, setData, { merge: true });
+            }
+            await batch.commit();
 
-            const setData = {
-                tournamentId: tournamentId,
-                userId: userId,
-                matchPredictions: matchPredictions
-            };
+            const message = `Successfully generated champion predictions for ${participants.length} participants.`;
+            logger.info(message);
+            return { success: true, message };
 
-            // Use set with { merge: true }. This will create the document if it doesn't exist,
-            // or correctly merge the new matchPredictions map into it if it does.
-            batch.set(predictionRef, setData, { merge: true });
+        } else {
+            // Handle match stage predictions
+            const allMatches = [...(tournament.matches || []), ...(tournament.knockoutMatches || [])];
+            const stageMatches = allMatches.filter(m => m.stage === stage);
+
+            if (stageMatches.length === 0) {
+                return { success: false, message: `No matches found for stage '${stage}'.` };
+            }
+
+            for (const userId of participants) {
+                const predictionRef = predictionsCollection.doc(`${tournamentId}_${userId}`);
+                const matchPredictions: { [key: string]: any } = {};
+                stageMatches.forEach(match => {
+                    matchPredictions[match.id] = {
+                        team1Score: getRandomInt(0, 4),
+                        team2Score: getRandomInt(0, 4),
+                    };
+                });
+
+                const setData = {
+                    tournamentId: tournamentId,
+                    userId: userId,
+                    matchPredictions: matchPredictions
+                };
+                batch.set(predictionRef, setData, { merge: true });
+            }
+            await batch.commit();
+
+            const message = `Successfully generated predictions for ${stageMatches.length} matches in stage '${stage}' for ${participants.length} participants.`;
+            logger.info(message);
+            return { success: true, message };
         }
-
-        await batch.commit();
-
-        const message = `Successfully generated predictions for ${stageMatches.length} matches in stage '${stage}' for ${participants.length} participants.`;
-        logger.info(message);
-        return { success: true, message };
 
     } catch (error) {
         logger.error("Error during stage prediction seeding:", error);

@@ -75,8 +75,15 @@ const WidgetConfigModal = ({ isOpen, widget, userProfile, onClose, onSave }: Wid
             const tourneyList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tournament));
             setTournaments(tourneyList);
             
-            if (!widget?.props?.tournamentId && tourneyList.length > 0) {
-                setSelectedTournamentId(tourneyList[0].id);
+            if (tourneyList.length > 0) {
+                const currentId = widget?.props?.tournamentId;
+                const isCurrentIdValid = tourneyList.some(t => t.id === currentId);
+
+                // If the current ID is invalid (e.g., tournament deleted) or not set,
+                // default to the first available tournament.
+                if (!currentId || !isCurrentIdValid) {
+                    setSelectedTournamentId(tourneyList[0].id);
+                }
             }
         };
         fetchTournaments();

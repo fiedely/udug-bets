@@ -37,6 +37,9 @@ const createFakeUser = () => {
 
 const generateStagePredictions = httpsCallable(functions, 'generateStagePredictions');
 
+// New type to include 'Champion' as a seedable stage
+type SeedStage = MatchStage | 'Champion' | '';
+
 const DebugSeeder = () => {
     // State for full tournament seeder
     const [isSeedingTournament, setIsSeedingTournament] = useState(false);
@@ -54,7 +57,7 @@ const DebugSeeder = () => {
     const [stageSeedLog, setStageSeedLog] = useState<string[]>([]);
     const [allTournaments, setAllTournaments] = useState<Tournament[]>([]);
     const [selectedTournamentId, setSelectedTournamentId] = useState('');
-    const [selectedStage, setSelectedStage] = useState<MatchStage | ''>('');
+    const [selectedStage, setSelectedStage] = useState<SeedStage>('');
 
     useEffect(() => {
         const fetchTournaments = async () => {
@@ -237,8 +240,9 @@ const DebugSeeder = () => {
         if (tournament.knockoutMatches) {
             tournament.knockoutMatches.forEach(m => stages.add(m.stage));
         }
-
-        return Array.from(stages);
+        
+        // Always add Champion as an option
+        return ['Champion', ...Array.from(stages)];
     }, [allTournaments, selectedTournamentId]);
 
 
@@ -299,7 +303,7 @@ const DebugSeeder = () => {
                         <label className="text-xs text-slate-400">Stage</label>
                         <select
                             value={selectedStage}
-                            onChange={e => setSelectedStage(e.target.value as MatchStage)}
+                            onChange={e => setSelectedStage(e.target.value as SeedStage)}
                             className="w-full mt-1 px-2 py-2 bg-slate-900 border border-slate-600 text-white"
                             disabled={!selectedTournamentId}
                         >

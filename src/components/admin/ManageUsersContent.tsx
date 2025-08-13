@@ -12,11 +12,7 @@ interface ManageUsersContentProps {
 const ManageUsersContent = ({ userProfile }: ManageUsersContentProps) => {
   const [usersList, setUsersList] = useState<UserProfile[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(() => {
-    const savedValue = localStorage.getItem('udug-bets-itemsPerPage');
-    return savedValue ? parseInt(savedValue, 10) : 10;
-  });
+  const [searchTerm, setSearchTerm] = useState('');
   const [editingUid, setEditingUid] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
 
@@ -64,18 +60,16 @@ const ManageUsersContent = ({ userProfile }: ManageUsersContentProps) => {
     setEditingName('');
   };
 
-  const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newValue = Number(e.target.value);
-    setItemsPerPage(newValue);
-    setCurrentPage(1);
-    localStorage.setItem('udug-bets-itemsPerPage', newValue.toString());
-  };
-
-  const totalPages = Math.ceil(usersList.length / itemsPerPage);
-  const paginatedUsers = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return usersList.slice(startIndex, startIndex + itemsPerPage);
-  }, [usersList, currentPage, itemsPerPage]);
+  const filteredUsers = useMemo(() => {
+    if (!searchTerm) {
+      return usersList;
+    }
+    const lowercasedFilter = searchTerm.toLowerCase();
+    return usersList.filter(user =>
+      user.name.toLowerCase().includes(lowercasedFilter) ||
+      user.email.toLowerCase().includes(lowercasedFilter)
+    );
+  }, [usersList, searchTerm]);
 
   if (isLoadingUsers) {
     return <div className="bg-slate-800 border border-slate-700 p-8 text-center"><svg className="animate-spin h-6 w-6 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>;
@@ -83,75 +77,75 @@ const ManageUsersContent = ({ userProfile }: ManageUsersContentProps) => {
 
   return (
     <div className="bg-slate-800 border border-slate-700 p-4 md:p-8">
-      <h2 className="text-2xl font-bold text-blue-400">Manage Users</h2>
-      <div className="mt-4 overflow-x-auto">
-        <table className="w-full text-sm text-left text-slate-300">
-          <thead className="text-xs text-slate-400 uppercase bg-slate-700">
-            <tr>
-              <th scope="col" className="px-6 py-3">Name</th>
-              <th scope="col" className="px-6 py-3">Email</th>
-              <th scope="col" className="px-6 py-3">Role</th>
-              {userProfile?.role === 'superadmin' && <th scope="col" className="px-6 py-3">Actions</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedUsers.map((u) => (
-              <tr key={u.uid} className="bg-slate-800 border-b border-slate-700 hover:bg-slate-700">
-                <td className="px-6 py-4 font-medium text-white">
-                  {editingUid === u.uid && userProfile?.role === 'superadmin' ? (
-                    <input type="text" value={editingName} onChange={(e) => setEditingName(e.target.value)} className="bg-slate-900 border border-slate-600 text-white p-1" />
+      <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+        <h2 className="text-2xl font-bold text-blue-400">Manage Users</h2>
+        <div className="w-full md:w-1/3">
+          <input
+            type="text"
+            placeholder="Search by name or email..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full px-4 py-2 bg-slate-900 border border-slate-600 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+      <div className="mt-4">
+        {/* Header for larger screens */}
+        <div className="hidden md:grid md:grid-cols-12 gap-4 px-4 py-2 text-xs text-slate-400 uppercase bg-slate-700 font-medium">
+          <div className="col-span-4">Name</div>
+          <div className="col-span-4">Email</div>
+          <div className="col-span-2">Role</div>
+          {userProfile?.role === 'superadmin' && <div className="col-span-2">Actions</div>}
+        </div>
+        {/* User List */}
+        <div className="space-y-4 md:space-y-0">
+          {filteredUsers.map((u) => (
+            <div key={u.uid} className="bg-slate-900/50 md:bg-transparent border md:border-t md:border-b-0 border-slate-700 p-4 md:p-0 md:grid md:grid-cols-12 md:gap-4 md:px-4 md:py-3 items-center text-sm">
+              {/* Name */}
+              <div className="col-span-4 flex items-center">
+                 <span className="md:hidden font-semibold text-slate-400 w-20">Name:</span>
+                 {editingUid === u.uid && userProfile?.role === 'superadmin' ? (
+                    <input type="text" value={editingName} onChange={(e) => setEditingName(e.target.value)} className="bg-slate-700 border border-slate-600 text-white p-1 w-full" />
                   ) : (
-                    u.name
+                    <span className="text-white font-medium">{u.name}</span>
                   )}
-                </td>
-                <td className="px-6 py-4">{u.email}</td>
-                <td className="px-6 py-4">
-                  {u.role === 'superadmin' ? (
+              </div>
+               {/* Email */}
+              <div className="col-span-4 mt-2 md:mt-0 flex items-center">
+                 <span className="md:hidden font-semibold text-slate-400 w-20">Email:</span>
+                 <span className="text-slate-300 truncate">{u.email}</span>
+              </div>
+               {/* Role */}
+              <div className="col-span-2 mt-2 md:mt-0 flex items-center">
+                 <span className="md:hidden font-semibold text-slate-400 w-20">Role:</span>
+                 {u.role === 'superadmin' ? (
                     <span className="font-bold text-amber-400">Super Admin</span>
                   ) : (
-                    <select value={u.role} onChange={(e) => handleRoleChange(u.uid, e.target.value as 'user' | 'admin')} disabled={userProfile?.role === 'admin' && u.role === 'admin'} className="bg-slate-900 border border-slate-600 text-white text-sm focus:ring-blue-500 focus:border-blue-500 block w-full p-2">
+                    <select value={u.role} onChange={(e) => handleRoleChange(u.uid, e.target.value as 'user' | 'admin')} disabled={userProfile?.role === 'admin' && u.role === 'admin'} className="bg-slate-700 border border-slate-600 text-white text-sm focus:ring-blue-500 focus:border-blue-500 block w-full p-2">
                       <option value="user">User</option>
                       <option value="admin">Admin</option>
                     </select>
                   )}
-                </td>
-                {userProfile?.role === 'superadmin' && (
-                  <td className="px-6 py-4">
-                    {u.role !== 'superadmin' && (
+              </div>
+               {/* Actions */}
+              {userProfile?.role === 'superadmin' && (
+                <div className="col-span-2 mt-4 md:mt-0 pt-4 md:pt-0 border-t border-slate-700 md:border-0">
+                  {u.role !== 'superadmin' && (
                       editingUid === u.uid ? (
-                        <div className="flex gap-2">
+                        <div className="flex gap-4">
                           <button onClick={() => handleNameChange(u.uid)} className="font-medium text-green-500 hover:underline">Save</button>
-                          <button onClick={cancelEditing} className="font-medium text-red-500 hover:underline">Cancel</button>
+                          <button onClick={cancelEditing} className="font-medium text-slate-400 hover:underline">Cancel</button>
                         </div>
                       ) : (
-                        <button onClick={() => startEditing(u)} className="font-medium text-blue-500 hover:underline">Edit</button>
+                        <button onClick={() => startEditing(u)} className="font-medium text-blue-500 hover:underline">Edit Name</button>
                       )
                     )}
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="flex flex-col md:flex-row items-center justify-between mt-4 text-sm text-slate-400 gap-4">
-          <div className="flex items-center gap-2">
-            <span>Show</span>
-            <select value={itemsPerPage} onChange={handleItemsPerPageChange} className="bg-slate-900 border border-slate-600 text-white p-1">
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-            </select>
-            <span>entries</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span>Page {currentPage} of {totalPages}</span>
-            <div className="flex gap-2">
-              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1 bg-slate-600 hover:bg-slate-500 disabled:bg-slate-700 disabled:cursor-not-allowed">Previous</button>
-              <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-3 py-1 bg-slate-600 hover:bg-slate-500 disabled:bg-slate-700 disabled:cursor-not-allowed">Next</button>
+                </div>
+              )}
             </div>
-          </div>
+          ))}
         </div>
+      </div>
     </div>
   );
 };

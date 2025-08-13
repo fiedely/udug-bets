@@ -17,6 +17,7 @@ const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexCh
     const [tournament, setTournament] = useState<Tournament | null>(null);
     const [predictions, setPredictions] = useState<UserPredictions[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [tournamentNotFound, setTournamentNotFound] = useState(false);
 
     const allMatches = useMemo(() => {
         if (!tournament) return [];
@@ -25,6 +26,7 @@ const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexCh
     }, [tournament]);
 
     const fetchData = useCallback(async () => {
+        setTournamentNotFound(false);
         if (!tournamentId) {
             setIsLoading(false);
             return;
@@ -39,6 +41,7 @@ const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexCh
             fetchedTournament = { id: tourneySnap.id, ...tourneySnap.data() } as Tournament;
             setTournament(fetchedTournament);
         } else {
+            setTournamentNotFound(true);
             setTournament(null);
             setPredictions([]);
             setIsLoading(false);
@@ -105,6 +108,16 @@ const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexCh
     const handlePrev = () => onMatchIndexChange(Math.max(0, currentMatchIndex - 1));
     const handleNext = () => onMatchIndexChange(Math.min(allMatches.length - 1, currentMatchIndex + 1));
 
+    if (tournamentNotFound) {
+        return (
+            <div className="h-full flex items-center justify-center p-4 text-center">
+                <p className="text-yellow-400 text-sm">
+                    The tournament associated with this widget could not be found. It may have been deleted. Please edit the widget to select a new tournament.
+                </p>
+            </div>
+        );
+    }
+
     if (isLoading) {
         return <div className="flex items-center justify-center h-full"><p className="text-slate-400">Loading Chart Data...</p></div>;
     }
@@ -135,11 +148,12 @@ const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexCh
                     <h5 className="text-center font-bold text-slate-400 mb-1">Predicted Outcome</h5>
                     <div className="flex-grow">
                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData.outcomeData} layout="vertical" margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                                <XAxis type="number" stroke="#94a3b8" tick={{ fontSize: 10 }} allowDecimals={false} />
-                                <YAxis type="category" dataKey="name" stroke="#94a3b8" width={80} tick={{ fontSize: 10 }} />
+                            <BarChart data={chartData.outcomeData} layout="horizontal" margin={{ top: 1, right: 15, left: -35, bottom: 1 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                                <XAxis type="category" dataKey="name" stroke="#FFFFFF" tick={{ fontSize: 10 }} interval={0} />
+                                <YAxis type="number" stroke="#FFFFFF" tick={{ fontSize: 10 }} allowDecimals={false} />
                                 <Tooltip cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }} contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} />
-                                <Bar dataKey="count" fill="#38bdf8" barSize={20} />
+                                <Bar dataKey="count" fill="#3b82f6" />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -148,12 +162,12 @@ const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexCh
                      <h5 className="text-center font-bold text-slate-400 mb-1">Exact Score Guesses</h5>
                     <div className="flex-grow">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData.scoreData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                            <BarChart data={chartData.scoreData} layout="horizontal" margin={{ top: 1, right: 15, left: -35, bottom: 1 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                                <XAxis dataKey="score" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                                <YAxis stroke="#94a3b8" tick={{ fontSize: 10 }} allowDecimals={false} />
+                                <XAxis type="category" dataKey="score" stroke="#FFFFFF" tick={{ fontSize: 10 }} />
+                                <YAxis type="number" stroke="#FFFFFF" tick={{ fontSize: 10 }} allowDecimals={false} />
                                 <Tooltip cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }} contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} />
-                                <Bar dataKey="count" fill="#818cf8" />
+                                <Bar dataKey="count" fill="#6366f1" />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>

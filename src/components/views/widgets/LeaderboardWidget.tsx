@@ -23,8 +23,11 @@ const RankChangeIndicator = ({ change }: { change: 'up' | 'down' | 'same' }) => 
 const LeaderboardWidget = ({ userProfile, tournamentId, setRefreshFunc }: LeaderboardWidgetProps) => {
     const [leaderboardData, setLeaderboardData] = useState<Leaderboard | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [tournamentNotFound, setTournamentNotFound] = useState(false); // State to track if the tournament is deleted
 
     const fetchData = useCallback(async () => {
+        // Reset error state on new fetch
+        setTournamentNotFound(false);
         if (!tournamentId) {
             setIsLoading(false);
             setLeaderboardData(null);
@@ -33,9 +36,18 @@ const LeaderboardWidget = ({ userProfile, tournamentId, setRefreshFunc }: Leader
         setIsLoading(true);
         const leaderboardRef = doc(db, "leaderboards", tournamentId);
         const docSnap = await getDoc(leaderboardRef);
+
+        // Check if the underlying leaderboard document exists.
+        // It might not exist if the tournament was deleted.
         if (docSnap.exists()) {
             setLeaderboardData(docSnap.data() as Leaderboard);
         } else {
+            // Check if the tournament itself exists to differentiate between no data and a deleted tournament
+            const tourneyRef = doc(db, "tournaments", tournamentId);
+            const tourneySnap = await getDoc(tourneyRef);
+            if (!tourneySnap.exists()) {
+                setTournamentNotFound(true);
+            }
             setLeaderboardData(null);
         }
         setIsLoading(false);
@@ -49,6 +61,16 @@ const LeaderboardWidget = ({ userProfile, tournamentId, setRefreshFunc }: Leader
         setRefreshFunc(fetchData);
     }, [fetchData, setRefreshFunc]);
 
+    if (tournamentNotFound) {
+        return (
+            <div className="h-full flex items-center justify-center p-4 text-center">
+                <p className="text-yellow-400 text-sm">
+                    The tournament associated with this widget could not be found. It may have been deleted. Please edit the widget to select a new tournament.
+                </p>
+            </div>
+        );
+    }
+    
     if (!tournamentId) {
         return (
             <div className="h-full flex items-center justify-center p-4">
