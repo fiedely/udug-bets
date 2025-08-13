@@ -1,63 +1,59 @@
-# Udug Bets - Advanced Tournament Prediction Platform
+"Udug Bets" application, a full-stack, serverless web platform for hosting and participating in football tournament prediction games. The project is built on a modern technology stack, featuring a dynamic React frontend and a robust Firebase backend, with a unique integration of Google's Vertex AI for intelligent data summaries.
 
-Udug Bets is a comprehensive, feature-rich web application for creating and participating in sports tournament prediction pools. Built with a modern tech stack including React, TypeScript, and Firebase, it provides a robust suite of tools for administrators to meticulously set up and manage tournaments, while offering a dynamic and informative experience for users to make and track their predictions.
+### **Technology Stack**
 
-## Features
+- **Frontend**: React (v19) with TypeScript, built with Vite for a fast development experience.
+- **Styling**: Tailwind CSS, including the `@tailwindcss/typography` plugin for rich text rendering.
+- **Backend**: Google Firebase Platform
+    - **Database**: Cloud Firestore provides a scalable NoSQL database for all application data.
+    - **Authentication**: Firebase Authentication for secure user sign-up, sign-in (Email/Password & Google), and session management.
+    - **Serverless Logic**: Firebase Cloud Functions (Node.js 22, TypeScript) for all backend processing, calculations, and AI integration.
+- **AI Integration**: Google Cloud Vertex AI (Gemini 2.5 Flash model) is used to generate dynamic, analytical summaries of leaderboard and prediction data.
+- **Data Visualization**: Recharts is used to create interactive bar and pie charts for the user dashboard.
+- **UI & Layout**: `react-grid-layout` provides the core functionality for the customizable user dashboard.
 
-The platform is divided into two core experiences: a powerful admin panel for complete tournament control and a user-centric dashboard for seamless participation.
+---
 
-### Admin & Superadmin Features
+### **Core Features**
 
-- **Multi-Step Tournament Wizard:** A guided 5-step process to create highly flexible and detailed tournaments.
+#### **User-Facing Features**
 
-  1. **Step 1: Details:** Define the tournament name, description (with Markdown support for rich text), start/end dates, and set custom point rules for every stage (Group Stage, Round of 32, Round of 16, Quarter-finals, Semi-finals, Third Place, and Final).
+- **Authentication**: Secure sign-up/sign-in flow with email verification and Google provider options.
+- **Customizable Dashboard**: A dynamic, grid-based dashboard where users can add, remove, resize, and rearrange widgets to create their own personalized view of the tournament. Layouts are saved per-user in Firestore.
+- **Data-Rich Widgets**:
+    - **Leaderboard**: Displays a real-time tournament leaderboard with rank change indicators.
+    - **Group Standings**: Shows official, live-calculated group stage tables.
+    - **All Predictions Chart**: A bar chart visualizing the aggregated predictions from all users for any given match.
+    - **My Predictions Chart**: Pie charts showing a user their personal accuracy for both match outcomes and exact scores.
+    - **Champion Predictions**: A ranked list of which teams the community has picked to win, with eliminated teams visually struck through.
+- **AI-Powered Summaries**: The Leaderboard and Champion Prediction widgets feature dynamically generated text summaries from Gemini, providing witty, analytical insights into the current state of the tournament.
+- **Profile Management**: A user profile modal allows users to update their display name, optional bio information (DOB, sex, favorite team), and change their password.
+- **Tournament Interaction**:
+    - A simple flow to join tournaments using a 6-digit ticket code.
+    - A dedicated view to browse joined tournaments and check prediction submission statuses.
+    - An intuitive interface for entering and editing score predictions and champion picks.
 
-  2. **Step 2:** Participants: Select participating teams from an expanded list of 77 countries and organize them into a customizable number of groups.
+#### **Administrator Features**
 
-  3. **Step 3:** Group Matches: Automatically generate a full round-robin schedule for all group stage matches, with the ability to edit any detail (teams, date, venue) after generation.
+- **Role-Based Access Control**: The system supports `user`, `admin`, and `superadmin` roles, with features progressively enabled based on permission level.
+- **Tournament Wizard**: A comprehensive, multi-step interface for creating and editing tournaments, covering:
+    1.  **Details**: Name, description (with Markdown support), and complex point rules for each stage.
+    2.  **Participants**: Selecting teams and assigning them to customizable groups.
+    3.  **Group Matches**: Automatic generation and manual editing of the group stage schedule.
+    4.  **Knockout Stage**: Generation of a skeletal structure for knockout rounds.
+    5.  **Confirmation**: A final review screen before activating the tournament.
+- **Real-time Management**:
+    - **Score Management**: A dedicated view for admins to input official match results, which automatically triggers leaderboard recalculations.
+    - **Prediction Control**: Admins can open and close prediction windows for each tournament stage in real-time.
+- **User & Data Oversight**:
+    - **User Management**: A responsive page for viewing all users, changing their roles, and searching by name or email.
+    - **All Predictions View**: A detailed table showing every prediction from every participant, with an option to export the data as a PDF.
+- **Debug & Seeding Tools (Superadmin)**: A powerful panel for generating fake users, test tournaments, and random predictions for any stage (including champions) to facilitate development and testing.
 
-  4. **Step 4:** Knockout Stage: A highly flexible knockout configurator. Admins can select the starting round (e.g., Round of 32, Round of 16, etc.) and choose whether to include a Third Place Match, adapting to any tournament format.
+---
 
-  5. **Step 5:** Confirmation: A final review screen summarizing all tournament details—including point rules, participants, and full match schedules (both group and knockout)—before activation.
+### **Backend Architecture & Data Integrity**
 
-- **Advanced Tournament Management:**
-  1. **Granular Prediction Control:** For each active tournament, admins can individually toggle prediction submissions on or off for each stage (Champion, Group Stage, R32, R16, etc.) via a convenient dropdown menu.
-
-  2. **User Invitation System:** Invite registered users to join a tournament via a dedicated modal that separates already-joined participants from those available to invite.
-
-  3. **Score & Seeding Management:** (Planned) A dedicated interface for admins to enter final match scores and manually seed the knockout bracket with qualifying teams.
-
-- **User Role Management:** Superadmins can manage user roles (promote/demote admins) and edit user details.
-
-### User Features
-
-- **Secure Authentication:** Seamless sign-up and login via Email/Password or Google Sign-In.
-
-- **Join Tournaments:** Users can join any active tournament by entering a unique 6-digit ticket code provided by an admin. Admins are prohibited from joining as participants.
-
-- **"My Tournaments" Dashboard:** The user's central hub, displaying a card for each joined tournament with detailed at-a-glance information:
-
-  1. Tournament status, date period, and total number of participants.
-
-  2. A detailed **Prediction Submission Status** table showing which stages are open for prediction (with a "traffic light" glowing indicator) and the user's personal submission status for each stage (Complete, Incomplete, or Not Submitted).
-
-- **Tournament Details View:** A dedicated page showing a comprehensive overview of a tournament, including the formatted description, point rules, and full match schedules.
-
-- **Prediction Entry Page:** A sophisticated interface for submitting predictions:
-
-  1. **Champion Prediction:** Select the tournament winner from a dropdown, with a trophy icon appearing upon selection.
-
-  2. **Match Predictions:** Enter scores for all matches. The UI automatically displays "WIN", "LOSE", or "DRAW" badges next to teams based on the input.
-
-  3. **Enhanced UX:** Each stage is a collapsible section, and the collapsed state is remembered in the browser. Match listings include date, time, venue, and match number.
-
-  4. **Unsaved Changes Warning:** Users are warned if they try to leave the page with unsaved predictions.
-
-## Tech Stack
-
-- **Frontend:** [React](https://reactjs.org/)
-- **Language:** [TypeScript](https://www.typescriptlang.org/)
-- **Backend/Database:** [Firebase](https://firebase.google.com/)
-- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
-- **Markdown Parsing:** [Marked](https://marked.js.org/)
-- **Build Tool:** [Vite](https://vitejs.dev/)
+- **Serverless Logic**: All backend operations are handled by Firebase Cloud Functions, ensuring scalability and low maintenance.
+- **Real-time Leaderboard Engine**: The core of the application is an event-driven system. Firestore triggers on the `tournaments` and `predictions` collections automatically invoke a `recalculateLeaderboard` function. This function processes all relevant data, calculates points and group standings, generates AI summaries, and updates the denormalized `leaderboards` document, ensuring all user-facing data is always live and accurate.
+- **Secure by Design**: Firestore Security Rules are meticulously crafted to enforce data ownership and role-based permissions, preventing unauthorized access or modification of data. Key collections like `leaderboards` are write-protected from the client-side, ensuring their integrity.
