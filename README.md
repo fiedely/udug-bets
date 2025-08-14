@@ -1,59 +1,49 @@
-"Udug Bets" application, a full-stack, serverless web platform for hosting and participating in football tournament prediction games. The project is built on a modern technology stack, featuring a dynamic React frontend and a robust Firebase backend, with a unique integration of Google's Vertex AI for intelligent data summaries.
+## Udug Bets prediction platform
 
-### **Technology Stack**
+A full-stack web application for running and participating in tournament prediction games.
 
-- **Frontend**: React (v19) with TypeScript, built with Vite for a fast development experience.
-- **Styling**: Tailwind CSS, including the `@tailwindcss/typography` plugin for rich text rendering.
-- **Backend**: Google Firebase Platform
-    - **Database**: Cloud Firestore provides a scalable NoSQL database for all application data.
-    - **Authentication**: Firebase Authentication for secure user sign-up, sign-in (Email/Password & Google), and session management.
-    - **Serverless Logic**: Firebase Cloud Functions (Node.js 22, TypeScript) for all backend processing, calculations, and AI integration.
-- **AI Integration**: Google Cloud Vertex AI (Gemini 2.5 Flash model) is used to generate dynamic, analytical summaries of leaderboard and prediction data.
-- **Data Visualization**: Recharts is used to create interactive bar and pie charts for the user dashboard.
-- **UI & Layout**: `react-grid-layout` provides the core functionality for the customizable user dashboard.
+The application is built on a modern, serverless architecture, providing a rich, interactive experience for both regular users and administrators. It features a customizable user dashboard, a comprehensive admin panel for tournament management, and real-time data updates.
 
 ---
 
-### **Core Features**
+### Tech Stack
 
-#### **User-Facing Features**
-
-- **Authentication**: Secure sign-up/sign-in flow with email verification and Google provider options.
-- **Customizable Dashboard**: A dynamic, grid-based dashboard where users can add, remove, resize, and rearrange widgets to create their own personalized view of the tournament. Layouts are saved per-user in Firestore.
-- **Data-Rich Widgets**:
-    - **Leaderboard**: Displays a real-time tournament leaderboard with rank change indicators.
-    - **Group Standings**: Shows official, live-calculated group stage tables.
-    - **All Predictions Chart**: A bar chart visualizing the aggregated predictions from all users for any given match.
-    - **My Predictions Chart**: Pie charts showing a user their personal accuracy for both match outcomes and exact scores.
-    - **Champion Predictions**: A ranked list of which teams the community has picked to win, with eliminated teams visually struck through.
-- **AI-Powered Summaries**: The Leaderboard and Champion Prediction widgets feature dynamically generated text summaries from Gemini, providing witty, analytical insights into the current state of the tournament.
-- **Profile Management**: A user profile modal allows users to update their display name, optional bio information (DOB, sex, favorite team), and change their password.
-- **Tournament Interaction**:
-    - A simple flow to join tournaments using a 6-digit ticket code.
-    - A dedicated view to browse joined tournaments and check prediction submission statuses.
-    - An intuitive interface for entering and editing score predictions and champion picks.
-
-#### **Administrator Features**
-
-- **Role-Based Access Control**: The system supports `user`, `admin`, and `superadmin` roles, with features progressively enabled based on permission level.
-- **Tournament Wizard**: A comprehensive, multi-step interface for creating and editing tournaments, covering:
-    1.  **Details**: Name, description (with Markdown support), and complex point rules for each stage.
-    2.  **Participants**: Selecting teams and assigning them to customizable groups.
-    3.  **Group Matches**: Automatic generation and manual editing of the group stage schedule.
-    4.  **Knockout Stage**: Generation of a skeletal structure for knockout rounds.
-    5.  **Confirmation**: A final review screen before activating the tournament.
-- **Real-time Management**:
-    - **Score Management**: A dedicated view for admins to input official match results, which automatically triggers leaderboard recalculations.
-    - **Prediction Control**: Admins can open and close prediction windows for each tournament stage in real-time.
-- **User & Data Oversight**:
-    - **User Management**: A responsive page for viewing all users, changing their roles, and searching by name or email.
-    - **All Predictions View**: A detailed table showing every prediction from every participant, with an option to export the data as a PDF.
-- **Debug & Seeding Tools (Superadmin)**: A powerful panel for generating fake users, test tournaments, and random predictions for any stage (including champions) to facilitate development and testing.
+* **Frontend**: React 19 (with Vite), TypeScript, Tailwind CSS
+* **Backend**: Firebase Cloud Functions (v2) written in TypeScript
+* **Database**: Cloud Firestore
+* **Authentication**: Firebase Authentication (Email/Password & Google Provider)
+* **AI Integration**: Google's Gemini 1.5 Flash model via Vertex AI for generating dynamic tournament summaries.
+* **Deployment**: Firebase Hosting
 
 ---
 
-### **Backend Architecture & Data Integrity**
+### Core Features
 
-- **Serverless Logic**: All backend operations are handled by Firebase Cloud Functions, ensuring scalability and low maintenance.
-- **Real-time Leaderboard Engine**: The core of the application is an event-driven system. Firestore triggers on the `tournaments` and `predictions` collections automatically invoke a `recalculateLeaderboard` function. This function processes all relevant data, calculates points and group standings, generates AI summaries, and updates the denormalized `leaderboards` document, ensuring all user-facing data is always live and accurate.
-- **Secure by Design**: Firestore Security Rules are meticulously crafted to enforce data ownership and role-based permissions, preventing unauthorized access or modification of data. Key collections like `leaderboards` are write-protected from the client-side, ensuring their integrity.
+#### User-Facing Features:
+* **Authentication**: Secure user sign-up, login (email/password and Google), password reset, and email verification flow.
+* **Customizable Dashboard**: A dynamic, grid-based dashboard (`react-grid-layout`) where users can add, remove, resize, and configure various informational widgets. Layouts are saved per user in Firestore.
+* **Tournament Participation**: Users can join active tournaments using a 6-digit ticket code.
+* **Prediction Entry**: An intuitive interface for submitting and updating predictions for all matches in a tournament, including group stage, knockout rounds, and the overall champion.
+* **Profile Management**: Users can update their display name and other personal details, including changing their password.
+* **My Tournaments View**: A dedicated view to see all joined tournaments, their status, and a summary of prediction submission completeness.
+
+#### Admin-Facing Features:
+* **Multi-Step Tournament Wizard**: A comprehensive 5-step wizard for creating and configuring tournaments, covering details, participants, group stage matches, knockout rounds, and final confirmation.
+* **Participant Management**: Admins can invite users to tournaments and view all participants.
+* **Score Management**: A dedicated interface for admins to input and update live scores for all matches, including seeding teams for knockout rounds and handling tie-breakers.
+* **User Role Management**: Superadmins can manage user roles (promoting users to admins) and edit user details.
+* **Prediction Control**: Admins can open and close prediction submissions for different stages of a tournament (e.g., lock group stage predictions once matches begin).
+* **PDF Export**: Functionality to generate and download a detailed PDF summary of all predictions for a tournament using `jsPDF`.
+* **Debug & Seeding Panel**: A superadmin-only view for seeding the database with test tournaments and users for development and testing purposes.
+
+#### Shared & Backend Features:
+* **Real-time Leaderboards**: Cloud Functions automatically recalculate and update tournament leaderboards in real-time whenever scores are updated or predictions are made.
+* **AI-Powered Summaries**: A Cloud Function leverages the Gemini API to generate witty and insightful summaries of leaderboard standings and champion prediction trends, which are displayed on the user dashboard.
+
+---
+
+### Security Implementation
+
+* **API Key Security**: All Firebase client-side keys are securely managed using environment variables (`.env.local`) and are not exposed in the source code.
+* **Firestore Security Rules**: The application is protected by detailed Firestore rules that restrict data access based on user authentication, user roles (admin, superadmin), and tournament participation. This ensures users can only read/write their own data and that sensitive admin actions are properly secured.
+

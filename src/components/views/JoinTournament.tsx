@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { db, auth } from '../../firebaseConfig';
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import type { Tournament, UserProfile, View } from '../../types';
-import cramorantImage from '../../assets/delz-cramorant.png';
+import cramorantImage from '../../assets/delz-cramorant.webp';
 
 interface JoinTournamentProps {
     userProfile: UserProfile | null;

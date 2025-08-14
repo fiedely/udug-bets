@@ -26,3 +26,6 @@ seed.js
 seedTeams.js
 seedTournament.js
 serviceAccountKey.json
+
+# Environment variables
+.env.local

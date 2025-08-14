@@ -6,7 +6,7 @@ import { collection, query, where, getDocs, Timestamp, doc, getDoc } from 'fireb
 import type { Tournament, UserProfile, UserPredictions, MatchStage } from '../../types';
 import TournamentDetails from './TournamentDetails';
 import AllPredictionsView from '../admin/AllPredictionsView';
-import cramorantImage from '../../assets/delz-cramorant.png';
+import cramorantImage from '../../assets/delz-cramorant.webp';
 
 interface MyTournamentsProps {
     userProfile: UserProfile | null;

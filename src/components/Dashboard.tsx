@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { auth } from '../firebaseConfig';
 import { signOut } from 'firebase/auth';
 import type { View, UserProfile, Tournament } from '../types';
-import udugBetsLogo from '../assets/udug_bets_logo.png';
+import udugBetsLogo from '../assets/udug_bets_logo.webp';
 import CreateTournamentContent from './admin/CreateTournamentContent';
 import ListTournamentsContent from './admin/ListTournamentsContent';
 import TournamentWizard from './admin/TournamentWizard';
