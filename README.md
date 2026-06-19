@@ -1,98 +1,179 @@
-# 🏆 Udug-Bets
+# Udug Bets Documentation (v2.5)
 
-**Udug-Bets** is a comprehensive, real-time tournament prediction and leaderboard web application. Originally engineered to handle the complex structure of the **FIFA World Cup 2026**, this platform allows administrators to host tournaments, invite participants, manage live match events, and track participant predictions against actual real-world results.
+> [!NOTE]
+> This documentation outlines the architecture, capabilities, and infrastructure for Udug Bets v2.5. It serves as a comprehensive reference for both developers and maintainers.
 
-Built with performance, security, and mobile-responsiveness in mind, Udug-Bets leverages a modern React frontend and a robust Firebase serverless backend.
+## 1. App Purpose and Capabilities
 
----
+**Udug Bets** is a modern, real-time prediction and leaderboard platform designed for private tournaments (such as football championships, e-sports, etc.). It allows participants to predict match outcomes, tracks real-time points based on actual scores, and injects entertainment through automated, personalized AI-generated commentary.
 
-## 🚀 Tech Stack
+### User Roles & Separation
 
-### Frontend
-* **Framework:** React 19 (via Vite & SWC for lightning-fast HMR and building)
-* **Language:** TypeScript for end-to-end type safety
-* **Styling:** TailwindCSS 3 for utility-first, responsive design
-* **Layouts:** `react-grid-layout` for the highly customizable user widget dashboard
-* **Drag and Drop:** `@dnd-kit/core` & `@dnd-kit/sortable` for mobile-friendly touch/drag interactions
-* **Internationalization:** `react-i18next` for multi-language support
-* **Exporting:** `jspdf` & `html2canvas` for generating shareable PDF reports
+The application strictly separates capabilities between standard Participants and Administrators:
 
-### Backend & Infrastructure
-* **Database:** Firebase Firestore (NoSQL realtime database)
-* **Authentication:** Firebase Auth (Secure user management and login)
-* **Cloud Logic:** Firebase Cloud Functions (Node.js) for backend recalculations, secure scoring, and data aggregation
-* **Hosting:** Firebase Hosting
+#### 🧑‍💻 Standard Participants (Users)
+- **Dashboard & Tournaments**: Browse active and past tournaments.
+- **Predictions**: Submit and edit predictions for upcoming matches before they start.
+- **Leaderboards**: View real-time leaderboards, point histories, and their rank compared to others.
+- **AI Summaries**: Read AI-generated roasts and praises regarding the latest leaderboard shifts.
+- **Live Match Monitor**: Track ongoing live matches and see how current scorelines affect their live points.
 
----
-
-## ✨ Core Features
-
-### 👑 Admin Capabilities
-* **Tournament Wizard:** A step-by-step wizard to configure tournaments, add teams, map out groups, and schedule knockout stages.
-* **Participant Management:** Invite users securely and manage their access rights to specific tournaments.
-* **Prediction Period Toggles:** Granularly lock or unlock prediction submissions for specific stages (e.g., "Allow Group Stage Predictions", "Allow Round of 16 Predictions").
-* **Live Score Controller:** Input real-time match events (goals, cards) and finalize match scores, instantly triggering system-wide leaderboard recalculations.
-* **Standings Override Engine:** A drag-and-drop interface that allows admins to manually override mathematically tied Group Standings (e.g., when FIFA tiebreaker rules require a drawing of lots).
-
-### 👤 User Dashboard (Widget System)
-Users experience a dynamic, customizable dashboard powered by draggable and resizable widgets:
-* **All Predictions Widget:** Intelligently auto-selects the upcoming match of the day. Users can swipe through matches and submit their score predictions before the admin locks the stage.
-* **Group Standings Widget:** Real-time view of tournament groups showing Matches Played, Wins, Draws, Losses, Goal Difference, and Points.
-* **Leaderboard Widget:** Tracks participant scores based on the accuracy of their predictions against actual match outcomes.
-* **Prediction Point History:** Allows participants to view a detailed breakdown of where they gained or lost points.
+#### 🛡️ Administrators (Admins)
+- **Tournament Management**: Create new tournaments using a multi-step Wizard, edit details, and configure the tournament stages.
+- **Score Management**: Input actual match scores. The system automatically finds matches missing scores and auto-scrolls to them for efficiency.
+- **User Management**: Grant or revoke admin privileges, delete users.
+- **AI Configuration**: Define participant contexts (gender, inside jokes, specific relationships) and manage the "Topic Library" (mandatory and optional jokes) to feed the AI Summary Engine.
+- **Reporting**: Download PDF snapshots of all user predictions for a tournament to maintain an immutable record before matches begin.
 
 ---
 
-## 🛡️ Security & Architecture
+## 2. Infrastructure Specifications
 
-Udug-Bets implements strict security paradigms to ensure fair play during high-stakes tournaments:
+Udug Bets is built on a modern, serverless stack designed for high performance, rapid iteration, and real-time data sync.
 
-1. **The "Payload Bouncer" (Firestore Rules):** 
-   Strict security rules block any malicious payloads attempting to escalate user roles (e.g., standard users injecting `isAdmin: true` into their profile document).
-2. **"Server Lock" Mechanism:** 
-   Predictions are validated both on the frontend and backend. If a match has started or a tournament stage has been toggled off by the admin, Cloud Functions will instantly reject any incoming write requests.
-3. **Optimized Reads:** 
-   The Group Standings logic heavily relies on frontend caching and calculated Firestore documents (`leaderboards` collection) rather than brute-force querying, minimizing database read costs drastically.
-
----
-
-## 🛠️ Local Development
-
-### Prerequisites
-* Node.js (v18+ recommended)
-* Firebase CLI (`npm install -g firebase-tools`)
-
-### Setup Instructions
-
-1. **Clone and Install:**
-   ```bash
-   git clone <repository-url>
-   cd udug-bets
-   npm install
-   ```
-
-2. **Run the React Frontend:**
-   ```bash
-   npm run dev
-   ```
-   The app will be available at `http://localhost:5173`.
-
-3. **Deploying to Production:**
-   When you are ready to push updates to the live Firebase environment:
-   ```bash
-   # 1. Build the React production bundle
-   npm run build
-   
-   # 2. Deploy hosting and cloud functions
-   firebase deploy --only "hosting,functions"
-   ```
+- **Frontend Framework**: React 18, utilizing functional components and hooks.
+- **Build Tool**: Vite (blazing fast HMR and optimized production bundling).
+- **Language**: TypeScript (strict typing for both frontend and backend).
+- **Styling**: Tailwind CSS (utility-first CSS framework for rapid UI development and fully responsive mobile views).
+- **Backend/Database**: Firebase Firestore (NoSQL document database with real-time listeners).
+- **Authentication**: Firebase Authentication (Google Sign-In).
+- **Serverless Compute**: Firebase Cloud Functions (Node.js 22, 2nd Generation).
+- **Hosting**: Firebase Hosting.
+- **AI Provider**: Google Generative AI (Gemini Flash models).
 
 ---
 
-## 📂 Project Structure Overview
+## 3. Frontend Architecture & Capabilities
 
-* `/src/components/admin/` - Administrative views, modals, and the Tournament Creation Wizard.
-* `/src/components/views/widgets/` - The building blocks for the customizable user dashboard.
-* `/src/types/` - Shared TypeScript interfaces ensuring data consistency between Firestore and React.
-* `/functions/src/` - Backend Cloud Functions (e.g., `leaderboard.ts` for automated points calculation).
-* `/firebase.json` - Configuration for Firebase hosting rewrites and function deployment.
+The frontend is organized by feature and role, ensuring that admin logic is heavily decoupled from standard user views.
+
+### Directory Structure
+```text
+src/
+├── components/
+│   ├── admin/       # Exclusive admin management panels
+│   ├── auth/        # Authentication components (Login)
+│   ├── common/      # Reusable UI elements (Buttons, Layouts)
+│   └── views/       # User-facing pages (Dashboard, Leaderboard)
+├── types/           # Global TypeScript interfaces
+├── utils/           # Helper functions (date formatting, scoring logic)
+└── firebaseConfig.ts# Firebase initialization and service exports
+```
+
+### Key Frontend Components
+
+1. **`src/components/admin/ScoreManagement.tsx`**
+   - **Capability**: Allows admins to input real-time scores.
+   - **Logic**: Automatically auto-scrolls to the first match with a missing score. Upon saving, it updates Firestore which triggers the backend leaderboard recalculation.
+
+2. **`src/components/admin/AiConfiguration.tsx`**
+   - **Capability**: The control center for AI summaries.
+   - **Logic**: Admins input specific participant contexts (e.g., gender, relationships) and manage a Topic Library. The frontend writes this to the `tournament_ai_config` collection.
+
+3. **`src/components/admin/AllPredictionsView.tsx`**
+   - **Capability**: Renders a massive data grid of every user and their prediction.
+   - **Logic**: Implements horizontal momentum scrolling specifically optimized for iOS (`WebkitOverflowScrolling: 'touch'`, `overscroll-x-none`) and utilizes `jspdf` and `jspdf-autotable` to export the view to a PDF.
+
+4. **`src/components/views/Leaderboard.tsx`**
+   - **Capability**: Displays the calculated leaderboard.
+   - **Logic**: Listens to the `leaderboard` Firestore collection. It also renders the `AiSummary` component which displays the latest AI commentary.
+
+---
+
+## 4. Cloud Functions Architecture
+
+The backend consists of Firebase Cloud Functions (2nd Gen) that react to Firestore document writes. This event-driven architecture ensures the frontend remains lightweight.
+
+### Core Cloud Functions
+
+1. **`onTournamentUpdate`**
+   - **Trigger**: `onDocumentUpdated('tournaments/{tournamentId}')`
+   - **Capability**: Triggers state transitions (e.g., moving a tournament from "Upcoming" to "Active").
+
+2. **`onPredictionWrite`**
+   - **Trigger**: `onDocumentWritten('predictions/{predictionId}')`
+   - **Capability**: Aggregates the total number of predictions a user has made and updates their user profile document.
+
+3. **`generateStagePredictions`**
+   - **Trigger**: Callable Function (HTTPS)
+   - **Capability**: When a tournament moves from Group Stage to Knockout Stage, this function scaffolds the empty prediction documents for the advancing teams.
+
+---
+
+## 5. AI Capabilities, Function, and Logic
+
+The crown jewel of Udug Bets v2.5 is the **AI Summary Engine**. Located in `functions/src/leaderboard.ts`, this engine is triggered whenever actual match scores are updated, resulting in leaderboard shifts.
+
+### AI Engine Workflow
+
+1. **Data Aggregation**:
+   When an admin inputs a score, the function calculates the *Old Leaderboard* and the *New Leaderboard*. It identifies exactly who moved up, who moved down, who gained points, and who got zero points.
+
+2. **Context Retrieval**:
+   The function pulls the `participant_contexts` (gender, specific relationships) and the `topics` (mandatory inside jokes) configured by the admin in the frontend.
+
+3. **Prompt Construction**:
+   The engine builds a highly engineered prompt for the Gemini model. It passes the real-world data and strict behavioral rules.
+
+### AI Engine Code implementation (`functions/src/leaderboard.ts`)
+
+```typescript
+// 1. Fetching Admin Configured Contexts
+const participantContexts = participantContextDoc.exists ? participantContextDoc.data()?.contexts || {} : {};
+let participantContextPrompt = "";
+
+if (Object.keys(participantContexts).length > 0) {
+    // STRICT AI INSTRUCTIONS
+    participantContextPrompt += "\n\nPLAYER CONTEXT: Use the following information to personalize your roasts and praises. Use appropriate pronouns based on gender (e.g., 'cici/mbak' for female, 'abang/om' for male, and gender-neutral 'kak/bos' for unknown). OCCASIONALLY incorporate their specific relationships if relevant to a joke, but do NOT overdo it. Keep relationship mentions sparse so it doesn't sound cheesy or repetitive. STRICT RULE: When mentioning relationships, NEVER use cheesy or dramatic adjectives like 'kesayangan', 'tercinta', 'tersayang', etc. (e.g., do not say 'mertua kesayangan' or 'sepupu tercinta'). Keep it casual, sarcastic, or purely factual.\n";
+    
+    // Injecting dynamic participant data
+    for (const [userId, ctx] of Object.entries(participantContexts)) {
+        const userObj = newLeaderboard.find(e => e.userId === userId);
+        if (userObj) {
+            const genderStr = ctx.gender === 'male' ? 'Male' : 'Female';
+            let connectionsStr = '';
+            if (ctx.connections?.length > 0) {
+                const rels = ctx.connections.map(c => `${c.type} of ${c.target}`).join(', ');
+                connectionsStr = ` - Connections: ${rels}`;
+            }
+            participantContextPrompt += `- ${userObj.userName} (${genderStr})${connectionsStr}\n`;
+        }
+    }
+}
+
+// 2. Fetching Topic Library (Inside Jokes)
+const topicsDoc = await db.collection(`tournaments/${tournamentId}/ai_config`).doc('topics').get();
+const allTopics = topicsDoc.exists ? topicsDoc.data()?.topics || [] : [];
+const forcedTopics = allTopics.filter(t => t.isMandatory);
+const optionalTopics = allTopics.filter(t => !t.isMandatory);
+
+// 3. Final Prompt Assembly
+const prompt = `Real-World Tournament Data:
+Tournament: ${tournamentDoc.data()?.name}
+Match Just Updated: ${updatedMatchesContext}
+
+Leaderboard Movement:
+${movementContext}
+
+Previous Summary History (DO NOT REPEAT THESE JOKES):
+${historyPrompt}
+
+Available Inside Jokes / Real-World Topics:
+MANDATORY TOPICS (You MUST weave these into your summary):
+${forcedTopics.map(t => `- Topic: ${t.topic}. Detail: ${t.details}`).join('\n')}
+
+OPTIONAL INSIDE JOKES:
+${optionalTopics.map(t => `- Topic: ${t.topic}. Detail: ${t.details}`).join('\n')}
+
+${participantContextPrompt}
+
+Write a witty, sharp, and highly entertaining summary (in Indonesian). Roast the losers, praise the winners, and weave the mandatory topics seamlessly into the commentary.`;
+
+// 4. Invoking the Gemini API
+const tournamentAiSummary = await generateAiSummary(prompt, systemInstruction);
+```
+
+### AI Summary Features
+- **Anti-Repetition**: The prompt includes the last 3 generated summaries and instructs the AI not to repeat the same jokes.
+- **Topic Tracking**: The AI appends a hidden tag `||USED_TOPICS: id1, id2||` to its response. A cloud function regex parser reads this tag and automatically deletes the used topics from the frontend Topic Library so they aren't reused in future summaries.
+- **Tone Control**: Strict prompt rules prevent the AI from using cheesy relationship descriptors (e.g., banning phrases like "sepupu tercinta"), enforcing a sarcastic, casual, and entertaining tone.
