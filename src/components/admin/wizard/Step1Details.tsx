@@ -3,12 +3,13 @@
 import { useState, useCallback } from 'react';
 import { db } from '../../../firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
-import type { PointRules, Tournament } from '../../../types';
+import type { PointRules, Tournament, UserProfile } from '../../../types';
+import { logAudit } from '../../../utils/auditLogger';
 
 interface Step1DetailsProps {
     tournament: Tournament;
+    userProfile: UserProfile;
     onNext: () => void;
-    onBack: () => void;
     setIsDirty: (dirty: boolean) => void;
 }
 
@@ -24,7 +25,7 @@ const DEFAULT_POINTS = { correctScore: 3, correctOutcome: 1 };
 
 type PointRuleStage = 'groupStage' | 'round32' | 'round16' | 'quarterFinal' | 'semiFinal' | 'thirdPlaceMatch' | 'final';
 
-const Step1Details = ({ tournament, onNext, onBack, setIsDirty }: Step1DetailsProps) => {
+const Step1Details = ({ tournament, userProfile, onNext, setIsDirty }: Step1DetailsProps) => {
     const [name, setName] = useState(tournament.name);
     const [description, setDescription] = useState(tournament.description || '');
 
@@ -103,6 +104,7 @@ const Step1Details = ({ tournament, onNext, onBack, setIsDirty }: Step1DetailsPr
             if (endDate) updatedData.endDate = new Date(endDate);
             
             await updateDoc(tournamentRef, updatedData as { [x: string]: any });
+            await logAudit(userProfile, 'EDIT_TOURNAMENT_DETAIL', `Edited details for tournament: ${name}`, { tournamentId: tournament.id });
             setMessage('Progress saved successfully!');
             setIsDirty(false);
 
@@ -123,9 +125,7 @@ const Step1Details = ({ tournament, onNext, onBack, setIsDirty }: Step1DetailsPr
 
     return (
         <>
-            <button onClick={onBack} className="text-sm text-blue-400 hover:text-blue-300 mb-4 flex items-center">
-                &larr; Back to List
-            </button>
+
             <form className="mt-4 space-y-6 max-w-4xl mx-auto" onSubmit={e => e.preventDefault()}>
                 <h2 className="text-2xl font-bold text-blue-400">Step 1: Tournament Details</h2>
                 <div>

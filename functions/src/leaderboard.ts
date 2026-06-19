@@ -2,10 +2,7 @@
 
 import * as logger from "firebase-functions/logger";
 import { Timestamp } from "firebase-admin/firestore";
-import { db, generateAiSummary, Leaderboard, LeaderboardEntry, Match, MatchStage, PointRule, PointRules, Tournament, UserPredictions, UserProfile, Team, TeamStanding } from "./common";
-import { FIFA_COUNTRIES } from "./data/countries";
-
-const fifaCountriesMap = new Map(FIFA_COUNTRIES.map((c: Team) => [c.code, c]));
+import { db, generateAiSummary, Leaderboard, LeaderboardEntry, Match, MatchStage, PointRule, PointRules, Tournament, UserPredictions, UserProfile, TeamStanding, AiTopic } from "./common";
 
 const stageToRuleKeyMap: { [key in MatchStage]?: keyof PointRules } = {
     "Group Stage": "groupStage", "Round of 32": "round32", "Round of 16": "round16",
@@ -127,8 +124,7 @@ export async function recalculateLeaderboard(tournamentId: string) {
         logger.info("Tournament has no participants or point rules. Skipping.");
         await db.collection("leaderboards").doc(tournamentId).set({
             entries: [],
-            tournamentAiSummary: "The tournament is all set up! Get ready for an exciting competition. The leaderboard will come alive as soon as participants join and make their predictions.",
-            championAiSummary: "Welcome to the tournament! Who will you pick as the champion? Make your prediction to see how your choice stacks up against the community.",
+            tournamentAiSummary: "Turnamen sudah disiapkan! Bersiaplah untuk kompetisi yang seru. Papan peringkat akan hidup begitu peserta bergabung dan membuat prediksi mereka.",
             lastUpdated: Timestamp.now(),
         }, { merge: true });
         return;
@@ -153,8 +149,7 @@ export async function recalculateLeaderboard(tournamentId: string) {
     if (completedMatches.length === 0) {
         await db.collection("leaderboards").doc(tournamentId).set({
             entries: [],
-            tournamentAiSummary: "The stage is set and predictions are rolling in! The leaderboard is currently empty, but it will update as soon as the first match results are posted. Good luck to all participants!",
-            championAiSummary: "You've made your champion pick! Now, let the games begin. Check back here as the tournament progresses to see how community sentiment changes.",
+            tournamentAiSummary: "Panggung sudah disiapkan dan prediksi mulai masuk! Papan peringkat saat ini kosong, tetapi akan diperbarui segera setelah hasil pertandingan pertama diposting. Semoga berhasil untuk semua peserta!",
             currentTournamentStage: "Not Started",
             groupStandings: groupStandings,
             lastUpdated: Timestamp.now(),
@@ -209,7 +204,7 @@ export async function recalculateLeaderboard(tournamentId: string) {
 
         for (const match of completedMatches) {
             const prediction = predictions.matchPredictions[match.id];
-            if (!prediction || prediction.team1Score < 0) continue;
+            if (!prediction || typeof prediction.team1Score !== 'number' || typeof prediction.team2Score !== 'number' || prediction.team1Score < 0 || prediction.team2Score < 0) continue;
 
             const actualOutcome = Math.sign(match.team1Score! - match.team2Score!);
             const predictedOutcome = Math.sign(prediction.team1Score - prediction.team2Score);
@@ -232,19 +227,26 @@ export async function recalculateLeaderboard(tournamentId: string) {
                 totalPoints += pointRules.championBonus || 0;
             }
         }
-        leaderboardData.push({ userId, userName: userProfile.name, totalPoints });
+        leaderboardData.push({ userId, userName: userProfile.name, avatarUrl: userProfile.avatarUrl || null, totalPoints });
     }
 
     const oldLeaderboardSnap = await db.collection("leaderboards").doc(tournamentId).get();
     const oldLeaderboardData = oldLeaderboardSnap.exists ? oldLeaderboardSnap.data() as Leaderboard : null;
     const oldEntriesMap = new Map<string, LeaderboardEntry>(oldLeaderboardData?.entries.map(e => [e.userId, e]) || []);
     
-    leaderboardData.sort((a, b) => b.totalPoints - a.totalPoints);
+    leaderboardData.sort((a, b) => b.totalPoints - a.totalPoints || a.userName.localeCompare(b.userName));
     
+    let currentRank = 1;
+    let prevPoints = -1;
     const newLeaderboard: LeaderboardEntry[] = leaderboardData.map((data, index) => {
-        const rank = index + 1;
+        if (data.totalPoints !== prevPoints) {
+            currentRank = index + 1;
+            prevPoints = data.totalPoints;
+        }
+        const rank = currentRank;
         const oldEntry = oldEntriesMap.get(data.userId);
         const previousRank = oldEntry?.rank;
+        const previousPoints = oldEntry?.totalPoints ?? null;
         let rankChange: "up" | "down" | "same" = "same";
         
         if (typeof previousRank === 'number') {
@@ -254,85 +256,240 @@ export async function recalculateLeaderboard(tournamentId: string) {
                 rankChange = "down";
             }
         }
-        return { userId: data.userId, userName: data.userName, totalPoints: data.totalPoints, rank, previousRank: previousRank ?? null, rankChange };
+        return { userId: data.userId, userName: data.userName, avatarUrl: data.avatarUrl, totalPoints: data.totalPoints, previousPoints, rank, previousRank: previousRank ?? null, rankChange };
     });
 
     let tournamentAiSummary = oldLeaderboardData?.tournamentAiSummary || "";
-    let championAiSummary = oldLeaderboardData?.championAiSummary || "";
+    let aiSummaryHistory = oldLeaderboardData?.aiSummaryHistory || [];
 
-    const oldTop3 = oldLeaderboardData?.entries.slice(0, 3).map(e => e.userId).join(',');
-    const newTop3 = newLeaderboard.slice(0, 3).map(e => e.userId).join(',');
+    const oldPointsHash = oldLeaderboardData?.entries.map(e => `${e.userId}:${e.totalPoints}`).join(',');
+    const newPointsHash = newLeaderboard.map(e => `${e.userId}:${e.totalPoints}`).join(',');
     
     const isFirstFill = (oldLeaderboardData?.entries.length === 0 && newLeaderboard.length > 0);
-    const shouldUpdateLeaderboardSummary = (oldTop3 !== newTop3) || isFirstFill || !tournamentAiSummary;
+    
+    // SAFE Match Detection
+    let newMatchesCount = 0;
+    if (oldLeaderboardData && oldLeaderboardData.completedMatchesCount !== undefined) {
+        newMatchesCount = Math.max(0, completedMatches.length - oldLeaderboardData.completedMatchesCount);
+    } else {
+        newMatchesCount = completedMatches.length > 0 ? 1 : 0;
+    }
+    newMatchesCount = Math.min(newMatchesCount, 4);
+    const hasNewMatches = newMatchesCount > 0;
+    
+    const shouldUpdateLeaderboardSummary = (oldPointsHash !== newPointsHash) || hasNewMatches || isFirstFill || !tournamentAiSummary;
 
-    if (shouldUpdateLeaderboardSummary && newLeaderboard.length > 2) {
-        const leader = newLeaderboard[0];
-        const secondPlace = newLeaderboard[1];
-        const thirdPlace = newLeaderboard[2];
+    if (shouldUpdateLeaderboardSummary && newLeaderboard.length > 0) {
+        const formatPlayer = (e: LeaderboardEntry) => `${e.userName} (Current: ${e.totalPoints} pts | Prev: ${e.previousPoints ?? 'N/A'} pts | Rank Change: ${e.rankChange === 'same' ? 'STUCK at ' + e.rank : (e.rankChange === 'up' ? 'UP to ' + e.rank : 'DOWN to ' + e.rank)})`;
+        
+        const topN = newLeaderboard.filter(e => e.rank <= 3).map(e => `Rank ${e.rank}: **${formatPlayer(e)}**`).join(', ');
+        const bottomN = newLeaderboard.length > 3 ? newLeaderboard.slice(-2).map(e => `Rank ${e.rank}: **${formatPlayer(e)}**`).join(', ') : "";
+        const climbers = newLeaderboard.filter(e => e.rankChange === 'up').slice(0, 2).map(e => `**${formatPlayer(e)}**`).join(', ');
+        const tumblers = newLeaderboard.filter(e => e.rankChange === 'down').slice(0, 2).map(e => `**${formatPlayer(e)}**`).join(', ');
+        
+        const middlePack = newLeaderboard.length > 5 ? newLeaderboard.slice(3, -2) : [];
+        let randomlySelectedMiddlePlayers = "";
+        if (middlePack.length > 0) {
+            const numToPick = Math.min(middlePack.length, Math.floor(Math.random() * 2) + 1);
+            const shuffled = [...middlePack].sort(() => 0.5 - Math.random());
+            const picked = shuffled.slice(0, numToPick);
+            randomlySelectedMiddlePlayers = picked.map(e => `**${formatPlayer(e)}**`).join(', ');
+        }
+        
         const maxPossibleRemainingPoints = calculateRemainingMatchPoints(allMatches, pointRules);
         
-        const prompt = `You are a sharp with dry "dad-jokes" humorous sports analyst. Write a concise, analytical summary (2-3 sentences) of a tournament leaderboard.
+        const newlyCompletedMatches = hasNewMatches ? completedMatches.slice(-newMatchesCount) : [];
+        
+        const formatMatch = (m: Match) => {
+            let res = `${m.team1.name} ${m.team1Score} - ${m.team2Score} ${m.team2.name}`;
+            if (m.team1Score === m.team2Score && m.winnerTeamCode) {
+                const winnerName = m.winnerTeamCode === m.team1.code ? m.team1.name : m.team2.name;
+                if (m.tiebreakerType === 'Extra Time') {
+                    res += ` (Extra Time ${m.team1Score! + (m.team1TiebreakerScore || 0)} - ${m.team2Score! + (m.team2TiebreakerScore || 0)}, ${winnerName} menang)`;
+                } else if (m.tiebreakerType === 'Penalty Shootout') {
+                    res += ` (Penalti ${m.team1TiebreakerScore || 0} - ${m.team2TiebreakerScore || 0}, ${winnerName} menang)`;
+                } else {
+                    res += ` (${winnerName} menang adu penalti/tiebreaker)`;
+                }
+            }
+            return res;
+        };
 
-        Data:
+        const newlyCompletedMatchesString = newlyCompletedMatches.length > 0 
+            ? newlyCompletedMatches.map(formatMatch).join(' DAN ') 
+            : 'Belum ada pertandingan baru';
+
+        const currentStageMatches = allMatches.filter(m => m.stage === currentTournamentStage);
+        const completedCurrentStageMatches = currentStageMatches.filter(m => typeof m.team1Score === 'number');
+        const stageProgressString = currentStageMatches.length > 0 ? `${completedCurrentStageMatches.length} dari ${currentStageMatches.length} pertandingan diselesaikan` : 'N/A';
+        const isLastMatchOfStage = currentStageMatches.length > 0 && completedCurrentStageMatches.length === currentStageMatches.length;
+
+        const groupStatus = currentTournamentStage === "Group Stage" ? Object.keys(groupStandings).map(group => {
+            const teams = groupStandings[group];
+            if (teams.length === 0) return '';
+            const leader = teams[0];
+            const others = teams.slice(1).map(t => `${t.team.name} (${t.pts} pts)`).join(', ');
+            return `Grup ${group}: Puncak ${leader.team.name} (${leader.pts} pts) | Tim lain: ${others}`;
+        }).filter(Boolean).join('\n        - ') : 'Fase grup sudah selesai, turnamen sekarang berada di fase gugur (Knockout/Piala).';
+
+        const systemInstruction = `You are a hilarious, highly insightful, and unhinged sports commentator chatting in a casual Indonesian group chat (menggunakan Bahasa Gaul, bahasa tongkrongan, santai, dan kocak).
+        Your goal is to blend the real-world drama of the tournament with the fierce, often comical rivalry of our prediction leaderboard.
+        CRITICAL INSTRUCTION: You MUST use a wide variety of sentence structures, metaphors, and jokes every single time. NEVER repeat the same tropes. Your tone should be unpredictable, chaotic, and fresh. DO NOT use formal/baku Indonesian. Gunakan bahasa santai sehari-hari (seperti "bikin", "banget", "kocak", "ngakak", "plonga-plongo"). 
+        FAMILY FRIENDLY CONSTRAINT: You MUST keep the language family-friendly (PG-13) as there are underage participants. Maintain the casual 'anak tongkrongan' vibe, but DO NOT use harsh words, mild profanity, or inappropriate slang (such as "anjir", "anjrit", "bangsat", "bego", "goblok", dll). You can be very funny, sarcastic, and unhinged without resorting to bad words.
+        You can use this expressive but safe vocabulary (but not limited to):
+        - "Buset" / "Bujug buneng" (Perfect for reacting to massive upsets)
+        - "Kocak parah" (Great for roasting bad predictions)
+        - "Ampun deh" (When someone drops to the bottom rank)
+        - "Ngakak guling-guling" (For pure comedy)
+        - "Asoy" / "Mantul" (For praising the top players)
+        STRICT NEGATIVE CONSTRAINT: DO NOT EVER USE the words "lo", "gue", "gw", "lu", or any variations of them. NEVER use them. Instead, use "aku", "kamu", "kalian", "doi", "bang", "om", "si cici", "si koko", "mereka", "si dia" when referring to people.`;
+
+        const inQueueTopicsSnap = await db.collection("tournaments").doc(tournamentId).collection("aiTopics")
+            .where("status", "==", "in_queue")
+            .orderBy("createdAt", "asc")
+            .get();
+        
+        const allInQueueTopics = inQueueTopicsSnap.docs.map(d => ({ id: d.id, ...d.data() } as AiTopic));
+        
+        const forcedTopics = allInQueueTopics.filter(t => t.usageMode === 'forced').slice(0, 1);
+        const optionalTopics = allInQueueTopics.filter(t => t.usageMode !== 'forced').slice(0, 2);
+        
+        let topicsPrompt = "";
+        if (forcedTopics.length > 0 || optionalTopics.length > 0) {
+            topicsPrompt += "\n\nAvailable Inside Jokes / Real-World Topics:\n";
+            if (forcedTopics.length > 0) {
+                topicsPrompt += "MANDATORY TOPICS (You MUST weave these into your summary):\n" + forcedTopics.map(t => `- [ID: ${t.id}] Topic: ${t.topic}. Detail: ${t.details}`).join('\n') + "\n";
+            }
+            if (optionalTopics.length > 0) {
+                topicsPrompt += "OPTIONAL INSIDE JOKES (Use these ONLY if they fit naturally with the leaderboard movement, e.g., if it relates to a specific participant being mentioned):\n" + optionalTopics.map(t => `- [ID: ${t.id}] Topic: ${t.topic}. Detail: ${t.details}`).join('\n') + "\n";
+            }
+            topicsPrompt += "\nYou MUST append a tag at the very end of your ENTIRE response exactly like this: ||USED_TOPICS: id1, id2|| for ANY topic you used (both mandatory and optional). If you didn't use any, do not append the tag.";
+        }
+
+        const participantContextDoc = await db.collection("tournaments").doc(tournamentId).collection("aiConfig").doc("participantContext").get();
+        const participantContexts = participantContextDoc.exists ? participantContextDoc.data()?.contexts || {} : {};
+        
+        let participantContextPrompt = "";
+        const contextEntries = Object.entries(participantContexts);
+        if (contextEntries.length > 0) {
+            participantContextPrompt += "\n\nPLAYER CONTEXT: Use the following information to personalize your roasts and praises. Use appropriate pronouns based on gender (e.g., 'cici/mbak' for female, 'abang/om' for male, and gender-neutral 'kak/bos' for unknown). OCCASIONALLY incorporate their specific relationships if relevant to a joke, but do NOT overdo it. Keep relationship mentions sparse so it doesn't sound cheesy or repetitive. STRICT RULE: When mentioning relationships, NEVER use cheesy or dramatic adjectives like 'kesayangan', 'tercinta', 'tersayang', etc. (e.g., do not say 'mertua kesayangan' or 'sepupu tercinta'). Keep it casual, sarcastic, or purely factual.\n";
+            for (const [userId, ctx] of contextEntries) {
+                const userObj = newLeaderboard.find(e => e.userId === userId);
+                if (userObj) {
+                    const ctxData = ctx as any;
+                    const genderStr = ctxData.gender === 'male' ? 'Male' : (ctxData.gender === 'female' ? 'Female' : 'Unknown/Neutral');
+                    let connectionsStr = '';
+                    if (ctxData.connections && Array.isArray(ctxData.connections) && ctxData.connections.length > 0) {
+                        const rels = ctxData.connections.map((c: any) => `${c.type} of ${c.target}`).join(', ');
+                        connectionsStr = ` - Connections: ${rels}`;
+                    }
+                    participantContextPrompt += `- ${userObj.userName} (${genderStr})${connectionsStr}\n`;
+                }
+            }
+        }
+
+        let playersGainedPoints = 0;
+        newLeaderboard.forEach(newEntry => {
+            const oldEntry = oldEntriesMap.get(newEntry.userId);
+            if (!oldEntry || newEntry.totalPoints > oldEntry.totalPoints) {
+                playersGainedPoints++;
+            }
+        });
+        
+        const totalPlayers = newLeaderboard.length;
+        const gainedPercentage = totalPlayers > 0 ? (playersGainedPoints / totalPlayers) * 100 : 0;
+        
+        let movementContext = "";
+        if (gainedPercentage === 0) {
+            movementContext = "🚨 STATUS KHUSUS: Papan peringkat STAGNAN total! Tidak ada satupun pemain yang dapet poin tambahan di pertandingan ini.";
+        } else if (gainedPercentage <= 30) {
+            movementContext = "🚨 STATUS KHUSUS: Pergerakan sangat minim! Hanya segelintir orang yang berhasil curi poin.";
+        } else {
+            movementContext = "🚨 STATUS KHUSUS: Pergerakan masif! Banyak pemain yang panen poin dan merubah susunan klasemen.";
+        }
+
+        let historyPrompt = "Belum ada riwayat ringkasan.";
+        if (aiSummaryHistory && aiSummaryHistory.length > 0) {
+            historyPrompt = aiSummaryHistory.map((summary, index) => 
+                `[Ringkasan ${index + 1} Pertandingan Lalu]: "${summary}"`
+            ).join('\n\n');
+        }
+
+        const prompt = `Real-World Tournament Data:
         - Tournament Progress: ${tournamentCompletion}% complete
-        - Current Stage: ${currentTournamentStage}
+        - Current Stage: ${currentTournamentStage} (Progres babak ini: ${stageProgressString})
+        ${isLastMatchOfStage ? `- STATUS SPESIAL: Ini adalah pertandingan TERAKHIR di babak ${currentTournamentStage}!` : ''}
         - Points Still Available: ${maxPossibleRemainingPoints}
-        - Top 3: 1st **${leader.userName}** (${leader.totalPoints} pts), 2nd **${secondPlace.userName}** (${secondPlace.totalPoints} pts), 3rd **${thirdPlace.userName}** (${thirdPlace.totalPoints} pts).
+        - Pertandingan yang BARU SAJA Selesai (SANGAT PENTING): ${newlyCompletedMatchesString}
+        - Status Grup (Group Standings): 
+        - ${groupStatus}
+        
+        Prediction Leaderboard Data:
+        - Dinamika Pergerakan: ${movementContext}
+        - Current Top 3: ${topN}
+        - Current Bottom Players: ${bottomN || 'N/A'}
+        - Notable Climbers (Ranking Up): ${climbers || 'N/A'}
+        - Notable Drops (Ranking Down): ${tumblers || 'N/A'}
+        - Pemain Papan Tengah (Middle Pack) yang bisa disorot (Opsional, puji atau roast jika menarik): ${randomlySelectedMiddlePlayers || 'N/A'}
+
+        Previous Context (Riwayat Ringkasan Terakhirmu):
+        ${historyPrompt}
+
+        Platform Rules (CRITICAL):
+        - PREDICTION LOCKS: Predictions are strictly LOCKED once the first match of a stage begins. Players CANNOT change their predictions mid-stage.
+        - PREDICTION UNLOCKS: The prediction window only opens AFTER the last match of the current stage is finished, to let them predict the NEXT stage.
+        - Therefore, DO NOT tell players to "panasin insting buat tebakan besok" or "ganti tebakan besok" if the stage is currently ongoing! Only hype them up for the NEXT stage if the current one is ending.
+        - DO NOT BE REDUNDANT ABOUT LOCKS: While you need to know the lock rules to avoid making mistakes, DO NOT actually write "ingat ya tebakan sudah dikunci" or remind them about the lock status at the end of your summary unless it's the very first match of the stage. We don't want to sound like a broken record.
+        - GROUP CONTEXT: In the Group Stage, teams only compete within their specific Group (Grup A, Grup B, dll). DO NOT compare teams from different groups as if they are directly fighting for the same spot. Also, do not heavily roast a team for having 0 points if their first match hasn't even started yet!
+        - TIE BREAKER RULE (SUPER IMPORTANT): If multiple players have the exact SAME points, they are TIED and share the exact SAME Rank! Do NOT say one player overtook another if they both have the SAME points. If you see multiple people with the same points in the top 3, acknowledge the massive tie instead of inventing a gap between them!
+        ${topicsPrompt}
+        ${participantContextPrompt}
 
         Instructions:
-        - Analyze the top 3 and the current stage to give a witty and insightful overview for all participants.
-        - You can mention the points still available to add context about how the leaderboard could still change.
-        - Ensure all user names are bolded using markdown.`;
-        tournamentAiSummary = await generateAiSummary(prompt);
+        - Write a rich, engaging, and highly comedic summary using CASUAL INDONESIAN (Bahasa Gaul/tongkrongan, JANGAN BAKU!).
+        - Analyze the flow of the Previous Context and the current Dinamika Pergerakan. If the leaderboard is stagnant or barely moved, point it out! If someone has been stuck in the same spot for multiple summaries, you can roast them for it.
+        - Start by setting the scene of the real-world tournament. Fokuslah secara EKSKLUSIF pada "Pertandingan yang BARU SAJA Selesai". Jika ada lebih dari satu, bahas semuanya dengan mulus!
+        - PENTING SANGAT: Perhatikan "Current Stage". Jika turnamen berada di fase gugur (seperti Round of 16, Quarter-final, Semi-final, Final), JANGAN BAHAS poin grup lagi. Bahas tentang eliminasi, siapa yang gugur, siapa yang lolos, atau drama adu penalti jika skor seri.
+        - Hindari mengulang-ulang lelucon atau topik dari "Previous Context". Fokus pada apa yang baru saja berubah.
+        - DO NOT repeat the exact same jokes you made in the previous summaries. For example, if you already joked about the irony of someone's name in the past, DO NOT make a joke about their name again in this summary. Find a completely new angle or reason to roast/praise them based on their point changes.
+        - Then, transition seamlessly into how this real-world drama is affecting our players in the prediction leaderboard.
+        - Notice and comment on changes across the whole board—praise the top leaders, playfully roast or encourage the bottom players, highlight the climbers/drops, dan berikan shoutout ke pemain papan tengah!
+        - You MUST keep the summary strictly between 10 to 14 sentences MAXIMUM. Make every sentence count!
+        - Go all out on the comedy—use funny analogies, dramatic flair, dan casual roasts. Example tone: "Buset, Paman Sam baru aja ngebantai Paraguay 4-1 tanpa ampun! Kemenangan brutal ini langsung bikin AS nongkrong bareng Meksiko di pucuk grup." or "si Alex malah terjun bebas ke rank 9, tebakan kamu error apa gimana bang? Wkwkwk."
+        - PENTING: Gunakan pola kalimat, struktur paragraf, dan pilihan lelucon yang SANGAT BERVARIASI. DILARANG KERAS menggunakan kiasan puitis basi. Buat analogi aneh bergaya tongkrongan yang belum pernah dipikirkan orang lain!
+        - STRICT RULE: JANGAN PERNAH MENGGUNAKAN KATA "LO", "GUE", "GW", ATAU "LU". Gunakan "aku", "kamu", "doi", "bang", "om", "si cici", "si koko", atau "kalian".
+        - Ensure all user/player names are bolded using markdown.`;
+        tournamentAiSummary = await generateAiSummary(prompt, systemInstruction);
+        
+        const usedTopicsMatch = tournamentAiSummary.match(/\|\|\s*USED_TOPICS\s*:\s*([\s\S]*?)\s*\|\|/i);
+        if (usedTopicsMatch) {
+            const ids = usedTopicsMatch[1].split(',').map(s => s.trim().replace(/[^a-zA-Z0-9_-]/g, '')).filter(Boolean);
+            for (const id of ids) {
+                if (allInQueueTopics.some(t => t.id === id)) {
+                    await db.collection("tournaments").doc(tournamentId).collection("aiTopics").doc(id).update({ status: 'used' });
+                }
+            }
+            tournamentAiSummary = tournamentAiSummary.replace(/\|\|\s*USED_TOPICS\s*:\s*([\s\S]*?)\s*\|\|/gi, '').trim();
+        }
+        
+        if (tournamentAiSummary) {
+            aiSummaryHistory.unshift(tournamentAiSummary);
+            aiSummaryHistory = aiSummaryHistory.slice(0, 3);
+        }
+    }  
+    
+    if (!tournamentAiSummary) {
+        tournamentAiSummary = "Turnamen sedang berlangsung! Terus buat prediksi untuk memanjat peringkat.";
     }
     
-    const championPicks = Array.from(userPredictionsMap.values()).map(p => p.championPrediction).filter(Boolean) as string[];
-    if (championPicks.length > 0) {
-        const previouslyEliminated = new Set(oldLeaderboardData?.eliminatedTeamCodes || []);
-        const currentEliminated = new Set(eliminatedTeamCodes);
-        const hasNewEliminations = ![...currentEliminated].every(code => previouslyEliminated.has(code));
-
-        const shouldUpdateChampionSummary = hasNewEliminations || !championAiSummary;
-
-        if (shouldUpdateChampionSummary) {
-            const pickCounts = championPicks.reduce((acc, code) => {
-                acc[code] = (acc[code] || 0) + 1;
-                return acc;
-            }, {} as Record<string, number>);
-
-            const activePicks = Object.entries(pickCounts).filter(([code]) => !eliminatedTeamCodes.has(code));
-            const sortedActivePicks = activePicks.sort(([, a], [, b]) => b - a).map(([code, count]) => ({ code, count }));
-            
-            let topPickAnalysis = "The field is wide open!";
-            if(sortedActivePicks.length > 0) {
-                const topPick = sortedActivePicks[0];
-                const teamData = tournamentData.teams?.find(t => t.code === topPick.code) || fifaCountriesMap.get(topPick.code);
-                const topPickTeam = teamData ? teamData.name : 'An unknown team';
-                const topPickPercent = Math.round((topPick.count / championPicks.length) * 100);
-                topPickAnalysis = `The community favorite was **${topPickTeam}**, backed by ${topPickPercent}% of participants before the tournament.`;
-            }
-
-            const eliminatedCount = championPicks.filter(code => eliminatedTeamCodes.has(code)).length;
-            const eliminatedPercent = Math.round((eliminatedCount / championPicks.length) * 100);
-
-            const prompt = `You are a sharp with dry "dad-jokes" humorous sports analyst. Write a concise summary (2-3 sentences) about the community's pre-tournament champion predictions.
-            
-            Context: These predictions were locked in before the first group stage match. The tournament is currently in the '${currentTournamentStage}' stage.
-            Analysis: ${topPickAnalysis} So far, ${eliminatedPercent}% of the community's champion picks have already been eliminated.
-            
-            Instruction: Combine the context and analysis into a witty, engaging summary. Comment on how the initial predictions are holding up against the reality of the tournament. Ensure all team names are bolded using markdown.`;
-            championAiSummary = await generateAiSummary(prompt);
-        }
-    }
-
     await db.collection("leaderboards").doc(tournamentId).set({
         entries: newLeaderboard,
         tournamentAiSummary: tournamentAiSummary,
-        championAiSummary: championAiSummary,
+        aiSummaryHistory: aiSummaryHistory,
         eliminatedTeamCodes: Array.from(eliminatedTeamCodes),
         currentTournamentStage: currentTournamentStage,
         groupStandings: groupStandings,
+        completedMatchesCount: completedMatches.length,
         lastUpdated: Timestamp.now(),
     });
     logger.info(`Leaderboard for tournament ${tournamentId} successfully updated.`);

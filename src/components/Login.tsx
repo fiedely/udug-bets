@@ -11,6 +11,8 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider, db } from '../firebaseConfig';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { logAudit } from '../utils/auditLogger';
+import type { UserProfile } from '../types';
 
 interface LoginProps {
   initialError?: string | null;
@@ -54,16 +56,22 @@ const Login: React.FC<LoginProps> = ({ initialError }) => {
 
       const userDocRef = doc(db, "users", user.uid);
       const docSnap = await getDoc(userDocRef);
+      let profileData: UserProfile;
 
       if (!docSnap.exists()) {
-        await setDoc(userDocRef, {
+        profileData = {
           uid: user.uid,
-          name: user.displayName,
-          email: user.email,
+          name: user.displayName || 'Unknown',
+          email: user.email || '',
           role: 'user'
-        });
+        };
+        await setDoc(userDocRef, profileData);
         await setupNewUserDashboard(user.uid);
+        await logAudit(profileData, 'USER_REGISTER', 'Google Sign Up');
+      } else {
+        profileData = docSnap.data() as UserProfile;
       }
+      await logAudit(profileData, 'USER_LOGIN', 'Google Sign In');
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -79,7 +87,11 @@ const Login: React.FC<LoginProps> = ({ initialError }) => {
 
     if (isLoginMode) {
       try {
-        await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const docSnap = await getDoc(doc(db, "users", userCredential.user.uid));
+        if (docSnap.exists()) {
+            await logAudit(docSnap.data() as UserProfile, 'USER_LOGIN', 'Email Sign In');
+        }
       } catch (err: any) {
         setError('Failed to sign in. Please check your email and password.');
       } finally {
@@ -107,14 +119,16 @@ const Login: React.FC<LoginProps> = ({ initialError }) => {
         const user = userCredential.user;
         
         await updateProfile(user, { displayName: name });
-        await setDoc(doc(db, "users", user.uid), {
+        const profileData = {
           uid: user.uid,
           name: name,
-          email: user.email,
-          role: 'user'
-        });
+          email: user.email || '',
+          role: 'user' as const
+        };
+        await setDoc(doc(db, "users", user.uid), profileData);
         await setupNewUserDashboard(user.uid);
         await sendEmailVerification(user);
+        await logAudit(profileData as UserProfile, 'USER_REGISTER', 'Email Sign Up');
 
         toggleMode();
         setMessage('Account created! Please check your email to verify your account before signing in.');

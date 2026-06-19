@@ -77,8 +77,7 @@ const ManageUsersContent = ({ userProfile }: ManageUsersContentProps) => {
 
   return (
     <div className="bg-slate-800 border border-slate-700 p-4 md:p-8">
-      <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-        <h2 className="text-2xl font-bold text-blue-400">Manage Users</h2>
+      <div className="flex flex-col md:flex-row justify-end items-center mb-4 gap-4">
         <div className="w-full md:w-1/3">
           <input
             type="text"

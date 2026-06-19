@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { db } from '../../../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Tournament, UserPredictions, Team, UserProfile, Leaderboard } from '../../../types';
-import AiSummary from './AiSummary';
 import { FIFA_COUNTRIES } from '../../../data/countries';
 
 interface ChampionPredictionWidgetProps {
@@ -23,7 +22,6 @@ const fifaCountriesMap = new Map(FIFA_COUNTRIES.map(c => [c.code, c]));
 
 const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }: ChampionPredictionWidgetProps) => {
     const [picks, setPicks] = useState<ChampionPick[]>([]);
-    const [aiSummary, setAiSummary] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [totalPredictions, setTotalPredictions] = useState(0);
     const [myChampionPick, setMyChampionPick] = useState<string | null>(null);
@@ -55,8 +53,6 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
         const teamsMap = new Map(tournament.teams?.map(t => [t.code, t]));
         const participants = tournament.participants || [];
         const eliminatedCodes = new Set(leaderboardData?.eliminatedTeamCodes || []);
-        
-        setAiSummary(leaderboardData?.championAiSummary || null);
 
         if (participants.length === 0) {
             setPicks([]);
@@ -69,7 +65,8 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
         const predictionSnapshots = await Promise.all(predictionPromises);
         const predictions = predictionSnapshots.filter(snap => snap.exists()).map(snap => snap.data() as UserPredictions);
 
-        setTotalPredictions(predictions.length);
+        const validChampionPredictions = predictions.filter(p => !!p.championPrediction);
+        setTotalPredictions(validChampionPredictions.length);
 
         if (userProfile.role === 'user') {
             const myPred = predictions.find(p => p.userId === userProfile.uid);
@@ -131,7 +128,6 @@ const ChampionPredictionWidget = ({ userProfile, tournamentId, setRefreshFunc }:
 
     return (
         <div className="h-full flex flex-col text-slate-300 text-xs">
-            {aiSummary && <AiSummary title="Community Sentiment" text={aiSummary} colorClass="border-slate-600 text-blue-400" />}
             <div className="flex-grow overflow-y-auto">
                 <table className="w-full text-xs">
                     <tbody>

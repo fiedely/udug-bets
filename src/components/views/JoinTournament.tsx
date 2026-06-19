@@ -3,7 +3,9 @@
 import React, { useState } from 'react';
 import { db, auth } from '../../firebaseConfig';
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { logAudit } from '../../utils/auditLogger';
 import type { Tournament, UserProfile, View } from '../../types';
+import { useTranslation } from 'react-i18next';
 import cramorantImage from '../../assets/delz-cramorant.webp';
 
 interface JoinTournamentProps {
@@ -12,20 +14,20 @@ interface JoinTournamentProps {
 }
 
 const JoinTournament = ({ userProfile, setView }: JoinTournamentProps) => {
-    const [ticket, setTicket] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const { t } = useTranslation();
+    const [ticketCode, setTicketCode] = useState('');
+    const [isJoining, setIsJoining] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState<React.ReactNode | null>(null);
 
     if (userProfile?.role === 'admin' || userProfile?.role === 'superadmin') {
         return (
             <div className="bg-slate-800 border border-slate-700 p-8 max-w-lg mx-auto text-center">
-                <h2 className="text-xl font-bold text-blue-400 mb-4">Admins Cannot Join Tournaments</h2>
+                <h2 className="text-xl font-bold text-blue-400 mb-4">{t('joinTournament.adminTitle', 'Admins Cannot Join Tournaments')}</h2>
                 <p className="text-slate-300 mb-6">
-                    This page is for participants. But don't be sad, here is a picture of Cramoly the Cramorant to cheer you up!
+                    {t('joinTournament.adminSubtitle', 'This page is for participants. But don\'t be sad, here is a picture of Cramoly the Cramorant to cheer you up!')}
                 </p>
-                <img 
-                    src={cramorantImage} 
+                <img loading="lazy" decoding="async" src={cramorantImage} 
                     alt="A cheerful Cramorant" 
                     className="mx-auto w-48 h-48 object-contain"
                 />
@@ -33,32 +35,32 @@ const JoinTournament = ({ userProfile, setView }: JoinTournamentProps) => {
         );
     }
 
-    const handleJoinTournament = async (e: React.FormEvent) => {
+    const handleJoin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setSuccess(null);
 
-        if (!/^\d{6}$/.test(ticket)) {
-            setError('Please enter a valid 6-digit ticket code.');
+        if (!/^\d{6}$/.test(ticketCode)) {
+            setError(t('joinTournament.invalidCode', 'Please enter a valid 6-digit ticket code.'));
             return;
         }
 
-        setIsLoading(true);
+        setIsJoining(true);
         const currentUser = auth.currentUser;
         if (!currentUser || !userProfile) {
-            setError('You must be logged in to join a tournament.');
-            setIsLoading(false);
+            setError(t('joinTournament.mustBeLoggedIn', 'You must be logged in to join a tournament.'));
+            setIsJoining(false);
             return;
         }
 
         try {
             const tournamentsRef = collection(db, 'tournaments');
-            const q = query(tournamentsRef, where('ticket', '==', ticket));
+            const q = query(tournamentsRef, where('ticket', '==', ticketCode));
             const querySnapshot = await getDocs(q);
 
             if (querySnapshot.empty) {
-                setError('Invalid ticket code. No tournament found.');
-                setIsLoading(false);
+                setError(t('joinTournament.notFound', 'Invalid ticket code. No tournament found.'));
+                setIsJoining(false);
                 return;
             }
 
@@ -66,25 +68,18 @@ const JoinTournament = ({ userProfile, setView }: JoinTournamentProps) => {
             const tournamentData = tournamentDoc.data() as Tournament;
 
             if (tournamentData.status !== 'active') {
-                setError(`This tournament, "${tournamentData.name}", is not active and cannot be joined.`);
-                setIsLoading(false);
+                setError(t('joinTournament.notActive', 'This tournament is not active and cannot be joined.'));
+                setIsJoining(false);
                 return;
             }
 
             if (tournamentData.participants?.includes(currentUser.uid)) {
                 setSuccess(
-                    <div>
-                        <div>You have already joined "{tournamentData.name}"!</div>
-                        <div>
-                            Check {' '}
-                            <button onClick={() => setView('My Tournaments')} className="font-semibold text-blue-400 underline hover:text-blue-300">
-                                My Tournaments
-                            </button>
-                            .
-                        </div>
+                    <div className="text-green-400 text-sm bg-green-900/20 p-3 border border-green-800">
+                        <div>{t('joinTournament.alreadyJoined', 'You have already joined this tournament!')}</div>
                     </div>
                 );
-                setIsLoading(false);
+                setIsJoining(false);
                 return;
             }
 
@@ -92,57 +87,59 @@ const JoinTournament = ({ userProfile, setView }: JoinTournamentProps) => {
             await updateDoc(tournamentRef, {
                 participants: arrayUnion(currentUser.uid)
             });
+            
+            await logAudit(userProfile, 'JOIN_TOURNAMENT', `Tournament: ${tournamentData.name}`, { tournamentId: tournamentDoc.id, code: ticketCode });
 
             setSuccess(
-                <div>
-                    <div>Successfully joined {tournamentData.name}!</div>
-                    <div>
-                        Check the My Tournaments menu to see the {' '}
-                        <button onClick={() => setView('My Tournaments')} className="font-semibold text-blue-400 underline hover:text-blue-300">
-                            {tournamentData.name}
-                        </button>
-                        {' '} tournament.
-                    </div>
+                <div className="text-green-400 text-sm bg-green-900/20 p-3 border border-green-800">
+                    <p className="font-semibold mb-1">{t('joinTournament.successMessage', 'Successfully joined tournament!')}</p>
+                    <p>{t('joinTournament.checkMenu', 'Check the My Tournaments menu to see the')} {' '}
+                    <button onClick={() => setView('My Tournaments')} className="font-semibold text-blue-400 underline hover:text-blue-300">
+                        {t('menu.myTournaments', 'My Tournaments')}
+                    </button> {' '}
+                    {t('joinTournament.tournamentLabel', 'tournament.')}</p>
                 </div>
             );
-            setTicket('');
+            setTicketCode('');
 
         } catch (err) {
             console.error(err);
-            setError('An error occurred while trying to join the tournament. Please try again.');
+            setError(t('joinTournament.error', 'An error occurred while trying to join the tournament. Please try again.'));
         } finally {
-            setIsLoading(false);
+            setIsJoining(false);
         }
     };
 
     return (
-        <div className="bg-slate-800 border border-slate-700 p-8 max-w-lg mx-auto">
-            <h2 className="text-2xl font-bold text-blue-400 mb-1">Join a Tournament</h2>
-            <p className="text-slate-400 text-sm mb-6">Enter the 6-digit ticket code you received from the tournament administrator.</p>
-            
-            <form onSubmit={handleJoinTournament} className="space-y-4">
+        <div className="bg-slate-800 border border-slate-700 p-8 max-w-lg mx-auto mt-10 shadow-lg">
+            <h2 className="text-2xl font-bold text-white mb-2">{t('joinTournament.title', 'Join a Tournament')}</h2>
+            <p className="text-slate-400 mb-6">{t('joinTournament.subtitle', 'Enter the 6-digit ticket code to participate')}</p>
+
+            <form onSubmit={handleJoin} className="space-y-4">
                 <div>
-                    <label htmlFor="ticket-code" className="block text-sm font-medium text-slate-300">Ticket Code</label>
+                    <label htmlFor="ticketCode" className="block text-sm font-medium text-slate-300 mb-1">{t('joinTournament.ticketCodeLabel', 'Ticket Code')}</label>
                     <input 
+                        id="ticketCode"
                         type="text" 
-                        id="ticket-code" 
-                        value={ticket}
-                        onChange={(e) => setTicket(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                        placeholder="e.g., 777777"
-                        className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-slate-100 text-center text-2xl tracking-[.5em] font-mono focus:outline-none focus:ring-2 focus:ring-blue-400" 
+                        value={ticketCode}
+                        onChange={(e) => setTicketCode(e.target.value.toUpperCase().replace(/\D/g, ''))}
+                        maxLength={6}
+                        placeholder={t('joinTournament.ticketCodePlaceholder', 'e.g. 123456')}
+                        className="w-full px-4 py-3 bg-slate-900 border border-slate-600 text-white text-2xl tracking-widest text-center font-mono placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
                     />
                 </div>
 
-                {error && <p className="text-red-400 text-sm text-center pt-1">{error}</p>}
-                {success && <div className="text-green-400 text-sm text-center pt-1 leading-relaxed">{success}</div>}
+                {error && <p className="text-red-400 text-sm bg-red-900/20 p-3 border border-red-800">{error}</p>}
+                
+                {success}
 
-                <button type="submit" disabled={isLoading} className="w-full flex justify-center items-center px-4 py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-white transition-colors disabled:bg-blue-800 disabled:cursor-not-allowed">
-                    {isLoading ? (
-                        <svg className="animate-spin h-5 w-5 text-white" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                    ) : 'Join Tournament'}
+                <button 
+                    type="submit" 
+                    disabled={isJoining || ticketCode.length < 6}
+                    className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-500 font-bold text-white transition-colors disabled:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50 mt-4"
+                >
+                    {isJoining ? t('joinTournament.joining', 'Joining...') : t('joinTournament.joinButton', 'Join Tournament')}
                 </button>
             </form>
         </div>

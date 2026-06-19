@@ -1,49 +1,98 @@
-## Udug Bets prediction platform
+# 🏆 Udug-Bets
 
-A full-stack web application for running and participating in tournament prediction games.
+**Udug-Bets** is a comprehensive, real-time tournament prediction and leaderboard web application. Originally engineered to handle the complex structure of the **FIFA World Cup 2026**, this platform allows administrators to host tournaments, invite participants, manage live match events, and track participant predictions against actual real-world results.
 
-The application is built on a modern, serverless architecture, providing a rich, interactive experience for both regular users and administrators. It features a customizable user dashboard, a comprehensive admin panel for tournament management, and real-time data updates.
-
----
-
-### Tech Stack
-
-* **Frontend**: React 19 (with Vite), TypeScript, Tailwind CSS
-* **Backend**: Firebase Cloud Functions (v2) written in TypeScript
-* **Database**: Cloud Firestore
-* **Authentication**: Firebase Authentication (Email/Password & Google Provider)
-* **AI Integration**: Google's Gemini 1.5 Flash model via Vertex AI for generating dynamic tournament summaries.
-* **Deployment**: Firebase Hosting
+Built with performance, security, and mobile-responsiveness in mind, Udug-Bets leverages a modern React frontend and a robust Firebase serverless backend.
 
 ---
 
-### Core Features
+## 🚀 Tech Stack
 
-#### User-Facing Features:
-* **Authentication**: Secure user sign-up, login (email/password and Google), password reset, and email verification flow.
-* **Customizable Dashboard**: A dynamic, grid-based dashboard (`react-grid-layout`) where users can add, remove, resize, and configure various informational widgets. Layouts are saved per user in Firestore.
-* **Tournament Participation**: Users can join active tournaments using a 6-digit ticket code.
-* **Prediction Entry**: An intuitive interface for submitting and updating predictions for all matches in a tournament, including group stage, knockout rounds, and the overall champion.
-* **Profile Management**: Users can update their display name and other personal details, including changing their password.
-* **My Tournaments View**: A dedicated view to see all joined tournaments, their status, and a summary of prediction submission completeness.
+### Frontend
+* **Framework:** React 19 (via Vite & SWC for lightning-fast HMR and building)
+* **Language:** TypeScript for end-to-end type safety
+* **Styling:** TailwindCSS 3 for utility-first, responsive design
+* **Layouts:** `react-grid-layout` for the highly customizable user widget dashboard
+* **Drag and Drop:** `@dnd-kit/core` & `@dnd-kit/sortable` for mobile-friendly touch/drag interactions
+* **Internationalization:** `react-i18next` for multi-language support
+* **Exporting:** `jspdf` & `html2canvas` for generating shareable PDF reports
 
-#### Admin-Facing Features:
-* **Multi-Step Tournament Wizard**: A comprehensive 5-step wizard for creating and configuring tournaments, covering details, participants, group stage matches, knockout rounds, and final confirmation.
-* **Participant Management**: Admins can invite users to tournaments and view all participants.
-* **Score Management**: A dedicated interface for admins to input and update live scores for all matches, including seeding teams for knockout rounds and handling tie-breakers.
-* **User Role Management**: Superadmins can manage user roles (promoting users to admins) and edit user details.
-* **Prediction Control**: Admins can open and close prediction submissions for different stages of a tournament (e.g., lock group stage predictions once matches begin).
-* **PDF Export**: Functionality to generate and download a detailed PDF summary of all predictions for a tournament using `jsPDF`.
-* **Debug & Seeding Panel**: A superadmin-only view for seeding the database with test tournaments and users for development and testing purposes.
-
-#### Shared & Backend Features:
-* **Real-time Leaderboards**: Cloud Functions automatically recalculate and update tournament leaderboards in real-time whenever scores are updated or predictions are made.
-* **AI-Powered Summaries**: A Cloud Function leverages the Gemini API to generate witty and insightful summaries of leaderboard standings and champion prediction trends, which are displayed on the user dashboard.
+### Backend & Infrastructure
+* **Database:** Firebase Firestore (NoSQL realtime database)
+* **Authentication:** Firebase Auth (Secure user management and login)
+* **Cloud Logic:** Firebase Cloud Functions (Node.js) for backend recalculations, secure scoring, and data aggregation
+* **Hosting:** Firebase Hosting
 
 ---
 
-### Security Implementation
+## ✨ Core Features
 
-* **API Key Security**: All Firebase client-side keys are securely managed using environment variables (`.env.local`) and are not exposed in the source code.
-* **Firestore Security Rules**: The application is protected by detailed Firestore rules that restrict data access based on user authentication, user roles (admin, superadmin), and tournament participation. This ensures users can only read/write their own data and that sensitive admin actions are properly secured.
+### 👑 Admin Capabilities
+* **Tournament Wizard:** A step-by-step wizard to configure tournaments, add teams, map out groups, and schedule knockout stages.
+* **Participant Management:** Invite users securely and manage their access rights to specific tournaments.
+* **Prediction Period Toggles:** Granularly lock or unlock prediction submissions for specific stages (e.g., "Allow Group Stage Predictions", "Allow Round of 16 Predictions").
+* **Live Score Controller:** Input real-time match events (goals, cards) and finalize match scores, instantly triggering system-wide leaderboard recalculations.
+* **Standings Override Engine:** A drag-and-drop interface that allows admins to manually override mathematically tied Group Standings (e.g., when FIFA tiebreaker rules require a drawing of lots).
 
+### 👤 User Dashboard (Widget System)
+Users experience a dynamic, customizable dashboard powered by draggable and resizable widgets:
+* **All Predictions Widget:** Intelligently auto-selects the upcoming match of the day. Users can swipe through matches and submit their score predictions before the admin locks the stage.
+* **Group Standings Widget:** Real-time view of tournament groups showing Matches Played, Wins, Draws, Losses, Goal Difference, and Points.
+* **Leaderboard Widget:** Tracks participant scores based on the accuracy of their predictions against actual match outcomes.
+* **Prediction Point History:** Allows participants to view a detailed breakdown of where they gained or lost points.
+
+---
+
+## 🛡️ Security & Architecture
+
+Udug-Bets implements strict security paradigms to ensure fair play during high-stakes tournaments:
+
+1. **The "Payload Bouncer" (Firestore Rules):** 
+   Strict security rules block any malicious payloads attempting to escalate user roles (e.g., standard users injecting `isAdmin: true` into their profile document).
+2. **"Server Lock" Mechanism:** 
+   Predictions are validated both on the frontend and backend. If a match has started or a tournament stage has been toggled off by the admin, Cloud Functions will instantly reject any incoming write requests.
+3. **Optimized Reads:** 
+   The Group Standings logic heavily relies on frontend caching and calculated Firestore documents (`leaderboards` collection) rather than brute-force querying, minimizing database read costs drastically.
+
+---
+
+## 🛠️ Local Development
+
+### Prerequisites
+* Node.js (v18+ recommended)
+* Firebase CLI (`npm install -g firebase-tools`)
+
+### Setup Instructions
+
+1. **Clone and Install:**
+   ```bash
+   git clone <repository-url>
+   cd udug-bets
+   npm install
+   ```
+
+2. **Run the React Frontend:**
+   ```bash
+   npm run dev
+   ```
+   The app will be available at `http://localhost:5173`.
+
+3. **Deploying to Production:**
+   When you are ready to push updates to the live Firebase environment:
+   ```bash
+   # 1. Build the React production bundle
+   npm run build
+   
+   # 2. Deploy hosting and cloud functions
+   firebase deploy --only "hosting,functions"
+   ```
+
+---
+
+## 📂 Project Structure Overview
+
+* `/src/components/admin/` - Administrative views, modals, and the Tournament Creation Wizard.
+* `/src/components/views/widgets/` - The building blocks for the customizable user dashboard.
+* `/src/types/` - Shared TypeScript interfaces ensuring data consistency between Firestore and React.
+* `/functions/src/` - Backend Cloud Functions (e.g., `leaderboard.ts` for automated points calculation).
+* `/firebase.json` - Configuration for Firebase hosting rewrites and function deployment.

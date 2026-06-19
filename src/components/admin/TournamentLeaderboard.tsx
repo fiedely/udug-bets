@@ -1,13 +1,13 @@
-// src/components/admin/TournamentLeaderboard.tsx
-
 import { useState, useEffect } from 'react';
 import { db } from '../../firebaseConfig';
 import { doc, onSnapshot } from 'firebase/firestore';
 import type { Tournament } from '../../types';
+import UserPointHistoryModal from './UserPointHistoryModal';
 
 interface LeaderboardEntry {
     userId: string;
     userName: string;
+    avatarUrl?: string | null;
     totalPoints: number;
     rank: number;
     previousRank?: number;
@@ -35,6 +35,7 @@ const TournamentLeaderboard = ({ tournament, onBack }: TournamentLeaderboardProp
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+    const [selectedAuditUser, setSelectedAuditUser] = useState<{id: string, name: string} | null>(null);
 
     useEffect(() => {
         const leaderboardRef = doc(db, "leaderboards", tournament.id);
@@ -56,16 +57,22 @@ const TournamentLeaderboard = ({ tournament, onBack }: TournamentLeaderboardProp
     }, [tournament.id]);
 
     return (
-        <div className="bg-slate-800 border border-slate-700 p-6 md:p-8">
-            <div className="flex justify-between items-start mb-4">
-                <div>
-                    <h2 className="text-2xl font-bold text-white">{tournament.name}</h2>
-                    <p className="text-blue-400">Live Leaderboard</p>
+        <div className="flex flex-col h-full bg-slate-900 text-slate-100 overflow-y-auto w-full">
+            <div className="bg-slate-800 p-4 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
+                <div className="flex items-center gap-3">
+                    <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </button>
+                    <div>
+                        <h2 className="text-xl font-bold text-white">Manage: {tournament.name}</h2>
+                        <p className="text-sm text-slate-400">Participant Point History: {tournament.name}</p>
+                    </div>
                 </div>
-                <button onClick={onBack} className="text-sm text-blue-400 hover:text-blue-300 flex items-center whitespace-nowrap">
-                    &larr; Back to Tournaments List
-                </button>
             </div>
+
+            <div className="p-4 flex flex-col max-w-6xl mx-auto w-full">
             
             {lastUpdated && (
                 <p className="text-xs text-slate-400 mb-4">
@@ -83,7 +90,7 @@ const TournamentLeaderboard = ({ tournament, onBack }: TournamentLeaderboardProp
                     <p className="text-slate-400 text-sm mt-1">It will be automatically generated after you save scores in the "Manage Scores" menu for the first time.</p>
                 </div>
             ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto overscroll-x-none" style={{ WebkitOverflowScrolling: 'touch' }}>
                     <table className="w-full text-sm text-left text-slate-300">
                         <thead className="text-xs text-slate-400 uppercase bg-slate-700">
                             <tr>
@@ -94,7 +101,12 @@ const TournamentLeaderboard = ({ tournament, onBack }: TournamentLeaderboardProp
                         </thead>
                         <tbody>
                             {leaderboard.map((entry) => (
-                                <tr key={entry.userId} className="bg-slate-800 border-b border-slate-700 hover:bg-slate-700/50">
+                                <tr 
+                                    key={entry.userId} 
+                                    onClick={() => setSelectedAuditUser({ id: entry.userId, name: entry.userName })}
+                                    className="bg-slate-800 border-b border-slate-700 hover:bg-slate-700/80 cursor-pointer transition-colors"
+                                    title="Click to view point history"
+                                >
                                     <td className="px-6 py-4 font-medium text-white text-center">
                                         <div className="flex items-center justify-center gap-3">
                                             <RankChangeIndicator change={entry.rankChange} />
@@ -102,7 +114,16 @@ const TournamentLeaderboard = ({ tournament, onBack }: TournamentLeaderboardProp
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 font-medium text-white">
-                                        {entry.userName}
+                                        <div className="flex items-center gap-3">
+                                            {entry.avatarUrl ? (
+                                                <img loading="lazy" decoding="async" src={entry.avatarUrl} alt="Avatar" className="w-8 h-8 rounded-full transform-gpu object-cover border border-slate-500" />
+                                            ) : (
+                                                <div className="w-8 h-8 rounded-full transform-gpu bg-slate-600 flex items-center justify-center text-xs text-slate-300 border border-slate-500">
+                                                    {entry.userName.charAt(0).toUpperCase()}
+                                                </div>
+                                            )}
+                                            <span>{entry.userName}</span>
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 text-right font-mono text-lg">
                                         {entry.totalPoints}
@@ -113,6 +134,16 @@ const TournamentLeaderboard = ({ tournament, onBack }: TournamentLeaderboardProp
                     </table>
                 </div>
             )}
+
+            {selectedAuditUser && (
+                <UserPointHistoryModal 
+                    tournament={tournament}
+                    userId={selectedAuditUser.id}
+                    userName={selectedAuditUser.name}
+                    onClose={() => setSelectedAuditUser(null)}
+                />
+            )}
+        </div>
         </div>
     );
 };

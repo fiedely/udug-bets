@@ -1,0 +1,81 @@
+{
+  "menu": {
+    "myDashboard": "My Dashboard",
+    "myTournaments": "My Tournaments",
+    "myProfile": "My Profile",
+    "adminPanel": "Admin Panel",
+    "createTournament": "Create Tournament",
+    "listTournaments": "List Tournaments",
+    "manageUsers": "Manage Users",
+    "debug": "Debug",
+    "signOut": "Sign Out"
+  },
+  "dashboard": {
+    "widget": {
+      "leaderboard": "Leaderboard",
+      "myPredictionChart": "My Prediction Chart",
+      "allPredictionsChart": "All Predictions Chart",
+      "championPrediction": "Champion Prediction",
+      "groupStandings": "Group Standings",
+      "selectTournament": "Select Tournament"
+    }
+  },
+  "profile": {
+    "title": "My Profile",
+    "uploadPhoto": "Upload your photo",
+    "emailAddress": "Email Address",
+    "displayName": "Display Name",
+    "language": "Language / Bahasa",
+    "saveProfile": "Save Profile",
+    "saving": "Saving..."
+  },
+  "myTournaments": {
+    "title": "My Tournaments",
+    "viewLeaderboard": "View Leaderboard",
+    "enterPredictions": "Enter/Edit Predictions",
+    "viewRivals": "(Click here to see your rivals)",
+    "submissionStatus": "Prediction Submission Status",
+    "pointHistory": "Point History",
+    "details": "Details",
+    "viewPredictions": "All Predictions",
+    "noJoinedTitle": "No Tournaments Joined Yet",
+    "noJoinedDesc": "Use the \"Join Tournament\" menu to enter a ticket code and get started!"
+  },
+  "predictionEntry": {
+    "enterYourPredictions": "Enter Your Predictions",
+    "backToTournaments": "← Back to My Tournaments",
+    "championPrediction": "Champion Prediction",
+    "selectChampion": "-- Select a Champion --",
+    "savePredictions": "Save Predictions",
+    "saving": "Saving..."
+  },
+  "joinTournament": {
+    "title": "Join a Tournament",
+    "subtitle": "Enter the 6-digit ticket code to participate",
+    "ticketCodeLabel": "Ticket Code",
+    "ticketCodePlaceholder": "e.g. 123456",
+    "joinButton": "Join Tournament",
+    "joining": "Joining...",
+    "successMessage": "Successfully joined tournament!",
+    "checkMenu": "Check the My Tournaments menu to see the",
+    "tournamentLabel": "tournament."
+  },
+  "tournamentDetails": {
+    "pointRules": "Point Rules",
+    "scoreOutcome": "Score: {{score}} / Outcome: {{outcome}}",
+    "championBonus": "Champion Bonus:",
+    "groupStageSchedule": "Group Stage Schedule",
+    "knockoutStageSchedule": "Knockout Stage Schedule",
+    "matchesCount": "{{count}} Matches",
+    "noDescription": "No description provided.",
+    "errorDescription": "Error parsing description.",
+    "backToTournaments": "← Back to My Tournaments"
+  },
+  "participantsList": {
+    "title": "Participant List",
+    "loading": "Loading...",
+    "error": "Failed to load participants.",
+    "empty": "No participants yet.",
+    "close": "Close"
+  }
+}

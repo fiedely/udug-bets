@@ -8,18 +8,24 @@ import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import VerificationMessage from './components/VerificationMessage';
 import type { UserProfile } from './types';
+import { useTranslation } from 'react-i18next';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAwaitingVerification, setIsAwaitingVerification] = useState(false);
+  const { i18n } = useTranslation();
 
   const fetchUserProfile = async (uid: string) => {
     const userDocRef = doc(db, "users", uid);
     const docSnap = await getDoc(userDocRef);
     if (docSnap.exists()) {
-      setUserProfile(docSnap.data() as UserProfile);
+      const profile = docSnap.data() as UserProfile;
+      setUserProfile(profile);
+      if (profile.language) {
+        i18n.changeLanguage(profile.language);
+      }
     } else {
       console.error("User profile not found in Firestore. Signing out.");
       signOut(auth);

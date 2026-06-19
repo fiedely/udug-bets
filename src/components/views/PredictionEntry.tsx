@@ -3,7 +3,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { db } from '../../firebaseConfig';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
+import { logAudit } from '../../utils/auditLogger';
 import type { Tournament, UserProfile, UserPredictions, Match, MatchStage } from '../../types';
+import { useTranslation } from 'react-i18next';
 
 interface PredictionEntryProps {
     tournament: Tournament;
@@ -25,6 +27,7 @@ const OutcomeBadge = ({ outcome }: { outcome: 'WIN' | 'LOSE' | 'DRAW' | null }) 
 };
 
 const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryProps) => {
+    const { t } = useTranslation();
     const [predictions, setPredictions] = useState<UserPredictions | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -103,6 +106,9 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
         try {
             const predictionDocId = `${tournament.id}_${userProfile!.uid}`;
             await setDoc(doc(db, "predictions", predictionDocId), { ...predictions, lastUpdated: Timestamp.now() });
+            
+            await logAudit(userProfile, 'SUBMIT_PREDICTION', `Tournament: ${tournament.name}`, predictions);
+
             setIsDirty(false);
             setMessage('Your predictions have been saved successfully!');
             setTimeout(() => setMessage(''), 3000);
@@ -125,7 +131,8 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
     };
 
     const matchesByStageAndDate = useMemo(() => {
-        return allMatches.reduce((acc, match) => {
+        const sortedMatches = [...allMatches].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        return sortedMatches.reduce((acc, match) => {
             const stage = match.stage;
             const date = new Date(match.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
             if (!acc[stage]) acc[stage] = {};
@@ -169,16 +176,16 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
             <div className="flex flex-col md:flex-row justify-between md:items-start mb-6 gap-4">
                 <div>
                     <h2 className="text-2xl font-bold text-white">{tournament.name}</h2>
-                    <p className="text-blue-400">Enter Your Predictions</p>
+                    <p className="text-blue-400">{t('predictionEntry.enterYourPredictions', 'Enter Your Predictions')}</p>
                 </div>
                 <button onClick={handleBack} className="text-sm text-blue-400 hover:text-blue-300 flex items-center whitespace-nowrap self-start md:self-auto">
-                    &larr; Back to My Tournaments
+                    {t('predictionEntry.backToTournaments', '← Back to My Tournaments')}
                 </button>
             </div>
 
             <div className="space-y-8">
                 <div className="bg-slate-900/50 p-4 border border-slate-700">
-                    <label htmlFor="champion-select" className="block text-lg font-semibold text-slate-100 mb-2">Champion Prediction</label>
+                    <label htmlFor="champion-select" className="block text-lg font-semibold text-slate-100 mb-2">{t('predictionEntry.championPrediction', 'Champion Prediction')}</label>
                     <div className="flex items-center">
                         <select 
                             id="champion-select"
@@ -187,7 +194,7 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
                             disabled={!tournament.predictionStatus?.allowChampion}
                             className="w-full md:w-1/2 px-4 py-2 bg-slate-800 border border-slate-600 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                         >
-                            <option value="">-- Select a Champion --</option>
+                            <option value="">{t('predictionEntry.selectChampion', '-- Select a Champion --')}</option>
                             {tournament.teams?.sort((a,b) => a.name.localeCompare(b.name)).map(team => (
                                 <option key={team.code} value={team.code}>{team.flag} {team.name}</option>
                             ))}
@@ -204,7 +211,7 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
                         </button>
                         {!collapsedStages[stage] && (
                             <div className="space-y-3">
-                                {Object.keys(matchesByStageAndDate[stage as MatchStage]).map(date => (
+                                {Object.keys(matchesByStageAndDate[stage as MatchStage]).sort((a,b) => new Date(a).getTime() - new Date(b).getTime()).map(date => (
                                     <div key={date}>
                                         <h4 className="font-semibold text-slate-300 text-sm mb-2 pl-2">{date}</h4>
                                         <div className="space-y-2 pl-4 border-l-2 border-slate-700">
@@ -258,10 +265,6 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
 
                                                         <div className="text-center text-xs text-slate-500 flex flex-wrap justify-center items-center gap-x-2">
                                                             <span>{new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                            <span className="text-slate-600 hidden sm:inline">•</span>
-                                                            <span className="w-full sm:w-auto text-center">{match.stadium.name}, {match.stadium.city}</span>
-                                                            <span className="text-slate-600 hidden sm:inline">•</span>
-                                                            <span>Match #{match.matchNumber}</span>
                                                         </div>
                                                     </div>
                                                 );
@@ -278,7 +281,7 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
             <div className="mt-8 pt-6 border-t border-slate-700 flex justify-end items-center gap-4">
                 {message && <p className="text-green-400 text-sm">{message}</p>}
                 <button onClick={handleSave} disabled={isSaving} className="px-6 py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-white transition-colors disabled:bg-blue-800 disabled:cursor-not-allowed">
-                    {isSaving ? 'Saving...' : 'Save Predictions'}
+                    {isSaving ? t('predictionEntry.saving', 'Saving...') : t('predictionEntry.savePredictions', 'Save Predictions')}
                 </button>
             </div>
         </div>

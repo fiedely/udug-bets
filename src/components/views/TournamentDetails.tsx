@@ -3,6 +3,7 @@
 import type { Tournament, Match, MatchStage } from '../../types';
 import { useMemo, useState, useEffect } from 'react';
 import { marked } from 'marked';
+import { useTranslation } from 'react-i18next';
 
 interface TournamentDetailsProps {
     tournament: Tournament;
@@ -10,11 +11,12 @@ interface TournamentDetailsProps {
 }
 
 const PointRuleRow = ({ label, points }: { label: string, points?: { correctScore: number; correctOutcome: number; } }) => {
+    const { t } = useTranslation();
     if (!points) return null;
     return (
         <div className="flex flex-col sm:flex-row justify-between py-1">
             <span className="text-slate-400">{label}:</span>
-            <span className="text-white font-mono text-left sm:text-right">Score: {points.correctScore} / Outcome: {points.correctOutcome}</span>
+            <span className="text-white font-mono text-left sm:text-right">{t('tournamentDetails.scoreOutcome', 'Score: {{score}} / Outcome: {{outcome}}', { score: points.correctScore, outcome: points.correctOutcome })}</span>
         </div>
     );
 };
@@ -47,9 +49,11 @@ const MatchList = ({ title, matches, groupByStage = false }: { title: string, ma
         return Object.keys(groupedMatches).sort((a, b) => STAGE_ORDER.indexOf(a as MatchStage) - STAGE_ORDER.indexOf(b as MatchStage));
     }, [groupedMatches]);
 
+    const { t } = useTranslation();
+    
     return (
         <div>
-            <h4 className="font-semibold text-blue-400 mb-2">{title} ({matches?.length || 0} Matches)</h4>
+            <h4 className="font-semibold text-blue-400 mb-2">{title} ({t('tournamentDetails.matchesCount', '{{count}} Matches', { count: matches?.length || 0 })})</h4>
             <div className="text-sm text-slate-300 max-h-64 overflow-y-auto pr-2 border border-slate-700 p-2 bg-slate-800 space-y-3">
                 {groupByStage ? (
                     sortedStageKeys.map(stageKey => (
@@ -63,7 +67,7 @@ const MatchList = ({ title, matches, groupByStage = false }: { title: string, ma
                                             <span className="flex items-center gap-2">
                                                 {match.team1.flag} {match.team1.name} <span className="text-slate-500 mx-1">vs</span> {match.team2.flag} {match.team2.name}
                                             </span>
-                                            <span className="text-xs text-slate-400 text-left sm:text-right">{new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}<br/>@ {match.stadium.name}</span>
+                                            <span className="text-xs text-slate-400 text-left sm:text-right">{new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -79,7 +83,7 @@ const MatchList = ({ title, matches, groupByStage = false }: { title: string, ma
                                     <span className="flex items-center gap-2">
                                         {match.team1.flag} {match.team1.name} <span className="text-slate-500 mx-1">vs</span> {match.team2.flag} {match.team2.name}
                                     </span>
-                                    <span className="text-xs text-slate-400 text-left sm:text-right">{new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}<br/>@ {match.stadium.name}</span>
+                                    <span className="text-xs text-slate-400 text-left sm:text-right">{new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                 </div>
                             ))}
                         </div>
@@ -92,12 +96,13 @@ const MatchList = ({ title, matches, groupByStage = false }: { title: string, ma
 
 
 const TournamentDetails = ({ tournament, onBack }: TournamentDetailsProps) => {
+    const { t } = useTranslation();
     const [renderedDescription, setRenderedDescription] = useState('');
 
     useEffect(() => {
         const parseDescription = async () => {
             if (!tournament.description) {
-                setRenderedDescription('<p class="text-slate-400 italic">No description provided.</p>');
+                setRenderedDescription(`<p class="text-slate-400 italic">${t('tournamentDetails.noDescription', 'No description provided.')}</p>`);
                 return;
             }
             try {
@@ -105,46 +110,57 @@ const TournamentDetails = ({ tournament, onBack }: TournamentDetailsProps) => {
                 setRenderedDescription(html);
             } catch (e) {
                 console.error("Error parsing markdown:", e);
-                setRenderedDescription("<p>Error parsing description.</p>");
+                setRenderedDescription(`<p>${t('tournamentDetails.errorDescription', 'Error parsing description.')}</p>`);
             }
         };
         parseDescription();
     }, [tournament.description]);
 
     return (
-        <div className="bg-slate-800 border border-slate-700 p-8">
-            <button onClick={onBack} className="text-sm text-blue-400 hover:text-blue-300 mb-6 flex items-center">
-                &larr; Back to My Tournaments
-            </button>
-            <div className="space-y-6">
-                <div>
-                    <h3 className="text-2xl font-bold text-white border-b border-slate-700 pb-2 mb-3">{tournament.name}</h3>
-                    <div
-                        className="prose prose-sm prose-invert max-w-none"
-                        dangerouslySetInnerHTML={{ __html: renderedDescription }}
-                    />
+        <div className="flex flex-col h-full bg-slate-900 text-slate-100 overflow-y-auto w-full">
+            <div className="bg-slate-800 p-4 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
+                <div className="flex items-center gap-3">
+                    <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </button>
+                    <div>
+                        <h2 className="text-xl font-bold text-white">Manage: {tournament.name}</h2>
+                        <p className="text-sm text-slate-400">Check Tournament Details: {tournament.name}</p>
+                    </div>
                 </div>
+            </div>
+            <div className="p-4 flex flex-col gap-6 max-w-6xl mx-auto w-full">
+                <div className="space-y-6">
+                    <div className="bg-slate-800 p-4 border border-slate-700 rounded shadow">
+                        <div
+                            className="prose prose-sm prose-invert max-w-none"
+                            dangerouslySetInnerHTML={{ __html: renderedDescription }}
+                        />
+                    </div>
 
                 <div className="bg-slate-900/50 p-4 border border-slate-700 text-sm">
-                    <h4 className="font-semibold text-blue-400 mb-2">Point Rules</h4>
-                    <PointRuleRow label="Group Stage" points={tournament.pointRules?.groupStage} />
-                    <PointRuleRow label="Round of 32" points={tournament.pointRules?.round32} />
-                    <PointRuleRow label="Round of 16" points={tournament.pointRules?.round16} />
-                    <PointRuleRow label="Quarter Finals" points={tournament.pointRules?.quarterFinal} />
-                    <PointRuleRow label="Semi Finals" points={tournament.pointRules?.semiFinal} />
-                    {tournament.hasThirdPlaceMatch && <PointRuleRow label="Third Place Match" points={tournament.pointRules?.thirdPlaceMatch} />}
-                    <PointRuleRow label="Final" points={tournament.pointRules?.final} />
+                    <h4 className="font-semibold text-blue-400 mb-2">{t('tournamentDetails.pointRules', 'Point Rules')}</h4>
+                    <PointRuleRow label={t('stages.groupStage', 'Group Stage')} points={tournament.pointRules?.groupStage} />
+                    <PointRuleRow label={t('stages.round32', 'Round of 32')} points={tournament.pointRules?.round32} />
+                    <PointRuleRow label={t('stages.round16', 'Round of 16')} points={tournament.pointRules?.round16} />
+                    <PointRuleRow label={t('stages.quarterFinals', 'Quarter-finals')} points={tournament.pointRules?.quarterFinal} />
+                    <PointRuleRow label={t('stages.semiFinals', 'Semi-finals')} points={tournament.pointRules?.semiFinal} />
+                    {tournament.hasThirdPlaceMatch && <PointRuleRow label={t('stages.thirdPlaceMatch', 'Third Place Match')} points={tournament.pointRules?.thirdPlaceMatch} />}
+                    <PointRuleRow label={t('stages.finals', 'Final')} points={tournament.pointRules?.final} />
                     <div className="flex flex-col sm:flex-row justify-between py-1 border-t border-slate-700 mt-1">
-                        <span className="text-slate-400">Champion Bonus:</span>
+                        <span className="text-slate-400">{t('tournamentDetails.championBonus', 'Champion Bonus:')}</span>
                         <span className="text-white font-mono">{tournament.pointRules?.championBonus ?? 'N/A'}</span>
                     </div>
                 </div>
 
                 <div className="space-y-4">
-                    <MatchList title="Group Stage Schedule" matches={tournament.matches} />
-                    <MatchList title="Knockout Stage Schedule" matches={tournament.knockoutMatches} groupByStage={true} />
+                    <MatchList title={t('tournamentDetails.groupStageSchedule', 'Group Stage Schedule')} matches={tournament.matches} />
+                    <MatchList title={t('tournamentDetails.knockoutStageSchedule', 'Knockout Stage Schedule')} matches={tournament.knockoutMatches} groupByStage={true} />
                 </div>
             </div>
+        </div>
         </div>
     );
 };

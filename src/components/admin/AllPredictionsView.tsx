@@ -5,12 +5,14 @@ import { db, functions } from '../../firebaseConfig';
 import { httpsCallable } from 'firebase/functions';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Tournament, UserProfile, UserPredictions, Match, Team, PointRule, PointRules, MatchStage } from '../../types';
+import { logAudit } from '../../utils/auditLogger';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { CellDef, UserOptions } from 'jspdf-autotable';
 
 interface AllPredictionsViewProps {
     tournament: Tournament;
+    userProfile: UserProfile;
     onBack: () => void;
 }
 
@@ -39,8 +41,19 @@ const stageToRuleKeyMap: { [key in MatchStage]?: keyof PointRules } = {
     "Third Place Match": "thirdPlaceMatch", "Final": "final",
 };
 
+const formatActualScore = (match: Match) => {
+    if (typeof match.team1Score !== 'number') return 'N/A';
+    let base = `${match.team1Score}-${match.team2Score}`;
+    if (match.tiebreakerType === 'Extra Time' && typeof match.team1TiebreakerScore === 'number' && typeof match.team2TiebreakerScore === 'number') {
+        return `${base} (ExtraTime ${match.team1Score + match.team1TiebreakerScore}-${match.team2Score! + match.team2TiebreakerScore})`;
+    }
+    if (match.tiebreakerType === 'Penalty Shootout' && typeof match.team1TiebreakerScore === 'number' && typeof match.team2TiebreakerScore === 'number') {
+        return `${base} (Penalty ${match.team1TiebreakerScore}-${match.team2TiebreakerScore})`;
+    }
+    return base;
+};
 
-const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => {
+const AllPredictionsView = ({ tournament, userProfile, onBack }: AllPredictionsViewProps) => {
     const [isLoading, setIsLoading] = useState(true);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const [enrichedMatches, setEnrichedMatches] = useState<EnrichedMatch[]>([]);
@@ -77,7 +90,7 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                     }
                 });
 
-                const allMatches = [...(tournament.matches || []), ...(tournament.knockoutMatches || [])];
+                const allMatches = [...(tournament.matches || []), ...(tournament.knockoutMatches || [])].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
                 const pointRules = tournament.pointRules;
 
                 const enriched = allMatches.map(match => {
@@ -146,7 +159,7 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
         });
         
         const body = enrichedMatches.map(match => {
-            const matchCell = `${match.team1.name} vs ${match.team2.name}\nActual: ${typeof match.team1Score === 'number' ? `${match.team1Score}-${match.team2Score}` : 'N/A'}`;
+            const matchCell = `${match.team1.name} vs ${match.team2.name}\nActual: ${formatActualScore(match)}`;
             const participantCells = participants.flatMap(p => {
                 const pred = match.participantPredictions.find(pp => pp.userId === p.uid);
                 const predText = pred?.prediction ? `${pred.prediction.team1Score}-${pred.prediction.team2Score}` : '-';
@@ -218,28 +231,35 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
         autoTable(doc, tableOptions);
     
         doc.save(`${tournament.name.replace(/ /g, '_')}_predictions.pdf`);
+        if (userProfile) {
+            logAudit(userProfile, 'DOWNLOAD_PREDICTIONS_PDF', `Downloaded predictions PDF for tournament: ${tournament.name}`, { tournamentId: tournament.id }).catch(console.error);
+        }
         setIsGeneratingPdf(false);
     };
 
 
     return (
-        <div className="bg-slate-800 border border-slate-700 p-4 md:p-8 flex flex-col h-[calc(100vh-6rem)] w-full">
-            <div className="flex-shrink-0">
-                <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
+        <div className="flex flex-col h-full bg-slate-900 text-slate-100 overflow-hidden w-full">
+            <div className="bg-slate-800 p-4 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
+                <div className="flex items-center gap-3">
+                    <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </button>
                     <div>
-                        <h2 className="text-2xl font-bold text-white">{tournament.name}</h2>
-                        <p className="text-blue-400">All Participant Predictions</p>
-                    </div>
-                    <div className="flex gap-4 self-start md:self-center">
-                        <button onClick={handleExportPDF} disabled={isGeneratingPdf || isLoading} className="px-4 py-2 bg-green-600 hover:bg-green-500 font-semibold text-white text-sm disabled:bg-green-800 disabled:cursor-not-allowed">
-                            {isGeneratingPdf ? 'Generating...' : 'Download PDF'}
-                        </button>
-                        <button onClick={onBack} className="text-sm text-blue-400 hover:text-blue-300 flex items-center whitespace-nowrap">
-                            &larr; Back
-                        </button>
+                        <h2 className="text-xl font-bold text-white">Manage: {tournament.name}</h2>
+                        <p className="text-sm text-slate-400">All Predictions: {tournament.name}</p>
                     </div>
                 </div>
+                <div className="flex gap-4 self-start sm:self-center">
+                    <button onClick={handleExportPDF} disabled={isGeneratingPdf || isLoading} className="px-4 py-2 bg-green-600 hover:bg-green-500 font-semibold text-white text-sm disabled:bg-green-800 disabled:cursor-not-allowed">
+                        {isGeneratingPdf ? 'Generating PDF...' : 'Download PDF Table'}
+                    </button>
+                </div>
             </div>
+
+            <div className="flex-1 flex flex-col min-h-0 p-4 max-w-full">
 
             {isLoading ? (
                  <div className="flex-grow flex items-center justify-center"><svg className="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>
@@ -248,7 +268,7 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
             ) : participants.length === 0 ? (
                 <div className="text-center p-8 bg-slate-900/50 border border-slate-700"><p className="text-slate-300">This tournament has no participants.</p></div>
             ) : (
-                <div ref={scrollContainerRef} className="overflow-auto border border-slate-700 flex-grow min-h-0">
+                <div ref={scrollContainerRef} className="overflow-auto overscroll-none border border-slate-700 flex-grow min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
                     <table ref={tableRef} className="w-full text-xs text-left text-slate-300 border-collapse min-w-[1200px]">
                         <thead className="sticky top-0 z-20">
                             <tr>
@@ -276,7 +296,7 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                                             <div className="text-xs text-slate-500 my-1 pl-6">vs</div>
                                             <div className="flex items-center gap-2"><span>{match.team2.flag}</span> {match.team2.name}</div>
                                         </div>
-                                        <div className="text-[10px] text-slate-400 mt-1">Actual: {typeof match.team1Score === 'number' ? `${match.team1Score} - ${match.team2Score}` : 'N/A'}</div>
+                                        <div className="text-[10px] text-slate-400 mt-1">Actual: {formatActualScore(match)}</div>
                                     </td>
                                     {match.participantPredictions.map(p => (
                                         <Fragment key={p.userId}>
@@ -308,6 +328,7 @@ const AllPredictionsView = ({ tournament, onBack }: AllPredictionsViewProps) => 
                     </table>
                 </div>
             )}
+        </div>
         </div>
     );
 };

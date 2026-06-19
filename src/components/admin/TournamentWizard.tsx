@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../../firebaseConfig';
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
-import type { Tournament } from '../../types';
+import type { Tournament, UserProfile } from '../../types';
 import Step1Details from './wizard/Step1Details';
 import Step2Participants from './wizard/Step2Participants';
 import Step3Matches from './wizard/Step3Matches';
@@ -13,13 +13,14 @@ import Step5Confirmation from './wizard/Step5Confirmation';
 
 interface TournamentWizardProps {
     tournamentId: string;
+    userProfile: UserProfile;
     onBackToList: () => void;
     reportDirtyState: (isDirty: boolean) => void;
 }
 
 type WizardStep = 1 | 2 | 3 | 4 | 5;
 
-const TournamentWizard = ({ tournamentId, onBackToList, reportDirtyState }: TournamentWizardProps) => {
+const TournamentWizard = ({ tournamentId, userProfile, onBackToList, reportDirtyState }: TournamentWizardProps) => {
     const [currentStep, setCurrentStep] = useState<WizardStep>(1);
     const [tournamentData, setTournamentData] = useState<Tournament | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -89,7 +90,22 @@ const TournamentWizard = ({ tournamentId, onBackToList, reportDirtyState }: Tour
     ];
 
     return (
-        <div className="bg-slate-800 border border-slate-700 p-4 md:p-8">
+        <div className="flex flex-col h-full bg-slate-900 text-slate-100 overflow-y-auto w-full">
+            <div className="bg-slate-800 p-4 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
+                <div className="flex items-center gap-3">
+                    <button onClick={onBackToList} className="text-slate-400 hover:text-white transition-colors">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </button>
+                    <div>
+                        <h2 className="text-xl font-bold text-white">Manage: {tournamentData.name}</h2>
+                        <p className="text-sm text-slate-400">Edit Tournament Detail: {tournamentData.name}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="p-4 flex flex-col gap-6 max-w-6xl mx-auto w-full">
             <div className="mb-6">
                 <div className="flex justify-between text-xs sm:text-sm font-medium text-slate-400 max-w-4xl mx-auto">
                     {STEPS.map(({num, label}) => (
@@ -101,11 +117,12 @@ const TournamentWizard = ({ tournamentId, onBackToList, reportDirtyState }: Tour
                 </div>
             </div>
 
-            {currentStep === 1 && <Step1Details tournament={tournamentData} onNext={goToNextStep} onBack={onBackToList} setIsDirty={setIsDirty} />}
+            {currentStep === 1 && <Step1Details tournament={tournamentData} userProfile={userProfile} onNext={goToNextStep} setIsDirty={setIsDirty} />}
             {currentStep === 2 && <Step2Participants tournament={tournamentData} onNext={goToNextStep} onBack={goToPreviousStep} setIsDirty={setIsDirty} />}
             {currentStep === 3 && <Step3Matches tournament={tournamentData} onNext={goToNextStep} onBack={goToPreviousStep} setIsDirty={setIsDirty} />}
             {currentStep === 4 && <Step4Knockout tournament={tournamentData} onNext={goToNextStep} onBack={goToPreviousStep} setIsDirty={setIsDirty} />}
             {currentStep === 5 && <Step5Confirmation tournament={tournamentData} onBack={goToPreviousStep} onFinish={onBackToList} />}
+        </div>
         </div>
     );
 };

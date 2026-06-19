@@ -1,9 +1,9 @@
 // src/components/views/widgets/PredictionChartWidget.tsx
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { db } from '../../../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
-import type { Tournament, UserPredictions, Match } from '../../../types';
+import type { Tournament, UserPredictions, Match, UserProfile } from '../../../types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 interface PredictionChartWidgetProps {
@@ -11,19 +11,61 @@ interface PredictionChartWidgetProps {
     currentMatchIndex: number;
     onMatchIndexChange: (index: number) => void;
     setRefreshFunc: (func: () => void) => void;
+    userProfile?: UserProfile;
 }
 
-const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexChange, setRefreshFunc }: PredictionChartWidgetProps) => {
+const PredictionChartWidget = ({ tournamentId, onMatchIndexChange, setRefreshFunc, userProfile }: PredictionChartWidgetProps) => {
     const [tournament, setTournament] = useState<Tournament | null>(null);
     const [predictions, setPredictions] = useState<UserPredictions[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [tournamentNotFound, setTournamentNotFound] = useState(false);
+    
+    const [localMatchIndex, setLocalMatchIndex] = useState<number>(0);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const allMatches = useMemo(() => {
         if (!tournament) return [];
         return [...(tournament.matches || []), ...(tournament.knockoutMatches || [])]
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     }, [tournament]);
+
+    useEffect(() => {
+        if (allMatches.length === 0 || !tournamentId) return;
+
+        let autoIdx = allMatches.findIndex(m => typeof m.team1Score !== 'number');
+        if (autoIdx === -1) {
+            autoIdx = allMatches.length - 1; // All completed, show last match
+        }
+
+        const storageKey = `predictionWidgetState_${tournamentId}`;
+        try {
+            const storedStr = localStorage.getItem(storageKey);
+            if (storedStr) {
+                const stored = JSON.parse(storedStr);
+                if (stored.date === new Date().toDateString() && typeof stored.index === 'number') {
+                    if (stored.index >= 0 && stored.index < allMatches.length) {
+                        setLocalMatchIndex(stored.index);
+                        return;
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Error reading localStorage", e);
+        }
+
+        setLocalMatchIndex(autoIdx);
+    }, [allMatches, tournamentId]);
 
     const fetchData = useCallback(async () => {
         setTournamentNotFound(false);
@@ -72,7 +114,21 @@ const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexCh
         setRefreshFunc(fetchData);
     }, [fetchData, setRefreshFunc]);
 
-    const currentMatch: Match | undefined = allMatches[currentMatchIndex];
+    const areSubmissionsClosed = useMemo(() => {
+        if (!tournament) return true;
+        const predStatus = tournament.predictionStatus;
+        return predStatus ?
+            !predStatus.allowChampion &&
+            !predStatus.allowGroupStage &&
+            !predStatus.allowRoundOf32 &&
+            !predStatus.allowRoundOf16 &&
+            !predStatus.allowQuarterFinal &&
+            !predStatus.allowSemiFinal &&
+            !predStatus.allowFinals
+            : true;
+    }, [tournament]);
+
+    const currentMatch: Match | undefined = allMatches[localMatchIndex];
 
     const chartData = useMemo(() => {
         if (!currentMatch || predictions.length === 0) return { outcomeData: [], scoreData: [] };
@@ -112,8 +168,24 @@ const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexCh
         return { outcomeData, scoreData };
     }, [currentMatch, predictions]);
 
-    const handlePrev = () => onMatchIndexChange(Math.max(0, currentMatchIndex - 1));
-    const handleNext = () => onMatchIndexChange(Math.min(allMatches.length - 1, currentMatchIndex + 1));
+    const updateLocalIndex = (idx: number) => {
+        setLocalMatchIndex(idx);
+        if (onMatchIndexChange) {
+            onMatchIndexChange(idx);
+        }
+        try {
+            const storageKey = `predictionWidgetState_${tournamentId}`;
+            localStorage.setItem(storageKey, JSON.stringify({
+                date: new Date().toDateString(),
+                index: idx
+            }));
+        } catch (e) {
+            // Ignore storage errors
+        }
+    };
+
+    const handlePrev = () => updateLocalIndex(Math.max(0, localMatchIndex - 1));
+    const handleNext = () => updateLocalIndex(Math.min(allMatches.length - 1, localMatchIndex + 1));
 
     if (tournamentNotFound) {
         return (
@@ -131,23 +203,58 @@ const PredictionChartWidget = ({ tournamentId, currentMatchIndex, onMatchIndexCh
     if (!tournamentId) {
         return <div className="h-full flex items-center justify-center p-4"><p className="text-slate-400 text-sm text-center">Please join a tournament or select one in the widget settings.</p></div>;
     }
+    const isVisible = areSubmissionsClosed || userProfile?.role === 'admin' || userProfile?.role === 'superadmin';
+    if (!isVisible) {
+        return (
+            <div className="h-full flex flex-col items-center justify-center p-4 text-center">
+                <svg className="w-8 h-8 text-slate-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                <p className="text-slate-400 text-sm font-semibold">Data Hidden</p>
+                <p className="text-slate-500 text-xs mt-1">This widget cannot be accessed until the prediction input period is closed.</p>
+            </div>
+        );
+    }
      if (!currentMatch) {
         return <div className="flex items-center justify-center h-full"><p className="text-slate-400 text-sm text-center">No matches found in this tournament.</p></div>;
     }
 
     return (
         <div className="h-full flex flex-col text-slate-300 text-xs">
-            <div className="flex-shrink-0 border-b border-slate-700 pb-2 mb-2">
+            <div className="flex-shrink-0 border-b border-slate-700 pb-2 mb-2 relative" ref={dropdownRef}>
                 <div className="flex justify-between items-center">
-                    <button onClick={handlePrev} disabled={currentMatchIndex === 0} className="px-2 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50">&lt;</button>
-                    <div className="text-center">
+                    <button onClick={handlePrev} disabled={localMatchIndex === 0} className="px-2 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50">&lt;</button>
+                    <div className="text-center cursor-pointer hover:bg-slate-700/50 p-1 rounded group flex-grow mx-2 transition-colors" onClick={() => setShowDropdown(!showDropdown)}>
                         <p className="font-bold text-white text-sm flex items-center justify-center gap-2">
                             {currentMatch.team1.flag} {currentMatch.team1.name} vs {currentMatch.team2.flag} {currentMatch.team2.name}
+                            <svg className={`w-4 h-4 text-slate-400 transition-transform ${showDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                         </p>
-                        <p className="text-slate-400 text-xs">Match {currentMatch.matchNumber} &bull; {new Date(currentMatch.date).toLocaleDateString()}</p>
+                        <p className="text-slate-400 text-xs">
+                            {new Date(currentMatch.date).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                        </p>
                     </div>
-                    <button onClick={handleNext} disabled={currentMatchIndex === allMatches.length - 1} className="px-2 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50">&gt;</button>
+                    <button onClick={handleNext} disabled={localMatchIndex === allMatches.length - 1} className="px-2 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50">&gt;</button>
                 </div>
+
+                {showDropdown && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-600 rounded shadow-xl z-50 max-h-[185px] overflow-y-auto custom-scrollbar">
+                        {allMatches.map((match, idx) => (
+                            <div 
+                                key={match.id} 
+                                className={`p-2 cursor-pointer border-b border-slate-700 last:border-0 hover:bg-slate-600 flex justify-between items-center transition-colors ${idx === localMatchIndex ? 'bg-slate-700/50 border-l-4 border-l-blue-500' : 'pl-3'}`}
+                                onClick={() => {
+                                    updateLocalIndex(idx);
+                                    setShowDropdown(false);
+                                }}
+                            >
+                                <span className="text-sm text-white font-medium truncate pr-2">
+                                    {match.team1.flag} {match.team1.name} <span className="text-slate-500 text-xs mx-1">vs</span> {match.team2.name} {match.team2.flag}
+                                </span>
+                                <span className="text-xs text-slate-400 whitespace-nowrap">
+                                    {new Date(match.date).toLocaleDateString([], { day: 'numeric', month: 'short' })}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             <div className="flex-grow flex flex-col sm:flex-row gap-4 overflow-hidden">

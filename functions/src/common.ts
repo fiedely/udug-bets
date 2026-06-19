@@ -3,7 +3,7 @@
 import * as logger from "firebase-functions/logger";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
-import { VertexAI } from "@google-cloud/vertexai";
+import { GoogleGenAI } from "@google/genai";
 
 try {
     initializeApp();
@@ -11,10 +11,7 @@ try {
     logger.info("Firebase app already initialized.");
 }
 export const db = getFirestore();
-const vertexAI = new VertexAI({ project: process.env.GCLOUD_PROJECT, location: "asia-southeast1" });
-const generativeModel = vertexAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
-});
+const ai = new GoogleGenAI({ vertexai: true, project: process.env.GCLOUD_PROJECT, location: "global" });
 
 
 export interface Team { name: string; flag: string; code: string; }
@@ -30,11 +27,14 @@ export interface Match {
     team2Score?: number; 
     date: string; 
     winnerTeamCode?: string;
+    tiebreakerType?: 'Extra Time' | 'Penalty Shootout';
+    team1TiebreakerScore?: number;
+    team2TiebreakerScore?: number;
 }
 export interface Tournament { id: string; name: string; pointRules?: PointRules; matches?: Match[]; knockoutMatches?: Match[]; participants?: string[]; champion?: string; teams?: Team[]; knockoutStartStage?: MatchStage; groups?: Record<string, Team[]>; }
 export interface MatchPrediction { team1Score: number; team2Score: number; }
 export interface UserPredictions { tournamentId: string; userId: string; championPrediction?: string; matchPredictions: Record<string, MatchPrediction>; }
-export interface UserProfile { uid: string; name: string; email: string; role: 'user' | 'admin' | 'superadmin'; }
+export interface UserProfile { uid: string; name: string; email: string; role: 'user' | 'admin' | 'superadmin'; avatarUrl?: string; }
 
 export interface TeamStanding {
     team: Team;
@@ -52,27 +52,42 @@ export interface Leaderboard {
     entries: LeaderboardEntry[];
     lastUpdated: Date;
     tournamentAiSummary?: string;
-    championAiSummary?: string;
+    aiSummaryHistory?: string[];
     eliminatedTeamCodes?: string[];
     currentTournamentStage?: MatchStage | "Not Started" | "Completed";
     groupStandings?: Record<string, TeamStanding[]>;
+    completedMatchesCount?: number;
 }
 
 export interface LeaderboardEntry { 
     userId: string; 
     userName: string; 
-    totalPoints: number; 
+    avatarUrl?: string;
+    totalPoints: number;
+    previousPoints?: number | null; 
     rank: number; 
     previousRank?: number | null; 
     rankChange: "up" | "down" | "same"; 
 }
 
+export interface AiTopic {
+    id: string;
+    topic: string;
+    details: string;
+    status: 'in_queue' | 'used' | 'not_active';
+    usageMode: 'forced' | 'optional';
+    createdAt: any;
+}
 
-export async function generateAiSummary(prompt: string): Promise<string> {
+
+export async function generateAiSummary(prompt: string, systemInstruction?: string): Promise<string> {
     try {
-        const resp = await generativeModel.generateContent(prompt);
-        const summary = resp.response.candidates?.[0]?.content?.parts?.[0]?.text;
-        return summary || "";
+        const response = await ai.models.generateContent({
+            model: "gemini-3.1-pro-preview",
+            contents: prompt,
+            config: systemInstruction ? { systemInstruction } : undefined
+        });
+        return response.text || "";
     } catch (error) {
         logger.error("Error generating AI summary:", error);
         return "";

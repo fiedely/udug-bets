@@ -243,8 +243,7 @@ const DebugSeeder = () => {
 
     return (
         <div className="bg-slate-800 border border-slate-700 p-8 space-y-8">
-            <div>
-                <h2 className="text-2xl font-bold text-blue-400">Debug & Seeding Panel</h2>
+            <div className="flex justify-end mb-6">
                 <p className="mt-2 text-slate-400 text-sm">Use these tools for testing purposes. (Visible to superadmins only)</p>
             </div>
 

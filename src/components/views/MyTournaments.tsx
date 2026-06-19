@@ -6,7 +6,10 @@ import { collection, query, where, getDocs, Timestamp, doc, getDoc } from 'fireb
 import type { Tournament, UserProfile, UserPredictions, MatchStage } from '../../types';
 import TournamentDetails from './TournamentDetails';
 import AllPredictionsView from '../admin/AllPredictionsView';
+import ParticipantsListModal from './ParticipantsListModal';
+import UserPointHistoryModal from '../admin/UserPointHistoryModal';
 import cramorantImage from '../../assets/delz-cramorant.webp';
+import { useTranslation } from 'react-i18next';
 
 interface MyTournamentsProps {
     userProfile: UserProfile | null;
@@ -29,13 +32,14 @@ const StatusLight = ({ isApplicable, isOn }: { isApplicable: boolean, isOn: bool
 };
 
 const SubmissionStatus = ({ tournament, predictions, stage, isApplicable }: { tournament: Tournament, predictions: UserPredictions | null, stage: MatchStage | 'Champion', isApplicable: boolean }) => {
+    const { t } = useTranslation();
     if (!isApplicable) {
         return <span className="text-xs text-slate-500">N/A</span>;
     }
     
     if (stage === 'Champion') {
-        const status = predictions?.championPrediction ? 'Complete' : 'Not Submitted';
-        const color = status === 'Complete' ? 'text-green-400' : 'text-slate-500';
+        const status = predictions?.championPrediction ? t('status.complete', 'Complete') : t('status.notSubmitted', 'Not Submitted');
+        const color = status === t('status.complete', 'Complete') ? 'text-green-400' : 'text-slate-500';
         return <span className={`text-xs ${color}`}>{status}</span>;
     }
 
@@ -58,28 +62,30 @@ const SubmissionStatus = ({ tournament, predictions, stage, isApplicable }: { to
         return count;
     }, 0);
 
-    if (submittedCount === 0) return <span className="text-xs text-slate-500">Not Submitted</span>;
-    if (submittedCount < stageMatches.length) return <span className="text-xs text-yellow-400">Incomplete</span>;
-    return <span className="text-xs text-green-400">Complete</span>;
+    if (submittedCount === 0) return <span className="text-xs text-slate-500">{t('status.notSubmitted', 'Not Submitted')}</span>;
+    if (submittedCount < stageMatches.length) return <span className="text-xs text-yellow-400">{t('status.incomplete', 'Incomplete')}</span>;
+    return <span className="text-xs text-green-400">{t('status.complete', 'Complete')}</span>;
 };
 
 
 const MyTournaments = ({ userProfile, onEnterPredictions }: MyTournamentsProps) => {
+    const { t } = useTranslation();
     const [joinedTournaments, setJoinedTournaments] = useState<Tournament[]>([]);
     const [userPredictions, setUserPredictions] = useState<Record<string, UserPredictions>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [viewingTournament, setViewingTournament] = useState<Tournament | null>(null);
     const [viewingAllPredictionsFor, setViewingAllPredictionsFor] = useState<Tournament | null>(null);
+    const [viewingParticipantsFor, setViewingParticipantsFor] = useState<Tournament | null>(null);
+    const [viewingHistoryFor, setViewingHistoryFor] = useState<Tournament | null>(null);
 
     if (userProfile?.role === 'admin' || userProfile?.role === 'superadmin') {
         return (
             <div className="bg-slate-800 border border-slate-700 p-8 max-w-lg mx-auto text-center">
-                <h2 className="text-xl font-bold text-blue-400 mb-4">Admins Cannot Access My Tournaments view</h2>
+                <h2 className="text-xl font-bold text-blue-400 mb-4">{t('admin.noAccessTitle', 'Admins Cannot Access My Tournaments view')}</h2>
                 <p className="text-slate-300 mb-6">
-                    This page is for participants. But don't be sad, here is a picture of Cramoly the Cramorant to cheer you up!
+                    {t('admin.noAccessDesc', 'This page is for participants. But don\'t be sad, here is a picture of Cramoly the Cramorant to cheer you up!')}
                 </p>
-                <img 
-                    src={cramorantImage} 
+                <img loading="lazy" decoding="async" src={cramorantImage} 
                     alt="A cheerful Cramorant" 
                     className="mx-auto w-48 h-48 object-contain"
                 />
@@ -129,8 +135,8 @@ const MyTournaments = ({ userProfile, onEnterPredictions }: MyTournamentsProps) 
         );
     }
     
-    if (viewingAllPredictionsFor) {
-        return <AllPredictionsView tournament={viewingAllPredictionsFor} onBack={() => setViewingAllPredictionsFor(null)} />;
+    if (viewingAllPredictionsFor && userProfile) {
+        return <AllPredictionsView tournament={viewingAllPredictionsFor} onBack={() => setViewingAllPredictionsFor(null)} userProfile={userProfile} />;
     }
 
     if (viewingTournament) {
@@ -138,21 +144,21 @@ const MyTournaments = ({ userProfile, onEnterPredictions }: MyTournamentsProps) 
     }
 
     const STAGES_TO_DISPLAY: { stage: MatchStage | 'Champion', label: string }[] = [
-        { stage: 'Champion', label: 'Champion' },
-        { stage: 'Group Stage', label: 'Group Stage' },
-        { stage: 'Round of 32', label: 'Round of 32' },
-        { stage: 'Round of 16', label: 'Round of 16' },
-        { stage: 'Quarter-final', label: 'Quarter-finals' },
-        { stage: 'Semi-final', label: 'Semi-finals' },
-        { stage: 'Final', label: 'Finals' },
+        { stage: 'Champion', label: t('stages.champion', 'Champion') },
+        { stage: 'Group Stage', label: t('stages.groupStage', 'Group Stage') },
+        { stage: 'Round of 32', label: t('stages.round32', 'Round of 32') },
+        { stage: 'Round of 16', label: t('stages.round16', 'Round of 16') },
+        { stage: 'Quarter-final', label: t('stages.quarterFinals', 'Quarter-finals') },
+        { stage: 'Semi-final', label: t('stages.semiFinals', 'Semi-finals') },
+        { stage: 'Final', label: t('stages.finals', 'Finals') },
     ];
 
     return (
         <div>
             {joinedTournaments.length === 0 ? (
                 <div className="bg-slate-800 border border-slate-700 p-8 text-center">
-                    <h2 className="text-xl font-bold text-white">No Tournaments Joined Yet</h2>
-                    <p className="mt-2 text-slate-400">Use the "Join Tournament" menu to enter a ticket code and get started!</p>
+                    <h2 className="text-xl font-bold text-white">{t('myTournaments.noJoinedTitle', 'No Tournaments Joined Yet')}</h2>
+                    <p className="mt-2 text-slate-400">{t('myTournaments.noJoinedDesc', 'Use the "Join Tournament" menu to enter a ticket code and get started!')}</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -172,23 +178,35 @@ const MyTournaments = ({ userProfile, onEnterPredictions }: MyTournamentsProps) 
                             !predStatus.allowFinals
                             : true;
 
+                        const isPredictionsVisible = areSubmissionsClosed || userProfile?.role === 'admin' || userProfile?.role === 'superadmin';
+
                         return (
                             <div key={tournament.id} className="bg-slate-800 border border-slate-700 shadow-lg flex flex-col">
                                 <div className="p-6 flex-grow space-y-4 text-slate-300">
                                     <h3 className="text-xl font-bold text-blue-400">{tournament.name}</h3>
                                     <div className="text-sm space-y-2">
-                                        <p><strong>Status:</strong> <span className={tournament.status === 'active' ? 'text-green-400' : 'text-yellow-400'}>{tournament.status}</span></p>
-                                        <p><strong>Period:</strong> {formatDate(tournament.startDate)} - {formatDate(tournament.endDate)}</p>
-                                        <p><strong>Participants:</strong> {tournament.participants?.length || 0} users</p>
+                                        <p><strong>{t('labels.status', 'Status')}:</strong> <span className={tournament.status === 'active' ? 'text-green-400' : 'text-yellow-400'}>{tournament.status}</span></p>
+                                        <p><strong>{t('labels.period', 'Period')}:</strong> {formatDate(tournament.startDate)} - {formatDate(tournament.endDate)}</p>
+                                        <p className="flex items-center gap-2 flex-wrap">
+                                            <span><strong>{t('labels.participants', 'Participants')}:</strong> {tournament.participants?.length || 0} {t('labels.users', 'users')}</span>
+                                            {tournament.participants && tournament.participants.length > 0 && (
+                                                <button 
+                                                    onClick={() => setViewingParticipantsFor(tournament)}
+                                                    className="text-blue-400 hover:text-blue-300 hover:underline font-semibold"
+                                                >
+                                                    {t('myTournaments.viewRivals', '(Klik di sini untuk melihat saingan Anda)')}
+                                                </button>
+                                            )}
+                                        </p>
                                     </div>
                                     <div className="pt-4 border-t border-slate-700">
-                                        <h4 className="font-semibold text-slate-200 mb-2 text-sm">Prediction Submission Status</h4>
+                                        <h4 className="font-semibold text-slate-200 mb-2 text-sm">{t('myTournaments.submissionStatus', 'Prediction Submission Status')}</h4>
                                         <table className="w-full text-xs">
                                             <thead>
                                                 <tr className="text-left text-slate-500">
-                                                    <th className="py-1 font-medium">Stage</th>
-                                                    <th className="py-1 font-medium text-center">Submission Open</th>
-                                                    <th className="py-1 font-medium text-right">Your Status</th>
+                                                    <th className="py-1 font-medium">{t('labels.stage', 'Stage')}</th>
+                                                    <th className="py-1 font-medium text-center">{t('labels.submissionOpen', 'Submission Open')}</th>
+                                                    <th className="py-1 font-medium text-right">{t('labels.yourStatus', 'Your Status')}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -218,22 +236,53 @@ const MyTournaments = ({ userProfile, onEnterPredictions }: MyTournamentsProps) 
                                         </table>
                                     </div>
                                 </div>
-                                <div className="p-4 bg-slate-900/50 grid grid-cols-3 gap-2">
-                                    <button onClick={() => setViewingTournament(tournament)} className="px-3 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-xs">Details</button>
-                                    <button 
-                                        onClick={() => setViewingAllPredictionsFor(tournament)} 
-                                        className="px-3 py-2 bg-gray-500 hover:bg-gray-400 font-semibold text-white text-xs disabled:bg-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
-                                        disabled={!areSubmissionsClosed}
-                                        title={!areSubmissionsClosed ? "Available after all prediction windows close" : "View all predictions"}
-                                    >
-                                        Predictions
+                                <div className="p-4 bg-slate-900/50 grid grid-cols-1 sm:grid-cols-4 gap-2">
+                                    <button onClick={() => setViewingHistoryFor(tournament)} className="px-3 py-2 bg-blue-600 hover:bg-blue-500 font-semibold text-white text-xs">
+                                        {t('myTournaments.pointHistory', 'Point History')}
                                     </button>
-                                    <button onClick={() => onEnterPredictions(tournament)} className="px-3 py-2 bg-blue-600 hover:bg-blue-500 font-semibold text-white text-xs">Enter/Edit</button>
+                                    <button onClick={() => setViewingTournament(tournament)} className="px-3 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-xs">
+                                        {t('myTournaments.details', 'Details')}
+                                    </button>
+                                    <div className="flex flex-col relative group">
+                                        <button 
+                                            onClick={() => setViewingAllPredictionsFor(tournament)} 
+                                            className="px-3 py-2 bg-gray-500 hover:bg-gray-400 font-semibold text-white text-xs disabled:bg-slate-700 disabled:cursor-not-allowed disabled:text-slate-500 w-full"
+                                            disabled={!isPredictionsVisible}
+                                        >
+                                            {t('myTournaments.viewPredictions', 'All Predictions')}
+                                        </button>
+                                        {!isPredictionsVisible && (
+                                            <span className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-black text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                                                Available after input period is closed
+                                            </span>
+                                        )}
+                                    </div>
+                                    <button 
+                                        onClick={() => onEnterPredictions(tournament)} 
+                                        disabled={tournament.status === 'inactive'}
+                                        className="px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed font-semibold text-white text-xs"
+                                    >
+                                        {t('myTournaments.enterPredictions', 'Enter / Edit')}
+                                    </button>
                                 </div>
                             </div>
                         );
                     })}
                 </div>
+            )}
+            {viewingParticipantsFor && (
+                <ParticipantsListModal 
+                    tournament={viewingParticipantsFor} 
+                    onClose={() => setViewingParticipantsFor(null)} 
+                />
+            )}
+            {viewingHistoryFor && userProfile && (
+                <UserPointHistoryModal
+                    tournament={viewingHistoryFor}
+                    userId={userProfile.uid}
+                    userName={userProfile.name}
+                    onClose={() => setViewingHistoryFor(null)}
+                />
             )}
         </div>
     );

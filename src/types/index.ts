@@ -20,7 +20,7 @@ export interface Widget {
 
 export type WidgetType = 'leaderboard' | 'predictionChart' | 'myPredictionsChart' | 'championPredictionChart' | 'groupStandings';
 
-export type View = 'User Dashboard' | 'My Tournaments' | 'Join Tournament' | 'Leaderboard' | 'Create Tournament' | 'Manage Users' | 'List Tournaments' | 'Edit Tournament' | 'Manage Scores' | 'Debug';
+export type View = 'User Dashboard' | 'My Tournaments' | 'Join Tournament' | 'Leaderboard' | 'Create Tournament' | 'Manage Users' | 'List Tournaments' | 'Edit Tournament' | 'Manage Scores' | 'Manage AI Config' | 'Debug' | 'Live Match' | 'Audit Logs';
 
 export interface UserProfile {
   uid: string;
@@ -30,6 +30,8 @@ export interface UserProfile {
   dob?: string | null;
   sex?: string | null;
   favouriteTeam?: string | null;
+  avatarUrl?: string | null;
+  language?: 'en' | 'id' | null;
 }
 
 export interface Team {
@@ -84,6 +86,54 @@ export interface Match {
     date: string;
     stadium: Stadium;
     winnerTeamCode?: string;
+    tiebreakerType?: 'Extra Time' | 'Penalty Shootout';
+    team1TiebreakerScore?: number;
+    team2TiebreakerScore?: number;
+}
+
+export interface LiveMatchEvent {
+    id: string;
+    type: 'goal' | 'yellow_card' | 'red_card' | 'substitution' | 'foul' | 'info';
+    minute: number;
+    teamKey: 'team1' | 'team2' | 'none';
+    playerName?: string;
+    subPlayerOutId?: string;
+    subPlayerInId?: string;
+    description?: string;
+    timestamp: any;
+}
+
+export interface Player {
+    id: string;
+    name: string;
+    number: number;
+    position?: string;
+}
+
+export interface MatchSquad {
+    startingXI: Player[];
+    bench: Player[];
+}
+
+export interface LiveMatchState {
+    status: 'scheduled' | 'first_half' | 'halftime' | 'second_half' | 'extra_time' | 'penalties' | 'finished';
+    currentMinute: number;
+    team1Score: number;
+    team2Score: number;
+    team1Squad?: MatchSquad;
+    team2Squad?: MatchSquad;
+    lastUpdated: any;
+}
+
+export interface AuditLog {
+    id: string;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    action: string;
+    context: string;
+    details: string;
+    timestamp: any;
 }
 
 export interface Tournament {
@@ -94,7 +144,7 @@ export interface Tournament {
     startDate?: Date;
     endDate?: Date;
     creatorId: string;
-    status: 'draft' | 'active' | 'completed';
+    status: 'draft' | 'active' | 'completed' | 'inactive';
     ticket?: string;
     teams?: Team[];
     groups?: Record<string, Team[]>;
@@ -105,6 +155,7 @@ export interface Tournament {
     knockoutStartStage?: KnockoutStartStage;
     hasThirdPlaceMatch?: boolean;
     champion?: string;
+    groupStandingsOverrides?: Record<string, string[]>;
 }
 
 export interface MatchPrediction {
@@ -135,17 +186,27 @@ export interface Leaderboard {
     entries: LeaderboardEntry[];
     lastUpdated: Date;
     tournamentAiSummary?: string;
-    championAiSummary?: string;
     eliminatedTeamCodes?: string[];
     currentTournamentStage?: MatchStage | "Not Started" | "Completed";
     groupStandings?: Record<string, TeamStanding[]>;
+    completedMatchesCount?: number;
 }
 
 export interface LeaderboardEntry { 
     userId: string; 
     userName: string; 
+    avatarUrl?: string | null; 
     totalPoints: number; 
     rank: number; 
     previousRank?: number | null; 
     rankChange: "up" | "down" | "same"; 
+}
+
+export interface AiTopic {
+    id: string;
+    topic: string;
+    details: string;
+    status: 'in_queue' | 'used' | 'not_active';
+    usageMode: 'forced' | 'optional';
+    createdAt: any;
 }

@@ -1,0 +1,81 @@
+{
+  "menu": {
+    "myDashboard": "Dasbor Saya",
+    "myTournaments": "Turnamen Saya",
+    "myProfile": "Profil Saya",
+    "adminPanel": "Panel Admin",
+    "createTournament": "Buat Turnamen",
+    "listTournaments": "Daftar Turnamen",
+    "manageUsers": "Kelola Pengguna",
+    "debug": "Debug",
+    "signOut": "Keluar"
+  },
+  "dashboard": {
+    "widget": {
+      "leaderboard": "Papan Peringkat",
+      "myPredictionChart": "Grafik Prediksi Saya",
+      "allPredictionsChart": "Grafik Semua Prediksi",
+      "championPrediction": "Prediksi Juara",
+      "groupStandings": "Klasemen Grup",
+      "selectTournament": "Pilih Turnamen"
+    }
+  },
+  "profile": {
+    "title": "Profil Saya",
+    "uploadPhoto": "Unggah foto Anda",
+    "emailAddress": "Alamat Email",
+    "displayName": "Nama Tampilan",
+    "language": "Bahasa / Language",
+    "saveProfile": "Simpan Profil",
+    "saving": "Menyimpan..."
+  },
+  "myTournaments": {
+    "title": "Turnamen Saya",
+    "viewLeaderboard": "Lihat Papan Peringkat",
+    "enterPredictions": "Masukkan/Edit Prediksi",
+    "pointHistory": "Riwayat Poin",
+    "viewRivals": "(Klik di sini untuk melihat saingan Anda)",
+    "submissionStatus": "Status Pengumpulan Prediksi",
+    "details": "Detail",
+    "viewPredictions": "Semua Prediksi",
+    "noJoinedTitle": "Belum Bergabung dengan Turnamen",
+    "noJoinedDesc": "Gunakan menu \"Bergabung ke Turnamen\" untuk memasukkan kode tiket dan mulai!"
+  },
+  "predictionEntry": {
+    "enterYourPredictions": "Masukkan Prediksi Anda",
+    "backToTournaments": "← Kembali ke Turnamen Saya",
+    "championPrediction": "Prediksi Juara",
+    "selectChampion": "-- Pilih Juara --",
+    "savePredictions": "Simpan Prediksi",
+    "saving": "Menyimpan..."
+  },
+  "joinTournament": {
+    "title": "Bergabung ke Turnamen",
+    "subtitle": "Masukkan 6 digit kode tiket untuk berpartisipasi",
+    "ticketCodeLabel": "Kode Tiket",
+    "ticketCodePlaceholder": "cth. 123456",
+    "joinButton": "Bergabung ke Turnamen",
+    "joining": "Bergabung...",
+    "successMessage": "Berhasil bergabung dengan turnamen!",
+    "checkMenu": "Periksa menu Turnamen Saya untuk melihat",
+    "tournamentLabel": "turnamen tersebut."
+  },
+  "tournamentDetails": {
+    "pointRules": "Aturan Poin",
+    "scoreOutcome": "Skor: {{score}} / Hasil: {{outcome}}",
+    "championBonus": "Bonus Juara:",
+    "groupStageSchedule": "Jadwal Babak Grup",
+    "knockoutStageSchedule": "Jadwal Babak Gugur",
+    "matchesCount": "{{count}} Pertandingan",
+    "noDescription": "Tidak ada deskripsi yang diberikan.",
+    "errorDescription": "Kesalahan saat memuat deskripsi.",
+    "backToTournaments": "← Kembali ke Turnamen Saya"
+  },
+  "participantsList": {
+    "title": "Daftar Peserta",
+    "loading": "Memuat...",
+    "error": "Gagal memuat peserta.",
+    "empty": "Belum ada peserta.",
+    "close": "Tutup"
+  }
+}

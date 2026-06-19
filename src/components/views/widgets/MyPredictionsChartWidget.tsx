@@ -1,6 +1,6 @@
 // src/components/views/widgets/MyPredictionsChartWidget.tsx
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { db } from '../../../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Tournament, UserPredictions, UserProfile } from '../../../types';
@@ -60,10 +60,49 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
     const [isLoading, setIsLoading] = useState(true);
     const [tournamentNotFound, setTournamentNotFound] = useState(false);
 
+    const [selectedStage, setSelectedStage] = useState<string>('All Stages');
+
     const isAdmin = userProfile.role === 'admin' || userProfile.role === 'superadmin';
     const targetUserId = isAdmin ? selectedUserId : userProfile.uid;
 
+    useEffect(() => {
+        if (tournamentId) {
+            try {
+                const storedStage = localStorage.getItem(`myPredictionsChartStage_${tournamentId}`);
+                if (storedStage) {
+                    setSelectedStage(storedStage);
+                }
+                
+                if (isAdmin) {
+                    const storedUser = localStorage.getItem(`myPredictionsChartUser_${tournamentId}`);
+                    if (storedUser && storedUser !== selectedUserId) {
+                        onSelectedUserChange(storedUser);
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to read from localStorage", e);
+            }
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tournamentId, isAdmin]);
+
+    const handleStageChange = (newStage: string) => {
+        setSelectedStage(newStage);
+        if (tournamentId) {
+            try {
+                localStorage.setItem(`myPredictionsChartStage_${tournamentId}`, newStage);
+            } catch (e) {
+                console.error("Failed to save stage to localStorage", e);
+            }
+        }
+    };
+
+    const fetchIdRef = useRef(0);
+
     const fetchData = useCallback(async () => {
+        fetchIdRef.current += 1;
+        const currentFetchId = fetchIdRef.current;
+
         setTournamentNotFound(false);
         if (!tournamentId) {
             setIsLoading(false);
@@ -73,6 +112,9 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
 
         const tourneyRef = doc(db, "tournaments", tournamentId);
         const tourneySnap = await getDoc(tourneyRef);
+        
+        if (currentFetchId !== fetchIdRef.current) return;
+
         if (tourneySnap.exists()) {
             const tourneyData = { id: tourneySnap.id, ...tourneySnap.data() } as Tournament;
             setTournament(tourneyData);
@@ -80,6 +122,9 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
             if (isAdmin && tourneyData.participants && tourneyData.participants.length > 0) {
                 const userPromises = tourneyData.participants.map(uid => getDoc(doc(db, 'users', uid)));
                 const userDocs = await Promise.all(userPromises);
+                
+                if (currentFetchId !== fetchIdRef.current) return;
+
                 const participantProfiles = userDocs
                     .filter(d => d.exists())
                     .map(d => d.data() as UserProfile)
@@ -97,6 +142,9 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
         if (targetUserId) {
             const predRef = doc(db, "predictions", `${tournamentId}_${targetUserId}`);
             const predSnap = await getDoc(predRef);
+            
+            if (currentFetchId !== fetchIdRef.current) return;
+
             if (predSnap.exists()) {
                 setPredictions(predSnap.data() as UserPredictions);
             } else {
@@ -115,17 +163,39 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
         setRefreshFunc(fetchData);
     }, [fetchData, setRefreshFunc]);
 
+    const availableStages = useMemo(() => {
+        if (!tournament) return ['All Stages'];
+        const allMatches = [...(tournament.matches || []), ...(tournament.knockoutMatches || [])];
+        const stages = new Set<string>();
+        allMatches.forEach(m => {
+            if (m.stage) stages.add(m.stage);
+        });
+        // Sort stages roughly by a typical order, or just alphabetical if we don't know the exact order.
+        // The type MatchStage has known values, we can order them explicitly:
+        const order = ["Group Stage", "Round of 32", "Round of 16", "Quarter-final", "Semi-final", "Third Place Match", "Final"];
+        const sortedStages = Array.from(stages).sort((a, b) => {
+            const idxA = order.indexOf(a);
+            const idxB = order.indexOf(b);
+            if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+            return a.localeCompare(b);
+        });
+        return ['All Stages', ...sortedStages];
+    }, [tournament]);
+
     const chartData = useMemo(() => {
         const outcomeStats = { correct: 0, wrong: 0, notYet: 0 };
         const scoreStats = { correct: 0, wrong: 0, notYet: 0 };
 
         if (!tournament || !predictions) {
-            const matchCount = (tournament?.matches?.length || 0) + (tournament?.knockoutMatches?.length || 0);
+            const allMatches = [...(tournament?.matches || []), ...(tournament?.knockoutMatches || [])];
+            const filteredMatches = selectedStage === 'All Stages' ? allMatches : allMatches.filter(m => m.stage === selectedStage);
+            const matchCount = filteredMatches.length;
             outcomeStats.notYet = matchCount;
             scoreStats.notYet = matchCount;
         } else {
             const allMatches = [...(tournament.matches || []), ...(tournament.knockoutMatches || [])];
-            allMatches.forEach(match => {
+            const filteredMatches = selectedStage === 'All Stages' ? allMatches : allMatches.filter(m => m.stage === selectedStage);
+            filteredMatches.forEach(match => {
                 const pred = predictions.matchPredictions[match.id];
                 const hasResult = typeof match.team1Score === 'number';
 
@@ -166,7 +236,7 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
                 { name: 'Not Yet', value: scoreStats.notYet },
             ].filter(d => d.value > 0),
         };
-    }, [tournament, predictions]);
+    }, [tournament, predictions, selectedStage]);
     
     if (tournamentNotFound) {
         return (
@@ -191,7 +261,17 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
                 <div className="flex-shrink-0 mb-2">
                     <select
                         value={selectedUserId || ''}
-                        onChange={e => onSelectedUserChange(e.target.value)}
+                        onChange={e => {
+                            const newUserId = e.target.value;
+                            onSelectedUserChange(newUserId);
+                            if (tournamentId) {
+                                try {
+                                    localStorage.setItem(`myPredictionsChartUser_${tournamentId}`, newUserId);
+                                } catch (err) {
+                                    console.error("Failed to save to localStorage", err);
+                                }
+                            }
+                        }}
                         className="w-full bg-slate-700 text-xs text-white p-1 border border-slate-600 focus:outline-none"
                     >
                         <option value="">-- Select a Participant --</option>
@@ -199,6 +279,15 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
                     </select>
                 </div>
             )}
+            <div className="flex-shrink-0 mb-2">
+                <select
+                    value={selectedStage}
+                    onChange={e => handleStageChange(e.target.value)}
+                    className="w-full bg-slate-700 text-xs text-white p-1 border border-slate-600 focus:outline-none"
+                >
+                    {availableStages.map(stage => <option key={stage} value={stage}>{stage}</option>)}
+                </select>
+            </div>
             <div className="flex-grow grid grid-cols-1 sm:grid-cols-2 gap-2 overflow-hidden">
                 <div className="flex flex-col items-center">
                     <h5 className="font-bold text-slate-400 mb-1">Outcome Accuracy</h5>
