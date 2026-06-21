@@ -450,7 +450,8 @@ export async function recalculateLeaderboard(tournamentId: string) {
         - You MUST keep the summary strictly between 10 to 14 sentences MAXIMUM. Make every sentence count!
         - Go all out on the comedy—use funny analogies, dramatic flair, dan casual roasts.
         - STRICT RULE: JANGAN PERNAH MENGGUNAKAN KATA "LO", "GUE", "GW", ATAU "LU".
-        - Ensure all user/player names are bolded using markdown.`;
+        - Ensure all user/player names are bolded using markdown (e.g., **Nama**).
+        - FORMATTING RULE: DO NOT use any HTML tags (like <i>, <b>, <br>) and DO NOT use markdown italics (*italic* or _italic_). Keep the text plain except for bolding names.`;
         tournamentAiSummary = await generateAiSummary(prompt, systemInstruction);
         
         const usedTopicsMatch = tournamentAiSummary.match(/\|\|\s*USED_TOPICS\s*:\s*([\s\S]*?)\s*\|\|/i);
