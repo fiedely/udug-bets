@@ -1,12 +1,9 @@
 // functions/src/index.ts
 
-import { setGlobalOptions } from "firebase-functions/v2";
 import { onDocumentUpdated, onDocumentWritten } from "firebase-functions/v2/firestore";
 import { recalculateLeaderboard } from "./leaderboard";
 import { deleteTournamentAndData, getTournamentParticipants, generateStagePredictions } from "./callable";
 import { Tournament, UserPredictions } from "./common";
-
-setGlobalOptions({ region: "asia-southeast2" });
 
 
 export const onTournamentUpdate = onDocumentUpdated("tournaments/{tournamentId}", async (event) => {

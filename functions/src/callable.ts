@@ -1,11 +1,11 @@
 // functions/src/callable.ts
 
 import * as logger from "firebase-functions/logger";
-import { setGlobalOptions } from "firebase-functions/v2";
+
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { db, Tournament, UserProfile } from "./common";
 
-setGlobalOptions({ region: "asia-southeast2" });
+
 
 const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 const getRandomElement = (arr: any[]) => arr[Math.floor(Math.random() * arr.length)];
