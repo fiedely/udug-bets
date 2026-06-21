@@ -89,7 +89,10 @@ export async function generateAiSummary(prompt: string, systemInstruction?: stri
         const response = await ai.models.generateContent({
             model: "gemini-3.1-pro-preview",
             contents: prompt,
-            config: systemInstruction ? { systemInstruction } : undefined
+            config: {
+                systemInstruction: systemInstruction ? systemInstruction : undefined,
+                temperature: 1.2
+            }
         });
         return response.text || "";
     } catch (error) {
