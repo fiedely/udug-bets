@@ -62,14 +62,26 @@ const MatchList = ({ title, matches, groupByStage = false }: { title: string, ma
                             {Object.keys(groupedMatches[stageKey]).sort().map(dateKey => (
                                 <div key={dateKey} className="pl-2 border-l-2 border-slate-600 ml-2">
                                     <h6 className="font-semibold text-slate-300 text-sm my-1">{new Date(dateKey).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</h6>
-                                    {(groupedMatches[stageKey] as Record<string, Match[]>)[dateKey].map(match => (
-                                        <div key={match.id} className="flex flex-col sm:flex-row justify-between sm:items-center p-1.5 hover:bg-slate-700/50">
-                                            <span className="flex items-center gap-2">
-                                                {match.team1.flag} {match.team1.name} <span className="text-slate-500 mx-1">vs</span> {match.team2.flag} {match.team2.name}
-                                            </span>
-                                            <span className="text-xs text-slate-400 text-left sm:text-right">{new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                        </div>
-                                    ))}
+                                    <table className="w-full text-left text-sm mt-1 mb-3 border-collapse bg-slate-900/30 rounded">
+                                        <tbody>
+                                            {(groupedMatches[stageKey] as Record<string, Match[]>)[dateKey].map(match => (
+                                                <tr key={match.id} className="hover:bg-slate-700/50 border-b border-slate-700/50 last:border-0">
+                                                    <td className="p-2 text-right w-2/5">
+                                                        <span className="mr-2 truncate">{match.team1.name}</span>
+                                                        <span>{match.team1.flag}</span>
+                                                    </td>
+                                                    <td className="p-2 text-center text-slate-500 w-1/5 text-xs">
+                                                        <div className="font-mono text-slate-400">{new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                                        <div className="text-[10px] uppercase">vs</div>
+                                                    </td>
+                                                    <td className="p-2 text-left w-2/5">
+                                                        <span>{match.team2.flag}</span>
+                                                        <span className="ml-2 truncate">{match.team2.name}</span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
                             ))}
                         </div>
@@ -78,14 +90,26 @@ const MatchList = ({ title, matches, groupByStage = false }: { title: string, ma
                     Object.keys(groupedMatches).sort().map(dateKey => (
                         <div key={dateKey}>
                             <h5 className="font-bold text-slate-300 text-sm mb-1 bg-slate-700 p-1">{new Date(dateKey).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h5>
-                            {(groupedMatches[dateKey] as Match[]).map(match => (
-                                 <div key={match.id} className="flex flex-col sm:flex-row justify-between sm:items-center p-1.5 hover:bg-slate-700/50">
-                                    <span className="flex items-center gap-2">
-                                        {match.team1.flag} {match.team1.name} <span className="text-slate-500 mx-1">vs</span> {match.team2.flag} {match.team2.name}
-                                    </span>
-                                    <span className="text-xs text-slate-400 text-left sm:text-right">{new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                </div>
-                            ))}
+                            <table className="w-full text-left text-sm border-collapse bg-slate-900/30 rounded mt-1 mb-2">
+                                <tbody>
+                                    {(groupedMatches[dateKey] as Match[]).map(match => (
+                                        <tr key={match.id} className="hover:bg-slate-700/50 border-b border-slate-700/50 last:border-0">
+                                            <td className="p-2 text-right w-2/5">
+                                                <span className="mr-2 truncate">{match.team1.name}</span>
+                                                <span>{match.team1.flag}</span>
+                                            </td>
+                                            <td className="p-2 text-center text-slate-500 w-1/5 text-xs">
+                                                <div className="font-mono text-slate-400">{new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                                <div className="text-[10px] uppercase">vs</div>
+                                            </td>
+                                            <td className="p-2 text-left w-2/5">
+                                                <span>{match.team2.flag}</span>
+                                                <span className="ml-2 truncate">{match.team2.name}</span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     ))
                 )}
