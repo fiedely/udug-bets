@@ -293,13 +293,13 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
                     <h5 className="font-bold text-slate-400 mb-1">Outcome Accuracy</h5>
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                            <Pie data={chartData.outcomeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} label={renderCustomizedLabel} labelLine={false}>
+                            <Pie data={chartData.outcomeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={45} label={renderCustomizedLabel} labelLine={false}>
                                 {chartData.outcomeData.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[entry.name.toLowerCase().replace(' ', '') as keyof typeof COLORS]} />
                                 ))}
                             </Pie>
                             <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} itemStyle={{ color: '#cbd5e1' }}/>
-                            <Legend iconSize={10} wrapperStyle={{fontSize: '10px'}}/>
+                            <Legend iconSize={10} wrapperStyle={{ fontSize: '10px', paddingTop: '15px' }}/>
                         </PieChart>
                     </ResponsiveContainer>
                 </div>
@@ -307,13 +307,13 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
                     <h5 className="font-bold text-slate-400 mb-1">Score Accuracy</h5>
                     <ResponsiveContainer width="100%" height="100%">
                          <PieChart>
-                            <Pie data={chartData.scoreData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} label={renderCustomizedLabel} labelLine={false}>
+                            <Pie data={chartData.scoreData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={45} label={renderCustomizedLabel} labelLine={false}>
                                 {chartData.scoreData.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[entry.name.toLowerCase().replace(' ', '') as keyof typeof COLORS]} />
                                 ))}
                             </Pie>
                             <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} itemStyle={{ color: '#cbd5e1' }}/>
-                            <Legend iconSize={10} wrapperStyle={{fontSize: '10px'}}/>
+                            <Legend iconSize={10} wrapperStyle={{ fontSize: '10px', paddingTop: '15px' }}/>
                         </PieChart>
                     </ResponsiveContainer>
                 </div>
