@@ -10,14 +10,14 @@ interface TournamentDetailsProps {
     onBack: () => void;
 }
 
-const PointRuleRow = ({ label, points }: { label: string, points?: { correctScore: number; correctOutcome: number; } }) => {
-    const { t } = useTranslation();
+const PointRuleTableRow = ({ label, points }: { label: string, points?: { correctScore: number; correctOutcome: number; } }) => {
     if (!points) return null;
     return (
-        <div className="flex flex-col sm:flex-row justify-between py-1">
-            <span className="text-slate-400">{label}:</span>
-            <span className="text-white font-mono text-left sm:text-right">{t('tournamentDetails.scoreOutcome', 'Score: {{score}} / Outcome: {{outcome}}', { score: points.correctScore, outcome: points.correctOutcome })}</span>
-        </div>
+        <tr className="hover:bg-slate-800/50 transition-colors">
+            <td className="py-2 text-slate-300">{label}</td>
+            <td className="py-2 text-center text-emerald-400 font-mono">+{points.correctOutcome}</td>
+            <td className="py-2 text-center text-blue-400 font-mono">+{points.correctScore}</td>
+        </tr>
     );
 };
 
@@ -97,24 +97,35 @@ const MatchList = ({ title, matches, groupByStage = false }: { title: string, ma
 
 const TournamentDetails = ({ tournament, onBack }: TournamentDetailsProps) => {
     const { t } = useTranslation();
-    const [renderedDescription, setRenderedDescription] = useState('');
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [previewDescription, setPreviewDescription] = useState('');
+    const [fullDescription, setFullDescription] = useState('');
 
     useEffect(() => {
         const parseDescription = async () => {
             if (!tournament.description) {
-                setRenderedDescription(`<p class="text-slate-400 italic">${t('tournamentDetails.noDescription', 'No description provided.')}</p>`);
+                const noDescHtml = `<p class="text-slate-400 italic">${t('tournamentDetails.noDescription', 'No description provided.')}</p>`;
+                setFullDescription(noDescHtml);
+                setPreviewDescription(noDescHtml);
                 return;
             }
             try {
-                const html = await marked.parse(tournament.description);
-                setRenderedDescription(html);
-            } catch (e) {
-                console.error("Error parsing markdown:", e);
-                setRenderedDescription(`<p>${t('tournamentDetails.errorDescription', 'Error parsing description.')}</p>`);
+                const sentences = tournament.description.match(/[^.!?]+[.!?]+/g) || [tournament.description];
+                const previewStr = sentences.slice(0, 3).join('').trim();
+                
+                const fullHtml = await marked.parse(tournament.description);
+                const previewHtml = await marked.parse(previewStr + (sentences.length > 3 ? '...' : ''));
+                
+                setFullDescription(fullHtml);
+                setPreviewDescription(previewHtml);
+            } catch (error) {
+                const errorHtml = `<p>${t('tournamentDetails.errorDescription', 'Error parsing description.')}</p>`;
+                setFullDescription(errorHtml);
+                setPreviewDescription(errorHtml);
             }
         };
         parseDescription();
-    }, [tournament.description]);
+    }, [tournament.description, t]);
 
     return (
         <div className="flex flex-col h-full bg-slate-900 text-slate-100 overflow-y-auto w-full">
@@ -135,23 +146,44 @@ const TournamentDetails = ({ tournament, onBack }: TournamentDetailsProps) => {
                 <div className="space-y-6">
                     <div className="bg-slate-800 p-4 border border-slate-700 rounded shadow">
                         <div
-                            className="prose prose-sm prose-invert max-w-none"
-                            dangerouslySetInnerHTML={{ __html: renderedDescription }}
+                            className="prose prose-sm prose-invert max-w-none transition-all duration-300"
+                            dangerouslySetInnerHTML={{ __html: isExpanded ? fullDescription : previewDescription }}
                         />
+                        {tournament.description && (tournament.description.match(/[^.!?]+[.!?]+/g)?.length || 0) > 3 && (
+                            <button 
+                                onClick={() => setIsExpanded(!isExpanded)} 
+                                className="text-blue-400 hover:text-blue-300 text-sm mt-4 font-medium"
+                            >
+                                {isExpanded ? t('common.showLess', 'Show Less') : t('common.readMore', 'Read More')}
+                            </button>
+                        )}
                     </div>
 
-                <div className="bg-slate-900/50 p-4 border border-slate-700 text-sm">
-                    <h4 className="font-semibold text-blue-400 mb-2">{t('tournamentDetails.pointRules', 'Point Rules')}</h4>
-                    <PointRuleRow label={t('stages.groupStage', 'Group Stage')} points={tournament.pointRules?.groupStage} />
-                    <PointRuleRow label={t('stages.round32', 'Round of 32')} points={tournament.pointRules?.round32} />
-                    <PointRuleRow label={t('stages.round16', 'Round of 16')} points={tournament.pointRules?.round16} />
-                    <PointRuleRow label={t('stages.quarterFinals', 'Quarter-finals')} points={tournament.pointRules?.quarterFinal} />
-                    <PointRuleRow label={t('stages.semiFinals', 'Semi-finals')} points={tournament.pointRules?.semiFinal} />
-                    {tournament.hasThirdPlaceMatch && <PointRuleRow label={t('stages.thirdPlaceMatch', 'Third Place Match')} points={tournament.pointRules?.thirdPlaceMatch} />}
-                    <PointRuleRow label={t('stages.finals', 'Final')} points={tournament.pointRules?.final} />
-                    <div className="flex flex-col sm:flex-row justify-between py-1 border-t border-slate-700 mt-1">
+                <div className="bg-slate-900/50 p-4 border border-slate-700 rounded shadow text-sm">
+                    <h4 className="font-semibold text-blue-400 mb-4">{t('tournamentDetails.pointRules', 'Point Rules')}</h4>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-b border-slate-700 text-slate-400">
+                                    <th className="pb-2 font-medium">{t('common.stage', 'Stage')}</th>
+                                    <th className="pb-2 font-medium text-center">{t('common.outcome', 'Outcome')}</th>
+                                    <th className="pb-2 font-medium text-center">{t('common.score', 'Score')}</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-800">
+                                <PointRuleTableRow label={t('stages.groupStage', 'Group Stage')} points={tournament.pointRules?.groupStage} />
+                                <PointRuleTableRow label={t('stages.round32', 'Round of 32')} points={tournament.pointRules?.round32} />
+                                <PointRuleTableRow label={t('stages.round16', 'Round of 16')} points={tournament.pointRules?.round16} />
+                                <PointRuleTableRow label={t('stages.quarterFinals', 'Quarter-finals')} points={tournament.pointRules?.quarterFinal} />
+                                <PointRuleTableRow label={t('stages.semiFinals', 'Semi-finals')} points={tournament.pointRules?.semiFinal} />
+                                {tournament.hasThirdPlaceMatch && <PointRuleTableRow label={t('stages.thirdPlaceMatch', 'Third Place Match')} points={tournament.pointRules?.thirdPlaceMatch} />}
+                                <PointRuleTableRow label={t('stages.finals', 'Final')} points={tournament.pointRules?.final} />
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="flex flex-col sm:flex-row justify-between py-3 border-t border-slate-700 mt-4">
                         <span className="text-slate-400">{t('tournamentDetails.championBonus', 'Champion Bonus:')}</span>
-                        <span className="text-white font-mono">{tournament.pointRules?.championBonus ?? 'N/A'}</span>
+                        <span className="text-emerald-400 font-mono font-bold">+{tournament.pointRules?.championBonus ?? 'N/A'}</span>
                     </div>
                 </div>
 
