@@ -3,6 +3,7 @@ import { auth, db, storage } from '../../firebaseConfig';
 import { updateProfile } from 'firebase/auth';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import imageCompression from 'browser-image-compression';
 import type { UserProfile } from '../../types';
 import { logAudit } from '../../utils/auditLogger';
 import { useTranslation } from 'react-i18next';
@@ -51,8 +52,16 @@ const UserProfileModal = ({ userProfile, onClose, onProfileUpdate }: UserProfile
 
             // Upload avatar if a new file is selected
             if (avatarFile) {
+                const options = {
+                    maxSizeMB: 0.05,
+                    maxWidthOrHeight: 256,
+                    useWebWorker: true,
+                    fileType: 'image/webp'
+                };
+                const compressedFile = await imageCompression(avatarFile, options);
+                
                 const storageRef = ref(storage, `users/${user.uid}/avatar`);
-                const snapshot = await uploadBytes(storageRef, avatarFile);
+                const snapshot = await uploadBytes(storageRef, compressedFile);
                 newAvatarUrl = await getDownloadURL(snapshot.ref);
             }
 
