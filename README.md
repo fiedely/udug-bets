@@ -1,7 +1,7 @@
-# Udug Bets Documentation (v2.5)
+# Udug Bets Documentation (v2.7)
 
 > [!NOTE]
-> This documentation outlines the architecture, capabilities, and infrastructure for Udug Bets v2.5. It serves as a comprehensive reference for both developers and maintainers.
+> This documentation outlines the architecture, capabilities, and infrastructure for Udug Bets v2.7. It serves as a comprehensive reference for both developers and maintainers.
 
 ## 1. App Purpose and Capabilities
 
@@ -20,6 +20,7 @@ The application strictly separates capabilities between standard Participants an
 
 #### 🛡️ Administrators (Admins)
 - **Tournament Management**: Create new tournaments using a multi-step Wizard, edit details, and configure the tournament stages.
+- **Dynamic Bracket Routing**: Admins can select official tournament formats (e.g., FIFA World Cup 2026, UEFA Euro). The UI uses a recursive routing algorithm to flawlessly trace official FIFA scheduling and visual layouts, supporting manual timezone adjustments.
 - **Score Management**: Input actual match scores. The system automatically finds matches missing scores and auto-scrolls to them for efficiency.
 - **User Management**: Grant or revoke admin privileges, delete users.
 - **AI Configuration**: Define participant contexts (gender, inside jokes, specific relationships) and manage the "Topic Library" (mandatory and optional jokes) to feed the AI Summary Engine.
@@ -74,7 +75,11 @@ src/
    - **Capability**: Renders a massive data grid of every user and their prediction.
    - **Logic**: Implements horizontal momentum scrolling specifically optimized for iOS (`WebkitOverflowScrolling: 'touch'`, `overscroll-x-none`) and utilizes `jspdf` and `jspdf-autotable` to export the view to a PDF.
 
-4. **`src/components/views/Leaderboard.tsx`**
+4. **`src/components/admin/PopulateKnockoutModal.tsx`**
+   - **Capability**: Allows admins to populate real-world teams into knockout brackets dynamically.
+   - **Logic**: Uses a recursive algorithm (`bracketRouting.ts`) to visually sort bracket branches exactly like the official FIFA/UEFA Wikipedia brackets. Also includes editable `datetime-local` inputs to gracefully sync local timezones with official real-world match numbers.
+
+5. **`src/components/views/Leaderboard.tsx`**
    - **Capability**: Displays the calculated leaderboard.
    - **Logic**: Listens to the `leaderboard` Firestore collection. It also renders the `AiSummary` component which displays the latest AI commentary.
 
