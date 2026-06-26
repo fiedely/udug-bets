@@ -17,7 +17,6 @@ interface MyPredictionsChartWidgetProps {
 const COLORS = {
     correct: '#22c55e',
     wrong: '#ef4444',
-    notYet: '#64748b',
 };
 
 const renderCustomizedLabel = (props: any) => {
@@ -183,15 +182,11 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
     }, [tournament]);
 
     const chartData = useMemo(() => {
-        const outcomeStats = { correct: 0, wrong: 0, notYet: 0 };
-        const scoreStats = { correct: 0, wrong: 0, notYet: 0 };
+        const outcomeStats = { correct: 0, wrong: 0 };
+        const scoreStats = { correct: 0, wrong: 0 };
 
         if (!tournament || !predictions) {
-            const allMatches = [...(tournament?.matches || []), ...(tournament?.knockoutMatches || [])];
-            const filteredMatches = selectedStage === 'All Stages' ? allMatches : allMatches.filter(m => m.stage === selectedStage);
-            const matchCount = filteredMatches.length;
-            outcomeStats.notYet = matchCount;
-            scoreStats.notYet = matchCount;
+            // No data or predictions, we just leave them at 0
         } else {
             const allMatches = [...(tournament.matches || []), ...(tournament.knockoutMatches || [])];
             const filteredMatches = selectedStage === 'All Stages' ? allMatches : allMatches.filter(m => m.stage === selectedStage);
@@ -200,8 +195,7 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
                 const hasResult = typeof match.team1Score === 'number';
 
                 if (!hasResult) {
-                    outcomeStats.notYet++;
-                    scoreStats.notYet++;
+                    // We only want to include games already played, so do nothing here
                 } else if (!pred || pred.team1Score < 0) {
                     outcomeStats.wrong++;
                     scoreStats.wrong++;
@@ -228,12 +222,10 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
             outcomeData: [
                 { name: 'Correct', value: outcomeStats.correct },
                 { name: 'Wrong', value: outcomeStats.wrong },
-                { name: 'Not Yet', value: outcomeStats.notYet },
             ].filter(d => d.value > 0),
             scoreData: [
                 { name: 'Correct', value: scoreStats.correct },
                 { name: 'Wrong', value: scoreStats.wrong },
-                { name: 'Not Yet', value: scoreStats.notYet },
             ].filter(d => d.value > 0),
         };
     }, [tournament, predictions, selectedStage]);
@@ -289,34 +281,42 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
                 </select>
             </div>
             <div className="flex-grow grid grid-cols-1 sm:grid-cols-2 gap-2 overflow-hidden">
-                <div className="flex flex-col items-center">
-                    <h5 className="font-bold text-slate-400 mb-1">Outcome Accuracy</h5>
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <Pie data={chartData.outcomeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={45} label={renderCustomizedLabel} labelLine={false}>
-                                {chartData.outcomeData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[entry.name.toLowerCase().replace(' ', '') as keyof typeof COLORS]} />
-                                ))}
-                            </Pie>
-                            <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} itemStyle={{ color: '#cbd5e1' }}/>
-                            <Legend iconSize={10} wrapperStyle={{ fontSize: '10px', paddingTop: '15px' }}/>
-                        </PieChart>
-                    </ResponsiveContainer>
-                </div>
-                 <div className="flex flex-col items-center">
-                    <h5 className="font-bold text-slate-400 mb-1">Score Accuracy</h5>
-                    <ResponsiveContainer width="100%" height="100%">
-                         <PieChart>
-                            <Pie data={chartData.scoreData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={45} label={renderCustomizedLabel} labelLine={false}>
-                                {chartData.scoreData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[entry.name.toLowerCase().replace(' ', '') as keyof typeof COLORS]} />
-                                ))}
-                            </Pie>
-                            <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} itemStyle={{ color: '#cbd5e1' }}/>
-                            <Legend iconSize={10} wrapperStyle={{ fontSize: '10px', paddingTop: '15px' }}/>
-                        </PieChart>
-                    </ResponsiveContainer>
-                </div>
+                {chartData.outcomeData.length === 0 && chartData.scoreData.length === 0 ? (
+                    <div className="col-span-1 sm:col-span-2 flex items-center justify-center text-slate-500 italic">
+                        Data not available yet
+                    </div>
+                ) : (
+                    <>
+                        <div className="flex flex-col items-center">
+                            <h5 className="font-bold text-slate-400 mb-1">Outcome Accuracy</h5>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie data={chartData.outcomeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={45} label={renderCustomizedLabel} labelLine={false}>
+                                        {chartData.outcomeData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[entry.name.toLowerCase().replace(' ', '') as keyof typeof COLORS]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} itemStyle={{ color: '#cbd5e1' }}/>
+                                    <Legend iconSize={10} wrapperStyle={{ fontSize: '10px', paddingTop: '15px' }}/>
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <h5 className="font-bold text-slate-400 mb-1">Score Accuracy</h5>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie data={chartData.scoreData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={45} label={renderCustomizedLabel} labelLine={false}>
+                                        {chartData.scoreData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[entry.name.toLowerCase().replace(' ', '') as keyof typeof COLORS]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} itemStyle={{ color: '#cbd5e1' }}/>
+                                    <Legend iconSize={10} wrapperStyle={{ fontSize: '10px', paddingTop: '15px' }}/>
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

@@ -1,7 +1,5 @@
 // src/components/admin/ListTournamentsContent.tsx
 
-// src/components/admin/ListTournamentsContent.tsx
-
 import { useState, useEffect, useRef } from 'react';
 import { db } from '../../firebaseConfig';
 import { collection, getDocs, doc, updateDoc, Timestamp } from 'firebase/firestore';
@@ -10,6 +8,7 @@ import InviteModal from './InviteModal';
 import AdminParticipantsModal from './AdminParticipantsModal';
 import TournamentDetails from '../views/TournamentDetails';
 import OverrideStandingsModal from './OverrideStandingsModal';
+import PopulateKnockoutModal from './PopulateKnockoutModal';
 import { logAudit } from '../../utils/auditLogger';
 
 const formatDate = (date?: Date) => {
@@ -39,6 +38,7 @@ const ListTournamentsContent = ({ onEditTournament, onManageTournament, onViewLe
     const [isDeleting, setIsDeleting] = useState(false);
     const [invitingTournament, setInvitingTournament] = useState<Tournament | null>(null);
     const [overridingTournament, setOverridingTournament] = useState<Tournament | null>(null);
+    const [populatingKnockoutFor, setPopulatingKnockoutFor] = useState<Tournament | null>(null);
     const [viewingParticipantsFor, setViewingParticipantsFor] = useState<Tournament | null>(null);
     const [managingPredictionsFor, setManagingPredictionsFor] = useState<string | null>(null);
     const [viewingTournamentDetails, setViewingTournamentDetails] = useState<Tournament | null>(null);
@@ -201,6 +201,7 @@ const ListTournamentsContent = ({ onEditTournament, onManageTournament, onViewLe
                                 <button onClick={() => setInvitingTournament(t)} className={`${baseButtonClasses} bg-slate-600 hover:bg-slate-500`}>Invite Participant</button>
                                 <button onClick={() => onEditTournament(t.id)} className={`${baseButtonClasses} bg-slate-600 hover:bg-slate-500`}>Edit Tournament Detail</button>
                                 <button onClick={() => setOverridingTournament(t)} className={`${baseButtonClasses} bg-orange-700 hover:bg-orange-600 col-span-2 text-white`}>Override Group Standings</button>
+                                <button onClick={() => setPopulatingKnockoutFor(t)} className={`${baseButtonClasses} bg-orange-700 hover:bg-orange-600 col-span-2 text-white`} disabled={t.status === 'draft'}>Populate Knockout Rounds</button>
                                 <button onClick={() => onManageAiConfig(t)} className={`${baseButtonClasses} bg-purple-700 hover:bg-purple-600 col-span-2 text-white`}>Manage AI Config</button>
                                 <button onClick={() => setDeletingTournament(t)} className={`${baseButtonClasses} bg-red-800 hover:bg-red-700 col-span-2`}>De-activate Tournament</button>
                             </div>
@@ -237,6 +238,12 @@ const ListTournamentsContent = ({ onEditTournament, onManageTournament, onViewLe
                     tournament={overridingTournament} 
                     userProfile={userProfile!}
                     onClose={() => setOverridingTournament(null)} 
+                />
+            )}
+            {populatingKnockoutFor && (
+                <PopulateKnockoutModal 
+                    tournament={populatingKnockoutFor} 
+                    onClose={() => setPopulatingKnockoutFor(null)} 
                 />
             )}
         </>

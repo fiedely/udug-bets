@@ -172,15 +172,20 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
     }
 
     return (
-        <div className="bg-slate-800 border border-slate-700 p-4 md:p-8">
-            <div className="flex flex-col md:flex-row justify-between md:items-start mb-6 gap-4">
-                <div>
-                    <h2 className="text-2xl font-bold text-white">{tournament.name}</h2>
-                    <p className="text-blue-400">{t('predictionEntry.enterYourPredictions', 'Enter Your Predictions')}</p>
+        <div id="prediction-entry-top" className="bg-slate-800 border border-slate-700 p-4 md:p-8 relative">
+            <div id="prediction-entry-top-anchor" className="absolute top-0 left-0"></div>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <div className="flex items-center gap-3">
+                    <button onClick={handleBack} className="text-slate-400 hover:text-white transition-colors">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </button>
+                    <div>
+                        <h2 className="text-xl font-bold text-white">{tournament.name}</h2>
+                        <p className="text-sm text-slate-400">{t('predictionEntry.enterYourPredictions', 'Enter Your Predictions')}</p>
+                    </div>
                 </div>
-                <button onClick={handleBack} className="text-sm text-blue-400 hover:text-blue-300 flex items-center whitespace-nowrap self-start md:self-auto">
-                    {t('predictionEntry.backToTournaments', '← Back to My Tournaments')}
-                </button>
             </div>
 
             <div className="space-y-8">
@@ -278,10 +283,28 @@ const PredictionEntry = ({ tournament, userProfile, onBack }: PredictionEntryPro
                 ))}
             </div>
             
-            <div className="mt-8 pt-6 border-t border-slate-700 flex justify-end items-center gap-4">
+            <div id="prediction-entry-bottom" className="mt-8 pt-6 border-t border-slate-700 flex justify-end items-center gap-4">
                 {message && <p className="text-green-400 text-sm">{message}</p>}
                 <button onClick={handleSave} disabled={isSaving} className="px-6 py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-white transition-colors disabled:bg-blue-800 disabled:cursor-not-allowed">
                     {isSaving ? t('predictionEntry.saving', 'Saving...') : t('predictionEntry.savePredictions', 'Save Predictions')}
+                </button>
+            </div>
+
+            {/* Floating Action Buttons */}
+            <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
+                <button 
+                    onClick={() => document.getElementById('prediction-entry-top-anchor')?.scrollIntoView({ behavior: 'smooth' })}
+                    className="w-12 h-12 bg-slate-700 hover:bg-slate-600 border border-slate-500 rounded-full flex items-center justify-center shadow-lg text-slate-300 hover:text-white transition-colors"
+                    title="Scroll to Top"
+                >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+                </button>
+                <button 
+                    onClick={() => document.getElementById('prediction-entry-bottom')?.scrollIntoView({ behavior: 'smooth' })}
+                    className="w-12 h-12 bg-blue-600 hover:bg-blue-500 border border-blue-400 rounded-full flex items-center justify-center shadow-lg text-white transition-colors"
+                    title="Scroll to Save"
+                >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
                 </button>
             </div>
         </div>

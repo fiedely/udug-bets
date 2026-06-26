@@ -117,39 +117,50 @@ const UserPointHistoryModal = ({ tournament, userId, userName, onClose }: UserPo
                         <p className="text-center text-slate-400 py-8">No predictions found for this user.</p>
                     ) : (
                         <div className="space-y-4">
-                            <table className="w-full text-sm text-left text-slate-300">
-                                <thead className="text-xs text-slate-400 uppercase bg-slate-700 sticky top-0">
-                                    <tr>
-                                        <th scope="col" className="px-4 py-3">Match</th>
-                                        <th scope="col" className="px-4 py-3 text-center">Predicted</th>
-                                        <th scope="col" className="px-4 py-3 text-center">Actual</th>
-                                        <th scope="col" className="px-4 py-3 text-right">Outcome Pts</th>
-                                        <th scope="col" className="px-4 py-3 text-right">Score Pts</th>
-                                        <th scope="col" className="px-4 py-3 text-right text-blue-300 font-bold">Accumulated Pts</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                            <div>
+                                <div className="hidden md:grid md:grid-cols-12 gap-4 px-4 py-2 text-xs text-slate-400 uppercase bg-slate-700 font-medium sticky top-0">
+                                    <div className="col-span-3">Match</div>
+                                    <div className="col-span-2 text-center">Predicted</div>
+                                    <div className="col-span-2 text-center">Actual</div>
+                                    <div className="col-span-2 text-right">Outcome Pts</div>
+                                    <div className="col-span-1 text-right">Score Pts</div>
+                                    <div className="col-span-2 text-right text-blue-300 font-bold">Accumulated Pts</div>
+                                </div>
+                                <div className="space-y-4 md:space-y-0 mt-4 md:mt-0">
                                     {historyData.rows.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={6} className="px-4 py-8 text-center text-slate-500">No completed matches yet.</td>
-                                        </tr>
+                                        <div className="px-4 py-8 text-center text-slate-500">No completed matches yet.</div>
                                     ) : (
                                         historyData.rows.map((row) => (
-                                            <tr key={row.id} className="bg-slate-800 border-b border-slate-700 hover:bg-slate-700/50">
-                                                <td className="px-4 py-3">
+                                            <div key={row.id} className="bg-slate-900/50 md:bg-transparent border md:border-t md:border-b-0 border-slate-700 p-4 md:p-0 md:grid md:grid-cols-12 md:gap-4 md:px-4 md:py-3 items-center text-sm hover:bg-slate-700/50 transition-colors">
+                                                <div className="col-span-3">
                                                     <div className="font-medium text-white">{row.matchLabel}</div>
                                                     <div className="text-[10px] text-slate-500">{row.stage}</div>
-                                                </td>
-                                                <td className="px-4 py-3 text-center font-mono">{row.predicted}</td>
-                                                <td className="px-4 py-3 text-center font-mono">{row.actual}</td>
-                                                <td className="px-4 py-3 text-right text-green-400">{row.outcomePts > 0 ? `+${row.outcomePts}` : '0'}</td>
-                                                <td className="px-4 py-3 text-right text-green-400">{row.scorePts > 0 ? `+${row.scorePts}` : '0'}</td>
-                                                <td className="px-4 py-3 text-right text-blue-300 font-bold text-base">{row.runningTotal}</td>
-                                            </tr>
+                                                </div>
+                                                <div className="col-span-2 mt-2 md:mt-0 flex justify-between md:justify-center items-center">
+                                                    <span className="md:hidden font-semibold text-slate-400">Predicted:</span>
+                                                    <span className="font-mono text-white">{row.predicted}</span>
+                                                </div>
+                                                <div className="col-span-2 mt-2 md:mt-0 flex justify-between md:justify-center items-center">
+                                                    <span className="md:hidden font-semibold text-slate-400">Actual:</span>
+                                                    <span className="font-mono text-white">{row.actual}</span>
+                                                </div>
+                                                <div className="col-span-2 mt-2 md:mt-0 flex justify-between md:justify-end items-center">
+                                                    <span className="md:hidden font-semibold text-slate-400">Outcome Pts:</span>
+                                                    <span className="text-green-400">{row.outcomePts > 0 ? `+${row.outcomePts}` : '0'}</span>
+                                                </div>
+                                                <div className="col-span-1 mt-2 md:mt-0 flex justify-between md:justify-end items-center">
+                                                    <span className="md:hidden font-semibold text-slate-400">Score Pts:</span>
+                                                    <span className="text-green-400">{row.scorePts > 0 ? `+${row.scorePts}` : '0'}</span>
+                                                </div>
+                                                <div className="col-span-2 mt-3 md:mt-0 pt-3 md:pt-0 border-t border-slate-700 md:border-0 flex justify-between md:justify-end items-center">
+                                                    <span className="md:hidden font-semibold text-slate-400">Accumulated:</span>
+                                                    <span className="text-blue-300 font-bold text-base">{row.runningTotal}</span>
+                                                </div>
+                                            </div>
                                         ))
                                     )}
-                                </tbody>
-                            </table>
+                                </div>
+                            </div>
                             <div className="bg-slate-700/30 border border-slate-600 p-4 rounded-lg flex flex-col sm:flex-row justify-between items-center gap-4">
                                 <div>
                                     <h4 className="text-slate-400 text-sm">Champion Prediction</h4>

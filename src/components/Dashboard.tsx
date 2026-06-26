@@ -20,7 +20,6 @@ import MyTournaments from './views/MyTournaments';
 import PredictionEntry from './views/PredictionEntry';
 import UserDashboard from './views/UserDashboard';
 import UserProfileModal from './views/UserProfileModal';
-import LiveMatchMonitor from './views/LiveMatch/LiveMatchMonitor';
 import AuditLogViewer from './admin/AuditLogViewer';
 import { useTranslation } from 'react-i18next';
 import { useSwipeable } from 'react-swipeable';
@@ -34,7 +33,7 @@ const Dashboard = ({ userProfile: initialProfile }: DashboardProps) => {
   const [userProfile, setUserProfile] = useState<UserProfile>(initialProfile);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeView, setActiveView] = useState<View>('User Dashboard');
-  const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
+  const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(true);
   const [editingTournamentId, setEditingTournamentId] = useState<string | null>(null);
   const [isEditorDirty, setIsEditorDirty] = useState(false);
   const [predictingTournament, setPredictingTournament] = useState<Tournament | null>(null);
@@ -163,8 +162,6 @@ const Dashboard = ({ userProfile: initialProfile }: DashboardProps) => {
         return <LeaderboardContent />;
       case 'Debug':
         return <DebugSeeder />;
-      case 'Live Match':
-        return <LiveMatchMonitor userProfile={userProfile} />;
       case 'My Tournaments':
       default:
         return <MyTournaments userProfile={userProfile} onEnterPredictions={handleEnterPredictions} />;
@@ -184,7 +181,6 @@ const Dashboard = ({ userProfile: initialProfile }: DashboardProps) => {
     if (activeView === 'Create Tournament') return t('menu.createTournament', 'Create Tournament');
     if (activeView === 'Manage Users') return t('menu.manageUsers', 'Manage Users');
     if (activeView === 'Debug') return t('menu.debug', 'Debug');
-    if (activeView === 'Live Match') return 'Live Match (Experimental)';
     if (activeView === 'Audit Logs') return 'Audit Logs';
 
     return activeView;
@@ -236,7 +232,9 @@ const Dashboard = ({ userProfile: initialProfile }: DashboardProps) => {
           <nav className="flex-grow overflow-y-auto">
             <div className="space-y-1">
               <button onClick={() => handleSetView('User Dashboard')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'User Dashboard' ? 'bg-slate-700 text-white' : ''}`}>{t('menu.myDashboard', 'My Dashboard')}</button>
-              <button onClick={() => handleSetView('My Tournaments')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'My Tournaments' ? 'bg-slate-700 text-white' : ''}`}>{t('menu.myTournaments', 'My Tournaments')}</button>
+              {(userProfile?.role !== 'admin' && userProfile?.role !== 'superadmin') && (
+                  <button onClick={() => handleSetView('My Tournaments')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'My Tournaments' ? 'bg-slate-700 text-white' : ''}`}>{t('menu.myTournaments', 'My Tournaments')}</button>
+              )}
               <button onClick={() => { setIsProfileModalOpen(true); setIsSidebarOpen(false); }} className="w-full text-left block py-2.5 px-4 hover:bg-slate-700">{t('menu.myProfile', 'My Profile')}</button>
             </div>
             
@@ -251,7 +249,6 @@ const Dashboard = ({ userProfile: initialProfile }: DashboardProps) => {
                      <button onClick={() => handleSetView('List Tournaments')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${(activeView === 'List Tournaments' || activeView === 'Edit Tournament' || activeView === 'Manage Scores') ? 'bg-slate-700 text-white' : ''}`}>{t('menu.listTournaments', 'List Tournaments')}</button>
                     <button onClick={() => handleSetView('Manage Users')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'Manage Users' ? 'bg-slate-700 text-white' : ''}`}>{t('menu.manageUsers', 'Manage Users')}</button>
                     <button onClick={() => handleSetView('Audit Logs')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'Audit Logs' ? 'bg-slate-700 text-white' : ''}`}>Audit Logs</button>
-                    <button onClick={() => handleSetView('Live Match')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'Live Match' ? 'bg-slate-700 text-white' : ''} text-orange-400 font-semibold`}>Live Match (Experimental)</button>
                     {userProfile.role === 'superadmin' && (
                       <button onClick={() => handleSetView('Debug')} className={`w-full text-left block py-2.5 px-4 hover:bg-slate-700 ${activeView === 'Debug' ? 'bg-slate-700 text-white' : ''} text-red-500 font-bold`}>Debug (Don't Touch)</button>
                     )}

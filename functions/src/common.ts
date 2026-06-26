@@ -22,6 +22,7 @@ export interface Team { name: string; flag: string; code: string; }
 export interface PointRule { correctScore: number; correctOutcome: number; }
 export interface PointRules { groupStage: PointRule; round32?: PointRule; round16?: PointRule; quarterFinal?: PointRule; semiFinal?: PointRule; thirdPlaceMatch?: PointRule; final?: PointRule; championBonus?: number; }
 export type MatchStage = "Group Stage" | "Round of 32" | "Round of 16" | "Quarter-final" | "Semi-final" | "Third Place Match" | "Final";
+export interface Stadium { name: string; city: string; }
 export interface Match { 
     id: string; 
     stage: MatchStage; 
@@ -29,13 +30,15 @@ export interface Match {
     team2: Team; 
     team1Score?: number; 
     team2Score?: number; 
+    stadium: Stadium;
     date: string; 
     winnerTeamCode?: string;
     tiebreakerType?: 'Extra Time' | 'Penalty Shootout';
     team1TiebreakerScore?: number;
     team2TiebreakerScore?: number;
+    nextMatchId?: string;
 }
-export interface Tournament { id: string; name: string; pointRules?: PointRules; matches?: Match[]; knockoutMatches?: Match[]; participants?: string[]; champion?: string; teams?: Team[]; knockoutStartStage?: MatchStage; groups?: Record<string, Team[]>; }
+export interface Tournament { id: string; name: string; pointRules?: PointRules; matches?: Match[]; knockoutMatches?: Match[]; participants?: string[]; champion?: string; teams?: Team[]; knockoutStartStage?: MatchStage; groups?: Record<string, Team[]>; skipLeaderboardUpdate?: number; }
 export interface MatchPrediction { team1Score: number; team2Score: number; }
 export interface UserPredictions { tournamentId: string; userId: string; championPrediction?: string; matchPredictions: Record<string, MatchPrediction>; }
 export interface UserProfile { uid: string; name: string; email: string; role: 'user' | 'admin' | 'superadmin'; avatarUrl?: string; }
@@ -72,6 +75,17 @@ export interface LeaderboardEntry {
     rank: number; 
     previousRank?: number | null; 
     rankChange: "up" | "down" | "same"; 
+}
+
+export interface Tournament {
+    id: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+    status: 'Upcoming' | 'Ongoing' | 'Completed';
+    format?: 'world_cup' | 'euro' | 'generic';
+    usageMode: 'forced' | 'optional';
+    createdAt: any;
 }
 
 export interface AiTopic {

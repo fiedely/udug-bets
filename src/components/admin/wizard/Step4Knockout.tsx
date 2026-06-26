@@ -5,6 +5,7 @@ import { db } from '../../../firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
 import type { Tournament, Match, Team, MatchStage, KnockoutStartStage } from '../../../types';
 import { STADIUMS } from '../../../data/stadiums';
+import { getNextMatchId } from '../../../utils/bracketRouting';
 
 interface Step4KnockoutProps {
     tournament: Tournament;
@@ -72,11 +73,14 @@ const Step4Knockout = ({ tournament, onNext, onBack, setIsDirty }: Step4Knockout
                 matchDate.setDate(matchDate.getDate() + 3 + Math.floor(matchCounter / 4));
                 matchDate.setHours(20 + (matchCounter % 2) * 2);
 
+                const nextMatchId = getNextMatchId(matchCounter, tournament.format || 'generic');
+
                 newMatches.push({
                     id: `match-${stage.toLowerCase().replace(/ /g, '-')}-${i}`,
                     stage: stage,
                     group: 'Knockout',
                     matchNumber: matchCounter,
+                    nextMatchId,
                     team1: PLACEHOLDER_TEAM_1,
                     team2: PLACEHOLDER_TEAM_2,
                     date: matchDate.toISOString(),

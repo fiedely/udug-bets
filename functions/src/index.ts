@@ -11,6 +11,11 @@ export const onTournamentUpdate = onDocumentUpdated("tournaments/{tournamentId}"
     const afterData = event.data?.after.data() as Tournament | undefined;
     if (!beforeData || !afterData) return;
     
+    // Explicitly skip recalculation if the skipLeaderboardUpdate flag was bumped
+    if (beforeData.skipLeaderboardUpdate !== afterData.skipLeaderboardUpdate) {
+        return;
+    }
+    
     const scoresChanged = JSON.stringify(beforeData.matches) !== JSON.stringify(afterData.matches) ||
                           JSON.stringify(beforeData.knockoutMatches) !== JSON.stringify(afterData.knockoutMatches);
     const championChanged = beforeData.champion !== afterData.champion;

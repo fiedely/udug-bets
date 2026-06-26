@@ -366,7 +366,7 @@ export async function recalculateLeaderboard(tournamentId: string) {
         let participantContextPrompt = "";
         const contextEntries = Object.entries(participantContexts);
         if (contextEntries.length > 0) {
-            participantContextPrompt += "\n\nPLAYER CONTEXT: Use the following information to personalize your roasts and praises. Use appropriate pronouns based on gender (e.g., 'cici/mbak' for female, 'abang/om' for male, and gender-neutral 'kak/bos' for unknown). OCCASIONALLY incorporate their specific relationships if relevant to a joke, but do NOT overdo it. Keep relationship mentions sparse so it doesn't sound cheesy or repetitive. STRICT RULE: When mentioning relationships, NEVER use cheesy or dramatic adjectives like 'kesayangan', 'tercinta', 'tersayang', etc. (e.g., do not say 'mertua kesayangan' or 'sepupu tercinta'). Keep it casual, sarcastic, or purely factual.\n";
+            participantContextPrompt += "\n\nPLAYER CONTEXT: Use the following information to personalize your roasts and praises. Use appropriate pronouns based on gender. RARELY incorporate their specific relationships if relevant to a joke, but do NOT overdo it. Keep relationship mentions sparse so it doesn't sound cheesy or repetitive. STRICT RULE: When mentioning relationships, NEVER use cheesy or dramatic adjectives like 'kesayangan', 'tercinta', 'tersayang', etc. (e.g., do not say 'mertua kesayangan' or 'sepupu tercinta'). Keep it casual, sarcastic, or purely factual.\n";
             for (const [userId, ctx] of contextEntries) {
                 const userObj = newLeaderboard.find(e => e.userId === userId);
                 if (userObj) {
@@ -447,7 +447,8 @@ export async function recalculateLeaderboard(tournamentId: string) {
         - PENTING SANGAT: Perhatikan "Current Stage". Jika turnamen berada di fase gugur (seperti Round of 16, Quarter-final, Semi-final, Final), JANGAN BAHAS poin grup lagi. Bahas tentang eliminasi, siapa yang gugur, siapa yang lolos, atau drama adu penalti jika skor seri.
         - DO NOT HALLUCINATE FACTS: You MUST strictly stick to the points, names, and match results provided in the prompt. You can be wild with your jokes and analogies, but NEVER invent fake scores, fake point totals, or fake matches.
         - Notice and comment on changes across the whole board—praise the top leaders, playfully roast or encourage the bottom players, highlight the climbers/drops, dan berikan shoutout ke pemain papan tengah!
-        - You MUST keep the summary strictly between 10 to 14 sentences MAXIMUM. Make every sentence count!
+        - COHERENT MONOLOGUE: Do not write disjointed, random roasts. You MUST write the summary as one continuous, flowing monologue like you are writing a story. Create and use transitions to connect the participants together smoothly and logically instead of just listing and roasting who went up or down.
+        - You MUST keep the summary strictly between 10 to 15 sentences MAXIMUM. Make every sentence count!
         - Go all out on the comedy—use funny analogies, dramatic flair, dan casual roasts.
         - STRICT RULE: JANGAN PERNAH MENGGUNAKAN KATA "LO", "GUE", "GW", ATAU "LU".
         - Ensure all user/player names are bolded using markdown (e.g., **Nama**).

@@ -246,7 +246,7 @@ const MyTournaments = ({ userProfile, onEnterPredictions }: MyTournamentsProps) 
                                     <div className="flex flex-col relative group">
                                         <button 
                                             onClick={() => setViewingAllPredictionsFor(tournament)} 
-                                            className="px-3 py-2 bg-gray-500 hover:bg-gray-400 font-semibold text-white text-xs disabled:bg-slate-700 disabled:cursor-not-allowed disabled:text-slate-500 w-full"
+                                            className="px-3 py-2 bg-slate-600 hover:bg-slate-500 font-semibold text-white text-xs disabled:bg-slate-800 disabled:cursor-not-allowed disabled:text-slate-600 w-full"
                                             disabled={!isPredictionsVisible}
                                         >
                                             {t('myTournaments.viewPredictions', 'All Predictions')}

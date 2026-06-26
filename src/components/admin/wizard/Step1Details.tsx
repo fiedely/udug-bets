@@ -28,6 +28,7 @@ type PointRuleStage = 'groupStage' | 'round32' | 'round16' | 'quarterFinal' | 's
 const Step1Details = ({ tournament, userProfile, onNext, setIsDirty }: Step1DetailsProps) => {
     const [name, setName] = useState(tournament.name);
     const [description, setDescription] = useState(tournament.description || '');
+    const [format, setFormat] = useState<'world_cup' | 'euro' | 'generic'>(tournament.format || 'generic');
 
     const initialPointRules: PointRules = tournament.pointRules || {
         groupStage: DEFAULT_POINTS,
@@ -97,6 +98,7 @@ const Step1Details = ({ tournament, userProfile, onNext, setIsDirty }: Step1Deta
             const updatedData: Partial<Tournament> = {
                 name,
                 description,
+                format,
                 pointRules: { ...pointRules, championBonus },
             };
 
@@ -128,9 +130,23 @@ const Step1Details = ({ tournament, userProfile, onNext, setIsDirty }: Step1Deta
 
             <form className="mt-4 space-y-6 max-w-4xl mx-auto" onSubmit={e => e.preventDefault()}>
                 <h2 className="text-2xl font-bold text-blue-400">Step 1: Tournament Details</h2>
-                <div>
-                    <label htmlFor="tourney-name" className="block text-sm font-medium text-slate-300">Tournament Name</label>
-                    <input type="text" id="tourney-name" value={name} onChange={e => { setName(e.target.value); markDirty(); }} className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-300">Tournament Name</label>
+                        <input type="text" value={name} onChange={(e) => { setName(e.target.value); markDirty(); }} className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 rounded" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-300">Tournament Format</label>
+                        <select 
+                            value={format} 
+                            onChange={(e) => { setFormat(e.target.value as any); markDirty(); }} 
+                            className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                        >
+                            <option value="generic">Generic (Standard Binary Tree)</option>
+                            <option value="world_cup">FIFA World Cup 2026</option>
+                            <option value="euro">UEFA Euro 2024</option>
+                        </select>
+                    </div>
                 </div>
                 <div>
                     <label htmlFor="tourney-desc" className="block text-sm font-medium text-slate-300">Description</label>

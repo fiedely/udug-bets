@@ -233,6 +233,7 @@ const AdminParticipantsModal = ({ tournament, onClose }: AdminParticipantsModalP
                                 <tr>
                                     <th className="px-2 py-1 font-semibold border-b border-slate-700 w-auto">Participant</th>
                                     {STAGES_TO_DISPLAY.map(stage => {
+                                        if (filterStage !== 'all' && filterStage !== stage.stage) return null;
                                         if (getStageStatus(participants[0]?.uid, stage.stage) !== 'na') {
                                             return <th key={stage.stage} className="px-1 py-1 font-semibold text-center border-b border-slate-700 w-20 min-w-[5rem]">{stage.label}</th>;
                                         }
@@ -258,6 +259,7 @@ const AdminParticipantsModal = ({ tournament, onClose }: AdminParticipantsModalP
                                             </div>
                                         </td>
                                         {STAGES_TO_DISPLAY.map(stage => {
+                                            if (filterStage !== 'all' && filterStage !== stage.stage) return null;
                                             const status = getStageStatus(user.uid, stage.stage);
                                             if (status !== 'na') {
                                                 return (

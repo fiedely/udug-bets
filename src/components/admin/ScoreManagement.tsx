@@ -180,7 +180,8 @@ const ScoreManagement = ({ tournament, userProfile, onBack, reportDirtyState }: 
     );
 
     return (
-        <div className="flex flex-col h-full bg-slate-900 text-slate-100 overflow-y-auto w-full">
+        <div id="score-management-top" className="flex flex-col h-full bg-slate-900 text-slate-100 overflow-y-auto w-full relative">
+            <div id="score-management-top-anchor" className="absolute top-0 left-0"></div>
             <div className="bg-slate-800 p-4 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
                 <div className="flex items-center gap-3">
                     <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors">
@@ -360,10 +361,28 @@ const ScoreManagement = ({ tournament, userProfile, onBack, reportDirtyState }: 
                 ))}
             </div>
             
-            <div className="mt-8 pt-6 border-t border-slate-700 flex justify-end items-center gap-4">
+            <div id="score-management-bottom" className="mt-8 pt-6 border-t border-slate-700 flex justify-end items-center gap-4">
                 {message && <p className="text-green-400 text-sm">{message}</p>}
                 <button onClick={handleSave} disabled={isSaving} className="px-6 py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-white transition-colors disabled:bg-blue-800 disabled:cursor-not-allowed">
                     {isSaving ? 'Saving...' : 'Save Results & Seeding'}
+                </button>
+            </div>
+
+            {/* Floating Action Buttons */}
+            <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
+                <button 
+                    onClick={() => document.getElementById('score-management-top-anchor')?.scrollIntoView({ behavior: 'smooth' })}
+                    className="w-12 h-12 bg-slate-700 hover:bg-slate-600 border border-slate-500 rounded-full flex items-center justify-center shadow-lg text-slate-300 hover:text-white transition-colors"
+                    title="Scroll to Top"
+                >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+                </button>
+                <button 
+                    onClick={() => document.getElementById('score-management-bottom')?.scrollIntoView({ behavior: 'smooth' })}
+                    className="w-12 h-12 bg-blue-600 hover:bg-blue-500 border border-blue-400 rounded-full flex items-center justify-center shadow-lg text-white transition-colors"
+                    title="Scroll to Save"
+                >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
                 </button>
             </div>
         </div>

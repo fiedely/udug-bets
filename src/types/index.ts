@@ -20,7 +20,7 @@ export interface Widget {
 
 export type WidgetType = 'leaderboard' | 'predictionChart' | 'myPredictionsChart' | 'championPredictionChart' | 'groupStandings';
 
-export type View = 'User Dashboard' | 'My Tournaments' | 'Join Tournament' | 'Leaderboard' | 'Create Tournament' | 'Manage Users' | 'List Tournaments' | 'Edit Tournament' | 'Manage Scores' | 'Manage AI Config' | 'Debug' | 'Live Match' | 'Audit Logs';
+export type View = 'User Dashboard' | 'My Tournaments' | 'Join Tournament' | 'Leaderboard' | 'Create Tournament' | 'Manage Users' | 'List Tournaments' | 'Edit Tournament' | 'Manage Scores' | 'Manage AI Config' | 'Debug' | 'Audit Logs';
 
 export interface UserProfile {
   uid: string;
@@ -89,6 +89,7 @@ export interface Match {
     tiebreakerType?: 'Extra Time' | 'Penalty Shootout';
     team1TiebreakerScore?: number;
     team2TiebreakerScore?: number;
+    nextMatchId?: string;
 }
 
 export interface LiveMatchEvent {
@@ -139,6 +140,7 @@ export interface AuditLog {
 export interface Tournament {
     id: string;
     name: string;
+    format?: 'world_cup' | 'euro' | 'generic';
     description?: string;
     pointRules?: PointRules;
     startDate?: Date;
@@ -156,6 +158,7 @@ export interface Tournament {
     hasThirdPlaceMatch?: boolean;
     champion?: string;
     groupStandingsOverrides?: Record<string, string[]>;
+    skipLeaderboardUpdate?: number;
 }
 
 export interface MatchPrediction {
