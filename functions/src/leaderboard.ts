@@ -377,7 +377,11 @@ export async function recalculateLeaderboard(tournamentId: string) {
                         const rels = ctxData.connections.map((c: any) => `${c.type} of ${c.target}`).join(', ');
                         connectionsStr = ` - Connections: ${rels}`;
                     }
-                    participantContextPrompt += `- ${userObj.userName} (${genderStr})${connectionsStr}\n`;
+                    let notesStr = '';
+                    if (ctxData.notes && typeof ctxData.notes === 'string' && ctxData.notes.trim() !== '') {
+                        notesStr = ` - Personal Notes: ${ctxData.notes.trim()}`;
+                    }
+                    participantContextPrompt += `- ${userObj.userName} (${genderStr})${connectionsStr}${notesStr}\n`;
                 }
             }
         }

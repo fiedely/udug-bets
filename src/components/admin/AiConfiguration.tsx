@@ -308,6 +308,7 @@ export default function AiConfiguration({ tournament, userProfile, onBack }: AiC
 
     const inverseMap: Record<string, string> = {
         'spouse': 'spouse',
+        'partner': 'partner',
         'sibling': 'sibling',
         'kid': 'parent',
         'parent': 'kid',
@@ -500,131 +501,145 @@ export default function AiConfiguration({ tournament, userProfile, onBack }: AiC
                             {isSavingContexts ? 'Saving...' : 'Save Contexts'}
                         </button>
                     </div>
-                    <div className="overflow-x-auto overscroll-x-none" style={{ WebkitOverflowScrolling: 'touch' }}>
-                        <table className="w-full text-left text-sm text-slate-300">
-                            <thead className="text-xs text-slate-400 uppercase bg-slate-900/50">
-                                <tr>
-                                    <th className="px-4 py-3">Participant</th>
-                                    <th className="px-4 py-3 w-40">Gender</th>
-                                    <th className="px-4 py-3">Relationships</th>
-                                    <th className="px-4 py-3">Notes</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-700/50">
-                                {participants.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={3} className="px-4 py-4 text-center text-slate-500">No participants found.</td>
-                                    </tr>
-                                ) : (
-                                    participants.map(p => (
-                                        <tr key={p.uid} className="hover:bg-slate-800/50">
-                                            <td className="px-4 py-3 font-semibold text-white whitespace-nowrap">{p.name}</td>
-                                            <td className="px-4 py-3 align-top">
-                                                <select 
-                                                    value={contexts[p.uid]?.gender || 'unknown'}
-                                                    onChange={e => handleContextChange(p.uid, 'gender', e.target.value)}
-                                                    className="w-full bg-slate-900 border border-slate-600 rounded text-slate-200 px-2 py-1.5 focus:outline-none focus:border-blue-500"
-                                                >
-                                                    <option value="unknown">Unknown</option>
-                                                    <option value="male">Male</option>
-                                                    <option value="female">Female</option>
-                                                </select>
-                                            </td>
-                                            <td className="px-4 py-3 align-top">
-                                                <div className="space-y-2">
-                                                    {(contexts[p.uid]?.connections || []).map((conn, idx) => (
-                                                        <div key={idx} className="flex gap-2 items-center relative bg-slate-800/50 p-1.5 rounded border border-slate-700/50">
-                                                            <span className="text-xs text-slate-400 whitespace-nowrap">is the</span>
-                                                            <select
-                                                                value={conn.type}
-                                                                onChange={e => handleConnectionChange(p.uid, idx, 'type', e.target.value)}
-                                                                className="bg-slate-900 border border-slate-600 rounded text-slate-200 px-2 py-1 text-xs focus:outline-none focus:border-blue-500 w-28 shrink-0"
-                                                            >
-                                                                <option value="spouse">Spouse</option>
-                                                                <option value="sibling">Sibling</option>
-                                                                <option value="kid">Kid</option>
-                                                                <option value="parent">Parent</option>
-                                                                <option value="grandparent">Grandparent</option>
-                                                                <option value="uncle/aunt">Uncle/Aunt</option>
-                                                                <option value="cousin">Cousin</option>
-                                                                <option value="niece/nephew">Niece/Nephew</option>
-                                                                <option value="friend">Friend</option>
-                                                            </select>
-                                                            <span className="text-xs text-slate-400 whitespace-nowrap">of</span>
-                                                            <div className="relative flex-1">
-                                                                <input
-                                                                    type="text"
-                                                                    value={conn.target}
-                                                                    onChange={e => handleConnectionTargetChange(e, p.uid, idx)}
-                                                                    onKeyDown={e => handleConnectionTargetKeyDown(e, p.uid, idx)}
-                                                                    onClick={e => handleConnectionTargetChange(e as any, p.uid, idx)}
-                                                                    onKeyUp={e => handleConnectionTargetChange(e as any, p.uid, idx)}
-                                                                    className="w-full bg-slate-900 border border-slate-600 rounded text-slate-200 px-2 py-1 text-xs focus:outline-none focus:border-blue-500"
-                                                                    placeholder="e.g. @Fyr"
-                                                                />
-                                                                {activeConnectionInput?.userId === p.uid && activeConnectionInput?.connIndex === idx && connectionMentionSearch !== null && filteredConnectionParticipants.length > 0 && (
-                                                                    <ul className="absolute z-10 w-full max-h-40 overflow-y-auto bg-slate-700 border border-slate-600 rounded shadow-lg top-full left-0 text-xs mt-1">
-                                                                        {filteredConnectionParticipants.map((fp, i) => (
-                                                                            <li 
-                                                                                key={fp.uid} 
-                                                                                className={`px-2 py-1 cursor-pointer hover:bg-blue-600 ${i === connectionMentionSelectedIndex ? 'bg-blue-600' : ''}`}
-                                                                                onMouseDown={(e) => {
-                                                                                    e.preventDefault();
-                                                                                    insertConnectionMention(fp.name, p.uid, idx);
-                                                                                }}
-                                                                            >
-                                                                                {fp.name}
-                                                                            </li>
-                                                                        ))}
-                                                                    </ul>
-                                                                )}
-                                                            </div>
-                                                            <button 
-                                                                onClick={() => removeConnection(p.uid, idx)}
-                                                                className="text-red-400 hover:text-red-300 px-1 font-bold text-lg leading-none"
-                                                                title="Remove connection"
-                                                            >
-                                                                &times;
-                                                            </button>
-                                                        </div>
-                                                    ))}
-                                                    <button 
-                                                        onClick={() => addConnection(p.uid)}
-                                                        className="text-xs text-blue-400 hover:text-blue-300 font-medium"
+                    <div className="flex flex-col divide-y divide-slate-700/50">
+                        {/* Desktop Header */}
+                        <div className="hidden md:flex text-xs text-slate-400 uppercase bg-slate-900/50 px-4 py-3">
+                            <div className="w-1/5 pr-4">Participant</div>
+                            <div className="w-1/5 pr-4">Gender</div>
+                            <div className="w-2/5 pr-4">Relationships</div>
+                            <div className="w-1/5">Notes</div>
+                        </div>
+
+                        {/* List */}
+                        {participants.length === 0 ? (
+                            <div className="px-4 py-8 text-center text-slate-500">No participants found.</div>
+                        ) : (
+                            participants.map(p => (
+                                <div key={p.uid} className="flex flex-col md:flex-row hover:bg-slate-800/50 p-4 gap-4 md:gap-0">
+                                    {/* Participant Name */}
+                                    <div className="md:w-1/5 md:pr-4 flex items-center">
+                                        <span className="font-semibold text-white text-base md:text-sm">{p.name}</span>
+                                    </div>
+
+                                    {/* Gender */}
+                                    <div className="md:w-1/5 md:pr-4 flex flex-col justify-start">
+                                        <label className="block text-xs text-slate-400 mb-1 md:hidden">Gender</label>
+                                        <select 
+                                            value={contexts[p.uid]?.gender || 'unknown'}
+                                            onChange={e => handleContextChange(p.uid, 'gender', e.target.value)}
+                                            className="w-full bg-slate-900 border border-slate-600 rounded text-slate-200 px-2 py-1.5 focus:outline-none focus:border-blue-500"
+                                        >
+                                            <option value="unknown">Unknown</option>
+                                            <option value="male">Male</option>
+                                            <option value="female">Female</option>
+                                        </select>
+                                    </div>
+
+                                    {/* Relationships */}
+                                    <div className="md:w-2/5 md:pr-4 flex flex-col justify-start space-y-2">
+                                        <label className="block text-xs text-slate-400 mb-1 md:hidden">Relationships</label>
+                                        {(contexts[p.uid]?.connections || []).map((conn, idx) => (
+                                            <div key={idx} className="flex flex-col sm:flex-row gap-2 sm:items-center relative bg-slate-800/50 p-2 sm:p-1.5 rounded border border-slate-700/50">
+                                                <div className="flex gap-2 items-center w-full sm:w-auto">
+                                                    <span className="text-xs text-slate-400 whitespace-nowrap">is the</span>
+                                                    <select
+                                                        value={conn.type}
+                                                        onChange={e => handleConnectionChange(p.uid, idx, 'type', e.target.value)}
+                                                        className="bg-slate-900 border border-slate-600 rounded text-slate-200 px-2 py-1 text-xs focus:outline-none focus:border-blue-500 flex-1 sm:w-28 sm:flex-none"
                                                     >
-                                                        + Add Relationship
-                                                    </button>
-                                                    
-                                                    {getAutoConnections(p.name).map((autoConn, idx) => (
-                                                        <div key={`auto-${idx}`} className="flex gap-2 items-center relative bg-slate-800/20 p-1.5 rounded border border-slate-700/30 opacity-60 pointer-events-none">
-                                                            <span className="text-xs text-slate-500 whitespace-nowrap italic">is the</span>
-                                                            <div className="bg-slate-900 border border-slate-700 rounded text-slate-400 px-2 py-1 text-xs w-28 shrink-0 capitalize">
-                                                                {autoConn.type}
-                                                            </div>
-                                                            <span className="text-xs text-slate-500 whitespace-nowrap italic">of</span>
-                                                            <div className="flex-1">
-                                                                <div className="w-full bg-slate-900 border border-slate-700 rounded text-slate-400 px-2 py-1 text-xs">
-                                                                    {autoConn.target}
-                                                                </div>
-                                                            </div>
-                                                            <div className="w-5" /> {/* Spacer for symmetry with the 'x' button */}
-                                                        </div>
-                                                    ))}
+                                                        <option value="spouse">Spouse</option>
+                                                        <option value="partner">Partner</option>
+                                                        <option value="sibling">Sibling</option>
+                                                        <option value="kid">Kid</option>
+                                                        <option value="parent">Parent</option>
+                                                        <option value="grandparent">Grandparent</option>
+                                                        <option value="uncle/aunt">Uncle/Aunt</option>
+                                                        <option value="cousin">Cousin</option>
+                                                        <option value="niece/nephew">Niece/Nephew</option>
+                                                        <option value="friend">Friend</option>
+                                                    </select>
                                                 </div>
-                                            </td>
-                                            <td className="px-4 py-3 align-top">
-                                                <textarea 
-                                                    value={contexts[p.uid]?.notes || ''}
-                                                    onChange={e => handleContextChange(p.uid, 'notes', e.target.value)}
-                                                    className="w-full min-w-[200px] h-20 bg-slate-900 border border-slate-600 rounded text-slate-200 px-3 py-1.5 focus:outline-none focus:border-blue-500 resize-y"
-                                                    placeholder="e.g. Suka pasang aneh-aneh"
-                                                />
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                                                <div className="flex gap-2 items-center w-full sm:w-auto sm:flex-1">
+                                                    <span className="text-xs text-slate-400 whitespace-nowrap">of</span>
+                                                    <div className="relative flex-1">
+                                                        <input
+                                                            type="text"
+                                                            value={conn.target}
+                                                            onChange={e => handleConnectionTargetChange(e, p.uid, idx)}
+                                                            onKeyDown={e => handleConnectionTargetKeyDown(e, p.uid, idx)}
+                                                            onClick={e => handleConnectionTargetChange(e as any, p.uid, idx)}
+                                                            onKeyUp={e => handleConnectionTargetChange(e as any, p.uid, idx)}
+                                                            className="w-full bg-slate-900 border border-slate-600 rounded text-slate-200 px-2 py-1 text-xs focus:outline-none focus:border-blue-500"
+                                                            placeholder="e.g. @Fyr"
+                                                        />
+                                                        {activeConnectionInput?.userId === p.uid && activeConnectionInput?.connIndex === idx && connectionMentionSearch !== null && filteredConnectionParticipants.length > 0 && (
+                                                            <ul className="absolute z-10 w-full max-h-40 overflow-y-auto bg-slate-700 border border-slate-600 rounded shadow-lg top-full left-0 text-xs mt-1">
+                                                                {filteredConnectionParticipants.map((fp, i) => (
+                                                                    <li 
+                                                                        key={fp.uid} 
+                                                                        className={`px-2 py-1 cursor-pointer hover:bg-blue-600 ${i === connectionMentionSelectedIndex ? 'bg-blue-600' : ''}`}
+                                                                        onMouseDown={(e) => {
+                                                                            e.preventDefault();
+                                                                            insertConnectionMention(fp.name, p.uid, idx);
+                                                                        }}
+                                                                    >
+                                                                        {fp.name}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        )}
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => removeConnection(p.uid, idx)}
+                                                        className="text-red-400 hover:text-red-300 px-1 font-bold text-lg leading-none shrink-0"
+                                                        title="Remove connection"
+                                                    >
+                                                        &times;
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <button 
+                                            onClick={() => addConnection(p.uid)}
+                                            className="text-xs text-blue-400 hover:text-blue-300 font-medium self-start mt-1"
+                                        >
+                                            + Add Relationship
+                                        </button>
+                                        
+                                        {getAutoConnections(p.name).map((autoConn, idx) => (
+                                            <div key={`auto-${idx}`} className="flex flex-col sm:flex-row gap-2 sm:items-center relative bg-slate-800/20 p-2 sm:p-1.5 rounded border border-slate-700/30 opacity-60 pointer-events-none mt-2">
+                                                <div className="flex gap-2 items-center w-full sm:w-auto">
+                                                    <span className="text-xs text-slate-500 whitespace-nowrap italic">is the</span>
+                                                    <div className="bg-slate-900 border border-slate-700 rounded text-slate-400 px-2 py-1 text-xs flex-1 sm:w-28 sm:flex-none capitalize">
+                                                        {autoConn.type}
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2 items-center w-full sm:w-auto sm:flex-1">
+                                                    <span className="text-xs text-slate-500 whitespace-nowrap italic">of</span>
+                                                    <div className="flex-1">
+                                                        <div className="w-full bg-slate-900 border border-slate-700 rounded text-slate-400 px-2 py-1 text-xs">
+                                                            {autoConn.target}
+                                                        </div>
+                                                    </div>
+                                                    <div className="w-5 hidden sm:block" />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Notes */}
+                                    <div className="md:w-1/5 flex flex-col justify-start mt-2 md:mt-0">
+                                        <label className="block text-xs text-slate-400 mb-1 md:hidden">Notes</label>
+                                        <textarea 
+                                            value={contexts[p.uid]?.notes || ''}
+                                            onChange={e => handleContextChange(p.uid, 'notes', e.target.value)}
+                                            className="w-full h-20 bg-slate-900 border border-slate-600 rounded text-slate-200 px-3 py-1.5 focus:outline-none focus:border-blue-500 resize-y"
+                                            placeholder="e.g. Suka pasang aneh-aneh"
+                                        />
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
 
