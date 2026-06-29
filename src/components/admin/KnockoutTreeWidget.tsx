@@ -214,6 +214,7 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
 
         const handleTouchStart = (e: TouchEvent) => {
             if (e.touches.length !== 1) return;
+            e.stopPropagation();
             
             container.style.overflowX = 'auto';
             container.style.overflowY = 'auto';
@@ -227,6 +228,8 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
 
         const handleTouchMove = (e: TouchEvent) => {
             if (e.touches.length !== 1) return;
+            e.stopPropagation();
+            
             const state = touchState.current;
             
             if (!state.isAxisLocked) {
@@ -257,7 +260,7 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
     }, []);
 
     return (
-        <div ref={containerRef} className="w-full h-full bg-slate-800 overflow-auto relative font-sans text-slate-100 p-4 sm:p-8" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div ref={containerRef} className="w-full h-full bg-slate-800 overflow-auto relative font-sans text-slate-100 p-4 sm:p-8" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'none', touchAction: 'pan-x pan-y' }}>
             <div className="min-w-max flex flex-col">
                 {/* Headers Row */}
                 <div className="flex gap-12 sm:gap-16 mb-6">
