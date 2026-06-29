@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { db, functions } from '../../firebaseConfig';
 import { httpsCallable } from 'firebase/functions';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Tournament, UserProfile, UserPredictions } from '../../types';
+import { useTouchScrollLock } from '../../hooks/useTouchScrollLock';
 
 interface AdminParticipantsModalProps {
     tournament: Tournament;
@@ -172,6 +173,8 @@ const AdminParticipantsModal = ({ tournament, onClose }: AdminParticipantsModalP
         if (filterStatus === 'complete') return participantsWithStatus.filter(p => p.overallStatus === 'complete');
         return participantsWithStatus.filter(p => p.overallStatus === 'incomplete' || p.overallStatus === 'none');
     }, [participantsWithStatus, filterStatus]);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    useTouchScrollLock(scrollContainerRef);
 
     return (
         <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center p-4 z-50">
@@ -220,7 +223,11 @@ const AdminParticipantsModal = ({ tournament, onClose }: AdminParticipantsModalP
                     )}
                     <button onClick={onClose} className="hidden sm:block text-slate-400 hover:text-white text-2xl leading-none">&times;</button>
                 </div>
-                <div className="p-4 flex-grow overflow-x-auto overflow-y-auto">
+                <div 
+                    ref={scrollContainerRef}
+                    className="p-4 flex-grow overflow-hidden"
+                    style={{ overscrollBehavior: 'none', touchAction: 'none' }}
+                >
                     {isLoading ? (
                         <p className="text-center text-slate-400 py-8">Loading report data...</p>
                     ) : error ? (

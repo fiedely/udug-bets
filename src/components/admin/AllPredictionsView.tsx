@@ -9,6 +9,7 @@ import { logAudit } from '../../utils/auditLogger';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { CellDef, UserOptions } from 'jspdf-autotable';
+import { useTouchScrollLock } from '../../hooks/useTouchScrollLock';
 
 interface AllPredictionsViewProps {
     tournament: Tournament;
@@ -62,6 +63,8 @@ const AllPredictionsView = ({ tournament, userProfile, onBack }: AllPredictionsV
     const tableRef = useRef<HTMLTableElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<string | null>(null);
+
+    useTouchScrollLock(scrollContainerRef);
 
     useEffect(() => {
         const fetchAllData = async () => {
@@ -268,7 +271,7 @@ const AllPredictionsView = ({ tournament, userProfile, onBack }: AllPredictionsV
             ) : participants.length === 0 ? (
                 <div className="text-center p-8 bg-slate-900/50 border border-slate-700"><p className="text-slate-300">This tournament has no participants.</p></div>
             ) : (
-                <div ref={scrollContainerRef} className="overflow-auto overscroll-none border border-slate-700 flex-grow min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+                <div ref={scrollContainerRef} className="overflow-hidden overscroll-none border border-slate-700 flex-grow min-h-0" style={{ touchAction: 'none' }}>
                     <table ref={tableRef} className="w-full text-xs text-left text-slate-300 border-collapse min-w-[1200px]">
                         <thead className="sticky top-0 z-20">
                             <tr>

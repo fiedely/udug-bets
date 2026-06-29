@@ -1,6 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import type { Tournament, Match } from '../../types';
 import { STAGE_MATCH_NUMBERS, getNextMatchId } from '../../utils/bracketRouting';
+import { useTouchScrollLock } from '../../hooks/useTouchScrollLock';
 
 interface KnockoutTreeWidgetProps {
     tournament: Tournament;
@@ -202,127 +203,7 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
     }
 
     const containerRef = useRef<HTMLDivElement>(null);
-    const touchState = useRef({
-        startX: 0,
-        startY: 0,
-        lastX: 0,
-        lastY: 0,
-        isAxisLocked: false,
-        lockedAxis: null as 'x' | 'y' | null,
-        velocityX: 0,
-        velocityY: 0,
-        lastTime: 0,
-        rafId: 0
-    });
-
-    useEffect(() => {
-        const container = containerRef.current;
-        if (!container) return;
-
-        const handleTouchStart = (e: TouchEvent) => {
-            if (e.touches.length !== 1) return;
-            e.stopPropagation();
-            
-            cancelAnimationFrame(touchState.current.rafId);
-            
-            touchState.current = {
-                ...touchState.current,
-                startX: e.touches[0].clientX,
-                startY: e.touches[0].clientY,
-                lastX: e.touches[0].clientX,
-                lastY: e.touches[0].clientY,
-                isAxisLocked: false,
-                lockedAxis: null,
-                velocityX: 0,
-                velocityY: 0,
-                lastTime: Date.now()
-            };
-        };
-
-        const handleTouchMove = (e: TouchEvent) => {
-            if (e.touches.length !== 1) return;
-            e.stopPropagation();
-            
-            const state = touchState.current;
-            const currentX = e.touches[0].clientX;
-            const currentY = e.touches[0].clientY;
-            const now = Date.now();
-            const dt = now - state.lastTime;
-            
-            if (!state.isAxisLocked) {
-                const dx = Math.abs(currentX - state.startX);
-                const dy = Math.abs(currentY - state.startY);
-                
-                if (dx > 5 || dy > 5) {
-                    state.isAxisLocked = true;
-                    state.lockedAxis = dx > dy ? 'x' : 'y';
-                    state.lastX = currentX;
-                    state.lastY = currentY;
-                    state.lastTime = now;
-                }
-            } else {
-                if (e.cancelable) e.preventDefault();
-                
-                if (state.lockedAxis === 'x') {
-                    const dx = currentX - state.lastX;
-                    container.scrollLeft -= dx;
-                    if (dt > 0) state.velocityX = dx / dt;
-                } else {
-                    const dy = currentY - state.lastY;
-                    container.scrollTop -= dy;
-                    if (dt > 0) state.velocityY = dy / dt;
-                }
-                
-                state.lastX = currentX;
-                state.lastY = currentY;
-                state.lastTime = now;
-            }
-        };
-
-        const handleTouchEnd = () => {
-            const state = touchState.current;
-            const now = Date.now();
-            
-            // If the finger was held still before lifting, kill inertia
-            if (now - state.lastTime > 50) {
-                state.velocityX = 0;
-                state.velocityY = 0;
-            }
-
-            let vx = state.velocityX;
-            let vy = state.velocityY;
-            const friction = 0.95;
-
-            const animate = () => {
-                if (Math.abs(vx) < 0.05 && Math.abs(vy) < 0.05) return;
-
-                if (state.lockedAxis === 'x') {
-                    container.scrollLeft -= vx * 16;
-                    vx *= friction;
-                } else if (state.lockedAxis === 'y') {
-                    container.scrollTop -= vy * 16;
-                    vy *= friction;
-                }
-
-                state.rafId = requestAnimationFrame(animate);
-            };
-
-            if (state.isAxisLocked) {
-                state.rafId = requestAnimationFrame(animate);
-            }
-        };
-
-        container.addEventListener('touchstart', handleTouchStart, { passive: false });
-        container.addEventListener('touchmove', handleTouchMove, { passive: false });
-        container.addEventListener('touchend', handleTouchEnd, { passive: true });
-
-        return () => {
-            cancelAnimationFrame(touchState.current.rafId);
-            container.removeEventListener('touchstart', handleTouchStart);
-            container.removeEventListener('touchmove', handleTouchMove);
-            container.removeEventListener('touchend', handleTouchEnd);
-        };
-    }, []);
+    useTouchScrollLock(containerRef);
 
     return (
         <div 
