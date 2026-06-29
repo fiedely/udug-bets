@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import type { Tournament, Match } from '../../types';
 import { STAGE_MATCH_NUMBERS, getNextMatchId } from '../../utils/bracketRouting';
 
@@ -201,66 +201,13 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
         return <div className="p-8 text-center text-slate-400">No knockout matches available.</div>;
     }
 
-    const containerRef = useRef<HTMLDivElement>(null);
-    const touchState = useRef({
-        startX: 0,
-        startY: 0,
-        isAxisLocked: false
-    });
-
-    useEffect(() => {
-        const container = containerRef.current;
-        if (!container) return;
-
-        const handleTouchStart = (e: TouchEvent) => {
-            if (e.touches.length !== 1) return;
-            e.stopPropagation();
-            
-            container.style.overflowX = 'auto';
-            container.style.overflowY = 'auto';
-            
-            touchState.current = {
-                startX: e.touches[0].clientX,
-                startY: e.touches[0].clientY,
-                isAxisLocked: false
-            };
-        };
-
-        const handleTouchMove = (e: TouchEvent) => {
-            if (e.touches.length !== 1) return;
-            e.stopPropagation();
-            
-            const state = touchState.current;
-            
-            if (!state.isAxisLocked) {
-                const currentX = e.touches[0].clientX;
-                const currentY = e.touches[0].clientY;
-                
-                const dx = Math.abs(currentX - state.startX);
-                const dy = Math.abs(currentY - state.startY);
-                
-                if (dx > 5 || dy > 5) {
-                    state.isAxisLocked = true;
-                    if (dx > dy) {
-                        container.style.overflowY = 'hidden';
-                    } else {
-                        container.style.overflowX = 'hidden';
-                    }
-                }
-            }
-        };
-
-        container.addEventListener('touchstart', handleTouchStart, { passive: true });
-        container.addEventListener('touchmove', handleTouchMove, { passive: true });
-
-        return () => {
-            container.removeEventListener('touchstart', handleTouchStart);
-            container.removeEventListener('touchmove', handleTouchMove);
-        };
-    }, []);
-
     return (
-        <div ref={containerRef} className="w-full h-full bg-slate-800 overflow-auto relative font-sans text-slate-100 p-4 sm:p-8" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'none', touchAction: 'pan-x pan-y' }}>
+        <div 
+            className="w-full h-full bg-slate-800 overflow-auto relative font-sans text-slate-100 p-4 sm:p-8" 
+            style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'none', touchAction: 'pan-x pan-y' }}
+            onTouchStart={e => e.stopPropagation()}
+            onTouchMove={e => e.stopPropagation()}
+        >
             <div className="min-w-max flex flex-col">
                 {/* Headers Row */}
                 <div className="flex gap-12 sm:gap-16 mb-6">
