@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import type { Tournament, Match } from '../../types';
 import { STAGE_MATCH_NUMBERS, getNextMatchId } from '../../utils/bracketRouting';
 
@@ -201,8 +201,76 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
         return <div className="p-8 text-center text-slate-400">No knockout matches available.</div>;
     }
 
+    const containerRef = useRef<HTMLDivElement>(null);
+    const touchState = useRef({
+        startX: 0,
+        startY: 0,
+        lastX: 0,
+        lastY: 0,
+        isAxisLocked: false,
+        lockedAxis: null as 'x' | 'y' | null
+    });
+
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const handleTouchStart = (e: TouchEvent) => {
+            if (e.touches.length !== 1) return;
+            touchState.current = {
+                startX: e.touches[0].clientX,
+                startY: e.touches[0].clientY,
+                lastX: e.touches[0].clientX,
+                lastY: e.touches[0].clientY,
+                isAxisLocked: false,
+                lockedAxis: null
+            };
+        };
+
+        const handleTouchMove = (e: TouchEvent) => {
+            if (e.touches.length !== 1) return;
+            const state = touchState.current;
+            const currentX = e.touches[0].clientX;
+            const currentY = e.touches[0].clientY;
+            
+            if (!state.isAxisLocked) {
+                const dx = Math.abs(currentX - state.startX);
+                const dy = Math.abs(currentY - state.startY);
+                
+                if (dx > 5 || dy > 5) {
+                    state.isAxisLocked = true;
+                    state.lockedAxis = dx > dy ? 'x' : 'y';
+                    state.lastX = currentX;
+                    state.lastY = currentY;
+                }
+            } else {
+                if (e.cancelable) {
+                    e.preventDefault();
+                }
+                
+                if (state.lockedAxis === 'x') {
+                    container.scrollLeft -= (currentX - state.lastX);
+                } else {
+                    container.scrollTop -= (currentY - state.lastY);
+                }
+                
+                state.lastX = currentX;
+                state.lastY = currentY;
+            }
+        };
+
+        // passive: false is required to allow e.preventDefault()
+        container.addEventListener('touchstart', handleTouchStart, { passive: false });
+        container.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+        return () => {
+            container.removeEventListener('touchstart', handleTouchStart);
+            container.removeEventListener('touchmove', handleTouchMove);
+        };
+    }, []);
+
     return (
-        <div className="w-full h-full bg-slate-800 overflow-auto relative font-sans text-slate-100 p-4 sm:p-8" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div ref={containerRef} className="w-full h-full bg-slate-800 overflow-auto relative font-sans text-slate-100 p-4 sm:p-8" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'none' }}>
             <div className="min-w-max flex flex-col">
                 {/* Headers Row */}
                 <div className="flex gap-12 sm:gap-16 mb-6">
