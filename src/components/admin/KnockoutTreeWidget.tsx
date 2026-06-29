@@ -135,6 +135,9 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
             if (match.winnerTeamCode) {
                 team1IsWinner = match.winnerTeamCode === match.team1.code;
                 team2IsWinner = match.winnerTeamCode === match.team2.code;
+            } else if (match.team1Score === match.team2Score && match.tiebreakerType) {
+                team1IsWinner = (match.team1TiebreakerScore || 0) > (match.team2TiebreakerScore || 0);
+                team2IsWinner = (match.team2TiebreakerScore || 0) > (match.team1TiebreakerScore || 0);
             } else {
                 team1IsWinner = match.team1Score! > match.team2Score!;
                 team2IsWinner = match.team2Score! > match.team1Score!;
