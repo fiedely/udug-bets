@@ -205,10 +205,7 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
     const touchState = useRef({
         startX: 0,
         startY: 0,
-        lastX: 0,
-        lastY: 0,
-        isAxisLocked: false,
-        lockedAxis: null as 'x' | 'y' | null
+        isAxisLocked: false
     });
 
     useEffect(() => {
@@ -217,51 +214,41 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
 
         const handleTouchStart = (e: TouchEvent) => {
             if (e.touches.length !== 1) return;
+            
+            container.style.overflowX = 'auto';
+            container.style.overflowY = 'auto';
+            
             touchState.current = {
                 startX: e.touches[0].clientX,
                 startY: e.touches[0].clientY,
-                lastX: e.touches[0].clientX,
-                lastY: e.touches[0].clientY,
-                isAxisLocked: false,
-                lockedAxis: null
+                isAxisLocked: false
             };
         };
 
         const handleTouchMove = (e: TouchEvent) => {
             if (e.touches.length !== 1) return;
             const state = touchState.current;
-            const currentX = e.touches[0].clientX;
-            const currentY = e.touches[0].clientY;
             
             if (!state.isAxisLocked) {
+                const currentX = e.touches[0].clientX;
+                const currentY = e.touches[0].clientY;
+                
                 const dx = Math.abs(currentX - state.startX);
                 const dy = Math.abs(currentY - state.startY);
                 
                 if (dx > 5 || dy > 5) {
                     state.isAxisLocked = true;
-                    state.lockedAxis = dx > dy ? 'x' : 'y';
-                    state.lastX = currentX;
-                    state.lastY = currentY;
+                    if (dx > dy) {
+                        container.style.overflowY = 'hidden';
+                    } else {
+                        container.style.overflowX = 'hidden';
+                    }
                 }
-            } else {
-                if (e.cancelable) {
-                    e.preventDefault();
-                }
-                
-                if (state.lockedAxis === 'x') {
-                    container.scrollLeft -= (currentX - state.lastX);
-                } else {
-                    container.scrollTop -= (currentY - state.lastY);
-                }
-                
-                state.lastX = currentX;
-                state.lastY = currentY;
             }
         };
 
-        // passive: false is required to allow e.preventDefault()
-        container.addEventListener('touchstart', handleTouchStart, { passive: false });
-        container.addEventListener('touchmove', handleTouchMove, { passive: false });
+        container.addEventListener('touchstart', handleTouchStart, { passive: true });
+        container.addEventListener('touchmove', handleTouchMove, { passive: true });
 
         return () => {
             container.removeEventListener('touchstart', handleTouchStart);
@@ -270,7 +257,7 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
     }, []);
 
     return (
-        <div ref={containerRef} className="w-full h-full bg-slate-800 overflow-auto relative font-sans text-slate-100 p-4 sm:p-8" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'none' }}>
+        <div ref={containerRef} className="w-full h-full bg-slate-800 overflow-auto relative font-sans text-slate-100 p-4 sm:p-8" style={{ WebkitOverflowScrolling: 'touch' }}>
             <div className="min-w-max flex flex-col">
                 {/* Headers Row */}
                 <div className="flex gap-12 sm:gap-16 mb-6">
