@@ -225,8 +225,8 @@ const AdminParticipantsModal = ({ tournament, onClose }: AdminParticipantsModalP
                 </div>
                 <div 
                     ref={scrollContainerRef}
-                    className="p-4 flex-grow overflow-hidden"
-                    style={{ overscrollBehavior: 'none', touchAction: 'none' }}
+                    className="p-4 flex-grow overflow-auto"
+                    style={{ overscrollBehavior: 'none', touchAction: 'none', WebkitOverflowScrolling: 'touch' }}
                 >
                     {isLoading ? (
                         <p className="text-center text-slate-400 py-8">Loading report data...</p>

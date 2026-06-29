@@ -263,16 +263,15 @@ const AllPredictionsView = ({ tournament, userProfile, onBack }: AllPredictionsV
             </div>
 
             <div className="flex-1 flex flex-col min-h-0 p-4 max-w-full">
-
-            {isLoading ? (
-                 <div className="flex-grow flex items-center justify-center"><svg className="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>
-            ) : error ? (
-                <div className="text-center p-8 bg-red-900/20 border border-red-700"><p className="text-red-400">Error: {error}</p></div>
-            ) : participants.length === 0 ? (
-                <div className="text-center p-8 bg-slate-900/50 border border-slate-700"><p className="text-slate-300">This tournament has no participants.</p></div>
-            ) : (
-                <div ref={scrollContainerRef} className="overflow-hidden overscroll-none border border-slate-700 flex-grow min-h-0" style={{ touchAction: 'none' }}>
-                    <table ref={tableRef} className="w-full text-xs text-left text-slate-300 border-collapse min-w-[1200px]">
+                <div ref={scrollContainerRef} className="overflow-auto overscroll-none border border-slate-700 flex-grow min-h-0" style={{ touchAction: 'none', WebkitOverflowScrolling: 'touch' }}>
+                    {isLoading ? (
+                        <div className="flex-grow flex items-center justify-center h-full"><svg className="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>
+                    ) : error ? (
+                        <div className="text-center p-8 bg-red-900/20 border border-red-700"><p className="text-red-400">Error: {error}</p></div>
+                    ) : participants.length === 0 ? (
+                        <div className="text-center p-8 bg-slate-900/50 border border-slate-700"><p className="text-slate-300">This tournament has no participants.</p></div>
+                    ) : (
+                        <table ref={tableRef} className="w-full text-xs text-left text-slate-300 border-collapse min-w-[1200px]">
                         <thead className="sticky top-0 z-20">
                             <tr>
                                 <th scope="col" className="p-2 font-semibold text-slate-300 sticky left-0 bg-slate-700 z-30 w-48">Match</th>
@@ -329,9 +328,9 @@ const AllPredictionsView = ({ tournament, userProfile, onBack }: AllPredictionsV
                             </tr>
                         </tbody>
                     </table>
+                    )}
                 </div>
-            )}
-        </div>
+            </div>
         </div>
     );
 };

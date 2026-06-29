@@ -208,8 +208,8 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
     return (
         <div 
             ref={containerRef}
-            className="w-full h-full bg-slate-800 overflow-hidden relative font-sans text-slate-100 p-4 sm:p-8" 
-            style={{ overscrollBehavior: 'none', touchAction: 'none' }}
+            className="w-full h-full bg-slate-800 overflow-auto relative font-sans text-slate-100 p-4 sm:p-8" 
+            style={{ overscrollBehavior: 'none', touchAction: 'none', WebkitOverflowScrolling: 'touch' }}
         >
             <div className="min-w-max flex flex-col">
                 {/* Headers Row */}
