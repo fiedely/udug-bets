@@ -45,6 +45,7 @@ const WidgetConfigModal = ({ isOpen, widget, userProfile, onClose, onSave }: Wid
     const defaultTitles: Record<WidgetType, string> = {
         leaderboard: 'Leaderboard',
         groupStandings: 'Group Standings',
+        knockoutTree: 'Knockout Tree',
         predictionChart: 'All Predictions Chart',
         myPredictionsChart: 'My Prediction Chart',
         championPredictionChart: 'Champion Prediction',

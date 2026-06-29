@@ -10,6 +10,7 @@ import PredictionChartWidget from './widgets/PredictionChartWidget';
 import MyPredictionsChartWidget from './widgets/MyPredictionsChartWidget';
 import ChampionPredictionWidget from './widgets/ChampionPredictionWidget';
 import GroupStandingsWidget from './widgets/GroupStandingsWidget';
+import KnockoutTreeWidgetContainer from './widgets/KnockoutTreeWidgetContainer';
 import { useTranslation } from 'react-i18next';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
@@ -52,6 +53,13 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
                 { i: `championPredictionChart-4`, type: 'championPredictionChart', title: t('dashboard.widget.championPrediction', 'Champion Prediction'), x: 8, y: 0, w: 4, h: 16, minW: 4, minH: 8, props: { tournamentId: tId, selectedUserId: userProfile.uid } },
                 { i: `groupStandings-5`, type: 'groupStandings', title: t('dashboard.widget.groupStandings', 'Group Standings'), x: 0, y: 16, w: 12, h: 9, minW: 8, minH: 8, props: { tournamentId: tId, selectedUserId: userProfile.uid } },
             ];
+
+            if (userProfile.role === 'admin' || userProfile.role === 'superadmin') {
+                defaultWidgets.push(
+                    { i: `knockoutTree-6`, type: 'knockoutTree', title: t('dashboard.widget.knockoutTree', 'Knockout Tree'), x: 0, y: 25, w: 12, h: 14, minW: 8, minH: 10, props: { tournamentId: tId } }
+                );
+            }
+
             setWidgets(defaultWidgets);
             setIsMounted(true);
         };
@@ -78,6 +86,11 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
                 />;
             case 'groupStandings':
                 return <GroupStandingsWidget
+                    tournamentId={widget.props?.tournamentId}
+                    setRefreshFunc={() => {}}
+                />;
+            case 'knockoutTree':
+                return <KnockoutTreeWidgetContainer
                     tournamentId={widget.props?.tournamentId}
                     setRefreshFunc={() => {}}
                 />;
@@ -117,7 +130,7 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
       x: 0,
       y: index * 12, 
       w: 1, 
-      h: (widget.type === 'leaderboard' || widget.type === 'championPredictionChart' || widget.type === 'groupStandings') ? 14 : 12,
+      h: (widget.type === 'leaderboard' || widget.type === 'championPredictionChart' || widget.type === 'groupStandings' || widget.type === 'knockoutTree') ? 14 : 12,
     }));
 
     return (

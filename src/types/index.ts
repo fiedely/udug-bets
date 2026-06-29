@@ -18,7 +18,7 @@ export interface Widget {
   };
 }
 
-export type WidgetType = 'leaderboard' | 'predictionChart' | 'myPredictionsChart' | 'championPredictionChart' | 'groupStandings';
+export type WidgetType = 'leaderboard' | 'predictionChart' | 'myPredictionsChart' | 'championPredictionChart' | 'groupStandings' | 'knockoutTree';
 
 export type View = 'User Dashboard' | 'My Tournaments' | 'Join Tournament' | 'Leaderboard' | 'Create Tournament' | 'Manage Users' | 'List Tournaments' | 'Edit Tournament' | 'Manage Scores' | 'Manage AI Config' | 'Debug' | 'Audit Logs';
 
