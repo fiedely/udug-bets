@@ -73,7 +73,7 @@ const ScoreManagement = ({ tournament, userProfile, onBack, reportDirtyState }: 
         setKnockoutMatches(prev => prev.map(m => m.id === matchId ? { ...m, tiebreakerType: type === '' ? undefined : type } : m));
     };
 
-    const handleTiebreakerScoreChange = (matchId: string, team: 'team1TiebreakerScore' | 'team2TiebreakerScore', value: string) => {
+    const handleTiebreakerScoreChange = (matchId: string, team: 'team1TiebreakerScore' | 'team2TiebreakerScore' | 'team1ExtraTimeScore' | 'team2ExtraTimeScore', value: string) => {
         setIsDirty(true);
         const score = value === '' ? null : parseInt(value, 10);
         setKnockoutMatches(prev => prev.map(m => {
@@ -298,24 +298,47 @@ const ScoreManagement = ({ tournament, userProfile, onBack, reportDirtyState }: 
                                                                     </select>
                                                                     
                                                                     {match.tiebreakerType && (
-                                                                        <div className="flex items-center justify-center gap-2">
-                                                                            <span className="text-slate-300 text-xs w-16 text-right truncate">{match.team1.code}</span>
-                                                                            <input 
-                                                                                type="number" min="0" 
-                                                                                value={match.team1TiebreakerScore ?? ''} 
-                                                                                onChange={e => handleTiebreakerScoreChange(match.id, 'team1TiebreakerScore', e.target.value)} 
-                                                                                className="w-12 text-center bg-slate-800 border border-slate-600 text-white font-bold p-1" 
-                                                                                placeholder="0"
-                                                                            />
-                                                                            <span className="text-slate-500 font-bold text-lg">-</span>
-                                                                            <input 
-                                                                                type="number" min="0" 
-                                                                                value={match.team2TiebreakerScore ?? ''} 
-                                                                                onChange={e => handleTiebreakerScoreChange(match.id, 'team2TiebreakerScore', e.target.value)} 
-                                                                                className="w-12 text-center bg-slate-800 border border-slate-600 text-white font-bold p-1" 
-                                                                                placeholder="0"
-                                                                            />
-                                                                            <span className="text-slate-300 text-xs w-16 text-left truncate">{match.team2.code}</span>
+                                                                        <div className="flex flex-col gap-2">
+                                                                            {match.tiebreakerType === 'Penalty Shootout' && (
+                                                                                <div className="flex items-center justify-center gap-2">
+                                                                                    <span className="text-slate-300 text-xs w-16 text-right truncate">{match.team1.code} (ET)</span>
+                                                                                    <input 
+                                                                                        type="number" min="0" 
+                                                                                        value={match.team1ExtraTimeScore ?? ''} 
+                                                                                        onChange={e => handleTiebreakerScoreChange(match.id, 'team1ExtraTimeScore', e.target.value)} 
+                                                                                        className="w-12 text-center bg-slate-800 border border-slate-600 text-slate-300 p-1" 
+                                                                                        placeholder={match.team1Score?.toString() || "0"}
+                                                                                    />
+                                                                                    <span className="text-slate-500 font-bold text-lg">-</span>
+                                                                                    <input 
+                                                                                        type="number" min="0" 
+                                                                                        value={match.team2ExtraTimeScore ?? ''} 
+                                                                                        onChange={e => handleTiebreakerScoreChange(match.id, 'team2ExtraTimeScore', e.target.value)} 
+                                                                                        className="w-12 text-center bg-slate-800 border border-slate-600 text-slate-300 p-1" 
+                                                                                        placeholder={match.team2Score?.toString() || "0"}
+                                                                                    />
+                                                                                    <span className="text-slate-300 text-xs w-16 text-left truncate">(ET) {match.team2.code}</span>
+                                                                                </div>
+                                                                            )}
+                                                                            <div className="flex items-center justify-center gap-2">
+                                                                                <span className="text-slate-300 text-xs w-16 text-right truncate">{match.team1.code} {match.tiebreakerType === 'Penalty Shootout' ? '(Pen)' : ''}</span>
+                                                                                <input 
+                                                                                    type="number" min="0" 
+                                                                                    value={match.team1TiebreakerScore ?? ''} 
+                                                                                    onChange={e => handleTiebreakerScoreChange(match.id, 'team1TiebreakerScore', e.target.value)} 
+                                                                                    className="w-12 text-center bg-slate-800 border border-slate-600 text-white font-bold p-1" 
+                                                                                    placeholder="0"
+                                                                                />
+                                                                                <span className="text-slate-500 font-bold text-lg">-</span>
+                                                                                <input 
+                                                                                    type="number" min="0" 
+                                                                                    value={match.team2TiebreakerScore ?? ''} 
+                                                                                    onChange={e => handleTiebreakerScoreChange(match.id, 'team2TiebreakerScore', e.target.value)} 
+                                                                                    className="w-12 text-center bg-slate-800 border border-slate-600 text-white font-bold p-1" 
+                                                                                    placeholder="0"
+                                                                                />
+                                                                                <span className="text-slate-300 text-xs w-16 text-left truncate">{match.tiebreakerType === 'Penalty Shootout' ? '(Pen)' : ''} {match.team2.code}</span>
+                                                                            </div>
                                                                         </div>
                                                                     )}
                                                                     

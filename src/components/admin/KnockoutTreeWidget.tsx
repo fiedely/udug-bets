@@ -153,14 +153,34 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
 
         const renderTiebreaker = (isTeam1: boolean) => {
             if (!match.tiebreakerType) return null;
-            const score = isTeam1 ? match.team1TiebreakerScore : match.team2TiebreakerScore;
-            if (score === undefined) return null;
             
-            const isWinner = isTeam1 ? team1IsWinner : team2IsWinner;
-            const colorClass = isWinner ? 'text-green-400' : 'text-red-400';
-            const prefix = match.tiebreakerType === 'Penalty Shootout' ? 'p' : 'et';
-            
-            return <span className={`text-[10px] italic ${colorClass}`}>{prefix}({score})</span>;
+            if (match.tiebreakerType === 'Penalty Shootout') {
+                const pScore = isTeam1 ? match.team1TiebreakerScore : match.team2TiebreakerScore;
+                if (pScore === undefined) return null;
+                
+                let etScore = isTeam1 ? match.team1ExtraTimeScore : match.team2ExtraTimeScore;
+                if (etScore === undefined) {
+                    etScore = isTeam1 ? match.team1Score : match.team2Score;
+                }
+                
+                const isWinner = isTeam1 ? team1IsWinner : team2IsWinner;
+                const colorClass = isWinner ? 'text-green-400' : 'text-red-400';
+                
+                return (
+                    <div className="flex gap-1">
+                        {etScore !== undefined && <span className="text-[10px] italic text-slate-400">et({etScore})</span>}
+                        <span className={`text-[10px] italic ${colorClass}`}>p({pScore})</span>
+                    </div>
+                );
+            } else {
+                const score = isTeam1 ? match.team1TiebreakerScore : match.team2TiebreakerScore;
+                if (score === undefined) return null;
+                
+                const isWinner = isTeam1 ? team1IsWinner : team2IsWinner;
+                const colorClass = isWinner ? 'text-green-400' : 'text-red-400';
+                
+                return <span className={`text-[10px] italic ${colorClass}`}>et({score})</span>;
+            }
         };
 
         return (

@@ -89,6 +89,8 @@ export interface Match {
     tiebreakerType?: 'Extra Time' | 'Penalty Shootout';
     team1TiebreakerScore?: number;
     team2TiebreakerScore?: number;
+    team1ExtraTimeScore?: number;
+    team2ExtraTimeScore?: number;
     nextMatchId?: string;
 }
 
