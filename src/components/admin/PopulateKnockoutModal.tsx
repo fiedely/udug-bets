@@ -166,9 +166,9 @@ const PopulateKnockoutModal: React.FC<PopulateKnockoutModalProps> = ({ tournamen
                                 onChange={(e) => handleTeamChange(match.id, 'team1', e.target.value)}
                                 className="bg-transparent text-white text-xs sm:text-sm border-none outline-none focus:ring-0 flex-1 truncate w-full p-0 cursor-pointer"
                             >
-                                <option value="TBD">TBD</option>
+                                <option className="bg-slate-800 text-white" value="TBD">TBD</option>
                                 {teams.map(t => (
-                                    <option key={t.code} value={t.code}>{t.name}</option>
+                                    <option className="bg-slate-800 text-white" key={t.code} value={t.code}>{t.name}</option>
                                 ))}
                             </select>
                         </div>
@@ -182,9 +182,9 @@ const PopulateKnockoutModal: React.FC<PopulateKnockoutModalProps> = ({ tournamen
                                 onChange={(e) => handleTeamChange(match.id, 'team2', e.target.value)}
                                 className="bg-transparent text-white text-xs sm:text-sm border-none outline-none focus:ring-0 flex-1 truncate w-full p-0 cursor-pointer"
                             >
-                                <option value="TBD">TBD</option>
+                                <option className="bg-slate-800 text-white" value="TBD">TBD</option>
                                 {teams.map(t => (
-                                    <option key={t.code} value={t.code}>{t.name}</option>
+                                    <option className="bg-slate-800 text-white" key={t.code} value={t.code}>{t.name}</option>
                                 ))}
                             </select>
                         </div>
@@ -309,7 +309,7 @@ const PopulateKnockoutModal: React.FC<PopulateKnockoutModalProps> = ({ tournamen
                                                     {renderMatchCard(match)}
 
                                                     {stage === 'Final' && matchIndex === 0 && thirdPlaceMatch && (
-                                                        <div className="mt-8 relative z-10 w-[200px] sm:w-[220px]">
+                                                        <div className="absolute top-[120%] left-0 z-10 w-[200px] sm:w-[220px]">
                                                             <h3 className="text-[10px] sm:text-xs text-center font-bold text-slate-400 mb-2 uppercase tracking-wider">Third Place</h3>
                                                             {renderMatchCard(thirdPlaceMatch)}
                                                         </div>
