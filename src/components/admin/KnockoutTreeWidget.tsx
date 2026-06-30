@@ -231,12 +231,12 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
     return (
         <div 
             ref={containerRef}
-            className="w-full h-full bg-slate-800 overflow-auto relative font-sans text-slate-100 p-4 sm:p-8" 
+            className="w-full h-full bg-slate-800 overflow-auto relative font-sans text-slate-100" 
             style={{ overscrollBehavior: 'none', touchAction: 'none', WebkitOverflowScrolling: 'touch' }}
         >
             <div className="min-w-max flex flex-col">
                 {/* Headers Row */}
-                <div className="flex gap-12 sm:gap-16 mb-6">
+                <div className="sticky top-0 z-20 flex gap-12 sm:gap-16 mb-6 pt-4 sm:pt-8 px-4 sm:px-8 pb-4 bg-slate-800/95 backdrop-blur-sm border-b border-slate-700/50 shadow-sm">
                     {activeStages.map(stage => (
                         <div key={`header-${stage}`} className="w-[200px] sm:w-[220px] shrink-0">
                             <h4 className="font-bold text-blue-400 text-center mb-2">
@@ -247,7 +247,7 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
                 </div>
 
                 {/* Bracket Container */}
-                <div className="flex gap-12 sm:gap-16 min-h-max pb-4">
+                <div className="flex gap-12 sm:gap-16 min-h-max pb-4 px-4 sm:px-8">
                     {activeStages.map((stage, stageIndex) => {
                         const isLastStage = stageIndex === activeStages.length - 1;
                         const isFirstStage = stageIndex === 0;
