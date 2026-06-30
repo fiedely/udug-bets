@@ -159,7 +159,7 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
                 if (pScore === undefined) return null;
                 
                 let etScore = isTeam1 ? match.team1ExtraTimeScore : match.team2ExtraTimeScore;
-                if (etScore === undefined) {
+                if (etScore === undefined || etScore === null) {
                     etScore = isTeam1 ? match.team1Score : match.team2Score;
                 }
                 
@@ -168,7 +168,7 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
                 
                 return (
                     <div className="flex gap-1">
-                        {etScore !== undefined && <span className="text-[10px] italic text-slate-400">et({etScore})</span>}
+                        {etScore !== undefined && etScore !== null && <span className="text-[10px] italic text-slate-400">et({etScore})</span>}
                         <span className={`text-[10px] italic ${colorClass}`}>p({pScore})</span>
                     </div>
                 );
