@@ -158,7 +158,7 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
                 const pScore = isTeam1 ? match.team1TiebreakerScore : match.team2TiebreakerScore;
                 if (pScore === undefined) return null;
                 
-                let etScore = isTeam1 ? match.team1ExtraTimeScore : match.team2ExtraTimeScore;
+                let etScore: number | null | undefined = isTeam1 ? match.team1ExtraTimeScore : match.team2ExtraTimeScore;
                 if (etScore === undefined || etScore === null) {
                     etScore = isTeam1 ? match.team1Score : match.team2Score;
                 }
