@@ -52,13 +52,8 @@ const UserDashboard = ({ userProfile }: UserDashboardProps) => {
                 { i: `predictionChart-3`, type: 'predictionChart', title: t('dashboard.widget.allPredictionsChart', 'All Predictions Chart'), x: 4, y: 8, w: 4, h: 8, minW: 4, minH: 8, props: { tournamentId: tId, currentMatchIndex: 0, selectedUserId: userProfile.uid } },
                 { i: `championPredictionChart-4`, type: 'championPredictionChart', title: t('dashboard.widget.championPrediction', 'Champion Prediction'), x: 8, y: 0, w: 4, h: 16, minW: 4, minH: 8, props: { tournamentId: tId, selectedUserId: userProfile.uid } },
                 { i: `groupStandings-5`, type: 'groupStandings', title: t('dashboard.widget.groupStandings', 'Group Standings'), x: 0, y: 16, w: 12, h: 9, minW: 8, minH: 8, props: { tournamentId: tId, selectedUserId: userProfile.uid } },
+                { i: `knockoutTree-6`, type: 'knockoutTree', title: t('dashboard.widget.knockoutTree', 'Knockout Tree'), x: 0, y: 25, w: 12, h: 14, minW: 8, minH: 10, props: { tournamentId: tId } }
             ];
-
-            if (userProfile.role === 'admin' || userProfile.role === 'superadmin') {
-                defaultWidgets.push(
-                    { i: `knockoutTree-6`, type: 'knockoutTree', title: t('dashboard.widget.knockoutTree', 'Knockout Tree'), x: 0, y: 25, w: 12, h: 14, minW: 8, minH: 10, props: { tournamentId: tId } }
-                );
-            }
 
             setWidgets(defaultWidgets);
             setIsMounted(true);
