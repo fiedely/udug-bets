@@ -237,10 +237,10 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
         >
             <div className="min-w-max flex flex-col">
                 {/* Headers Row */}
-                <div className="sticky top-0 z-20 flex gap-12 sm:gap-16 mb-6 pt-4 sm:pt-8 px-4 sm:px-8 pb-4 bg-slate-800/95 backdrop-blur-sm border-b border-slate-700/50 shadow-sm">
+                <div className="sticky top-0 z-20 flex gap-12 sm:gap-16 mb-6 pt-3 sm:pt-4 px-4 sm:px-8 pb-3 bg-slate-800/95 backdrop-blur-sm border-b border-slate-700/50 shadow-sm">
                     {activeStages.map(stage => (
                         <div key={`header-${stage}`} className="w-[200px] sm:w-[220px] shrink-0">
-                            <h4 className="font-bold text-blue-400 text-center mb-2">
+                            <h4 className="font-bold text-blue-400 text-center">
                                 {stage === 'Final' && tournament.hasThirdPlaceMatch ? 'Final' : stage}
                             </h4>
                         </div>
