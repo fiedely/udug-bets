@@ -239,15 +239,15 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
                 <div className="flex gap-12 sm:gap-16 mb-6">
                     {activeStages.map(stage => (
                         <div key={`header-${stage}`} className="w-[200px] sm:w-[220px] shrink-0">
-                            <div className="border border-slate-600 text-center py-1 text-sm font-semibold text-slate-300 bg-slate-900 rounded shadow-sm">
+                            <h4 className="font-bold text-blue-400 text-center mb-2">
                                 {stage === 'Final' && tournament.hasThirdPlaceMatch ? 'Final' : stage}
-                            </div>
+                            </h4>
                         </div>
                     ))}
                 </div>
 
                 {/* Bracket Container */}
-                <div className="flex gap-12 sm:gap-16 min-h-max pb-32">
+                <div className="flex gap-12 sm:gap-16 min-h-max pb-4">
                     {activeStages.map((stage, stageIndex) => {
                         const isLastStage = stageIndex === activeStages.length - 1;
                         const isFirstStage = stageIndex === 0;
