@@ -184,17 +184,18 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
         };
 
         return (
-            <div className="flex flex-col w-[200px] sm:w-[220px] shrink-0 z-10">
-                <div className="text-[10px] sm:text-xs text-slate-400 font-medium mb-1 px-1 flex gap-1 truncate justify-between">
+            <div className="bg-slate-900 border border-slate-700/50 rounded flex flex-col w-full shadow-lg z-10 relative">
+                <div className="text-[10px] sm:text-xs text-slate-400 font-medium mb-1 px-1 flex gap-1 truncate justify-between border-b border-slate-700/50 pb-1 pt-1 bg-slate-800/30">
+                    <span>M{match.matchNumber}</span>
                     <span>{formatDateTime(match.date)}</span>
-                    <span className="text-slate-500">M{match.matchNumber}</span>
                 </div>
-                <div className="bg-slate-900 border border-slate-700 rounded shadow text-slate-200 text-sm overflow-hidden flex flex-col">
+                
+                <div className="flex flex-col text-xs sm:text-sm">
                     {/* Team 1 */}
-                    <div className="flex justify-between items-center px-2 py-1.5 border-b border-slate-700 h-8">
-                        <div className="flex items-center gap-2 truncate pr-2">
+                    <div className="flex justify-between items-center px-2 py-1.5 h-8 border-b border-slate-700/30 bg-slate-800/20">
+                        <div className="flex items-center gap-2 truncate pr-2 w-full">
                             <span>{isTeam1Set ? match.team1.flag : '🏳️'}</span>
-                            <span className="truncate whitespace-nowrap">{team1Display}</span>
+                            <span className="truncate whitespace-nowrap text-white">{team1Display}</span>
                         </div>
                         {typeof match.team1Score === 'number' && (
                             <div className="flex items-center gap-1.5 shrink-0">
@@ -204,10 +205,10 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
                         )}
                     </div>
                     {/* Team 2 */}
-                    <div className="flex justify-between items-center px-2 py-1.5 h-8">
-                        <div className="flex items-center gap-2 truncate pr-2">
+                    <div className="flex justify-between items-center px-2 py-1.5 h-8 bg-slate-800/20">
+                        <div className="flex items-center gap-2 truncate pr-2 w-full">
                             <span>{isTeam2Set ? match.team2.flag : '🏳️'}</span>
-                            <span className="truncate whitespace-nowrap">{team2Display}</span>
+                            <span className="truncate whitespace-nowrap text-white">{team2Display}</span>
                         </div>
                         {typeof match.team2Score === 'number' && (
                             <div className="flex items-center gap-1.5 shrink-0">
