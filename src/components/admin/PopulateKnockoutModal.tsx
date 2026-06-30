@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { db } from '../../firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
 import type { Tournament, Match } from '../../types';
 import { STAGE_MATCH_NUMBERS, getNextMatchId } from '../../utils/bracketRouting';
+import { useTouchScrollLock } from '../../hooks/useTouchScrollLock';
 
 interface PopulateKnockoutModalProps {
     tournament: Tournament;
@@ -113,7 +114,6 @@ const PopulateKnockoutModal: React.FC<PopulateKnockoutModalProps> = ({ tournamen
     }
 
     const activeStages = STAGE_ORDER.filter(stage => groupedMatches[stage].length > 0);
-    const [mobileSelectedStage, setMobileSelectedStage] = useState(activeStages[0] || '');
 
     const handleTeamChange = (matchId: string, teamSlot: 'team1' | 'team2', teamCode: string) => {
         const team = teams.find(t => t.code === teamCode) || { name: 'TBD', code: 'TBD', flag: '🏳️' };
@@ -142,9 +142,9 @@ const PopulateKnockoutModal: React.FC<PopulateKnockoutModalProps> = ({ tournamen
         const localISOTime = (new Date(dateObj.getTime() - tzoffset)).toISOString().slice(0, 16);
 
         return (
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 w-full shadow-lg z-10 relative">
-                <div className="text-xs text-slate-500 mb-2 font-mono flex items-center justify-between gap-2">
-                    <span className="shrink-0 font-bold">Match {match.matchNumber}</span>
+            <div className="bg-slate-900 border border-slate-700/50 rounded flex flex-col w-full shadow-lg z-10 relative">
+                <div className="text-[10px] sm:text-xs text-slate-400 font-medium mb-1 px-1 flex gap-1 truncate justify-between border-b border-slate-700/50 pb-1 pt-1 bg-slate-800/30">
+                    <span>M{match.matchNumber}</span>
                     <input 
                         type="datetime-local" 
                         value={localISOTime}
@@ -152,38 +152,44 @@ const PopulateKnockoutModal: React.FC<PopulateKnockoutModalProps> = ({ tournamen
                             const newDateObj = new Date(e.target.value);
                             handleDateChange(match.id, newDateObj.toISOString());
                         }}
-                        className="bg-slate-900 text-slate-300 border border-slate-700 rounded px-1 py-0.5 text-[10px] sm:text-xs focus:ring-blue-500 focus:border-blue-500 w-full"
+                        className="bg-transparent text-slate-300 rounded px-1 py-0 border-none outline-none focus:ring-0 w-32 sm:w-[140px]"
                     />
                 </div>
-            
-            <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                    <span className="text-lg w-6 text-center">{match.team1?.flag || '🏳️'}</span>
-                    <select 
-                        value={match.team1?.code || 'TBD'} 
-                        onChange={(e) => handleTeamChange(match.id, 'team1', e.target.value)}
-                        className="bg-slate-700 text-white border border-slate-600 text-sm rounded flex-1 p-1.5 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                        <option value="TBD">TBD</option>
-                        {teams.map(t => (
-                            <option key={t.code} value={t.code}>{t.name}</option>
-                        ))}
-                    </select>
+                
+                <div className="flex flex-col text-xs sm:text-sm">
+                    {/* Team 1 */}
+                    <div className="flex justify-between items-center px-2 py-1.5 h-8 border-b border-slate-700/30 bg-slate-800/20">
+                        <div className="flex items-center gap-2 truncate pr-2 w-full">
+                            <span>{match.team1?.flag || '🏳️'}</span>
+                            <select 
+                                value={match.team1?.code || 'TBD'} 
+                                onChange={(e) => handleTeamChange(match.id, 'team1', e.target.value)}
+                                className="bg-transparent text-white text-xs sm:text-sm border-none outline-none focus:ring-0 flex-1 truncate w-full p-0 cursor-pointer"
+                            >
+                                <option value="TBD">TBD</option>
+                                {teams.map(t => (
+                                    <option key={t.code} value={t.code}>{t.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                    {/* Team 2 */}
+                    <div className="flex justify-between items-center px-2 py-1.5 h-8 bg-slate-800/20">
+                        <div className="flex items-center gap-2 truncate pr-2 w-full">
+                            <span>{match.team2?.flag || '🏳️'}</span>
+                            <select 
+                                value={match.team2?.code || 'TBD'} 
+                                onChange={(e) => handleTeamChange(match.id, 'team2', e.target.value)}
+                                className="bg-transparent text-white text-xs sm:text-sm border-none outline-none focus:ring-0 flex-1 truncate w-full p-0 cursor-pointer"
+                            >
+                                <option value="TBD">TBD</option>
+                                {teams.map(t => (
+                                    <option key={t.code} value={t.code}>{t.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-lg w-6 text-center">{match.team2?.flag || '🏳️'}</span>
-                    <select 
-                        value={match.team2?.code || 'TBD'} 
-                        onChange={(e) => handleTeamChange(match.id, 'team2', e.target.value)}
-                        className="bg-slate-700 text-white border border-slate-600 text-sm rounded flex-1 p-1.5 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                        <option value="TBD">TBD</option>
-                        {teams.map(t => (
-                            <option key={t.code} value={t.code}>{t.name}</option>
-                        ))}
-                    </select>
-                </div>
-            </div>
             </div>
         );
     };
@@ -219,6 +225,9 @@ const PopulateKnockoutModal: React.FC<PopulateKnockoutModalProps> = ({ tournamen
 
     const totalBaseRows = activeStages.length > 0 ? groupedMatches[activeStages[0]].length : 1;
 
+    const containerRef = useRef<HTMLDivElement>(null);
+    useTouchScrollLock(containerRef);
+
     return createPortal(
         <div className="fixed inset-0 bg-slate-900 z-[9999] flex flex-col h-[100dvh] overflow-hidden text-slate-100 w-full">
             <div className="bg-slate-800 p-4 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
@@ -241,39 +250,26 @@ const PopulateKnockoutModal: React.FC<PopulateKnockoutModalProps> = ({ tournamen
                 </div>
             </div>
             
-            <div className="flex-1 overflow-auto p-4 md:p-8 flex flex-col">
-                <div className="md:hidden mb-4">
-                    <label className="block text-sm font-medium text-slate-400 mb-2">Select Stage</label>
-                    <select 
-                        value={mobileSelectedStage} 
-                        onChange={(e) => setMobileSelectedStage(e.target.value)}
-                        className="w-full bg-slate-800 border border-slate-700 text-white p-2 rounded"
-                    >
-                        {activeStages.map(stage => (
-                            <option key={stage} value={stage}>
-                                {stage === 'Final' && tournament.hasThirdPlaceMatch ? 'Final (Third Place Match)' : stage}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
+            <div 
+                ref={containerRef}
+                className="flex-1 overflow-auto bg-slate-800 relative font-sans text-slate-100"
+                style={{ overscrollBehavior: 'none', touchAction: 'none', WebkitOverflowScrolling: 'touch' }}
+            >
                 <div className="min-w-max flex flex-col">
                     {/* Headers Row */}
-                    <div className="flex gap-0 mb-4">
-                        {activeStages.map(stage => {
-                            const isMobileVisible = stage === mobileSelectedStage;
-                            return (
-                                <h3 key={`header-${stage}`} className={`flex-1 text-center font-bold text-slate-300 min-w-[300px] ${!isMobileVisible ? 'hidden md:block' : 'block'}`}>
-                                    {stage}
-                                </h3>
-                            );
-                        })}
+                    <div className="sticky top-0 z-20 flex gap-12 sm:gap-16 mb-6 pt-4 sm:pt-8 px-4 sm:px-8 pb-4 bg-slate-800/95 backdrop-blur-sm border-b border-slate-700/50 shadow-sm">
+                        {activeStages.map(stage => (
+                            <div key={`header-${stage}`} className="w-[200px] sm:w-[220px] shrink-0">
+                                <h4 className="font-bold text-blue-400 text-center mb-2">
+                                    {stage === 'Final' && tournament.hasThirdPlaceMatch ? 'Final' : stage}
+                                </h4>
+                            </div>
+                        ))}
                     </div>
 
                     {/* Bracket Container */}
-                    <div className="flex flex-1 gap-0 h-max">
+                    <div className="flex gap-12 sm:gap-16 min-h-max pb-4 px-4 sm:px-8">
                         {activeStages.map((stage, stageIndex) => {
-                            const isMobileVisible = stage === mobileSelectedStage;
                             const isLastStage = stageIndex === activeStages.length - 1;
                             const isFirstStage = stageIndex === 0;
                             const rowSpan = Math.pow(2, stageIndex);
@@ -281,8 +277,8 @@ const PopulateKnockoutModal: React.FC<PopulateKnockoutModalProps> = ({ tournamen
                             return (
                                 <div 
                                     key={stage} 
-                                    className={`flex-1 min-w-[300px] flex-col gap-4 md:gap-0 ${!isMobileVisible ? 'hidden md:grid' : 'flex md:grid'}`}
-                                    style={{ gridTemplateRows: `repeat(${totalBaseRows}, minmax(130px, 1fr))` }}
+                                    className="w-[200px] sm:w-[220px] shrink-0 grid"
+                                    style={{ gridTemplateRows: `repeat(${totalBaseRows}, minmax(64px, 1fr))` }}
                                 >
                                     {groupedMatches[stage].map((match, matchIndex) => {
                                         const isEven = matchIndex % 2 === 0;
@@ -290,31 +286,31 @@ const PopulateKnockoutModal: React.FC<PopulateKnockoutModalProps> = ({ tournamen
                                         return (
                                             <div 
                                                 key={match.id} 
-                                                className="relative flex flex-col justify-center px-4 py-2 md:py-2"
+                                                className="relative flex flex-col justify-center"
                                                 style={{ gridRow: `span ${rowSpan}` }}
                                             >
-                                                {/* Connecting Lines for Desktop */}
-                                                <div className="hidden md:block absolute inset-0 pointer-events-none">
-                                                    {/* Line coming in from left (not on first stage) */}
+                                                {/* Connecting Lines for ALL views */}
+                                                <div className="absolute inset-0 pointer-events-none">
+                                                    {/* Line coming in from left */}
                                                     {!isFirstStage && (
-                                                        <div className="absolute top-1/2 left-0 w-4 border-t-2 border-slate-600"></div>
+                                                        <div className="absolute top-1/2 -left-6 sm:-left-8 w-6 sm:w-8 border-t-2 border-slate-600"></div>
                                                     )}
                                                     
-                                                    {/* Lines going out to right (not on last stage) */}
+                                                    {/* Lines going out to right */}
                                                     {!isLastStage && (
                                                         <>
-                                                            <div className="absolute top-1/2 right-0 w-4 border-t-2 border-slate-600"></div>
-                                                            <div className={`absolute right-0 w-0 border-r-2 border-slate-600 ${isEven ? 'top-1/2 bottom-0' : 'top-0 bottom-1/2'}`}></div>
+                                                            <div className="absolute top-1/2 -right-6 sm:-right-8 w-6 sm:w-8 border-t-2 border-slate-600"></div>
+                                                            <div className={`absolute -right-6 sm:-right-8 w-0 border-r-2 border-slate-600 ${isEven ? 'top-1/2 bottom-0' : 'top-0 bottom-1/2'}`}></div>
                                                         </>
                                                     )}
                                                 </div>
 
-                                                <div className="relative w-full">
+                                                <div className="relative w-full z-10 hover:z-20 transition-all duration-200" style={{ transform: 'scale(1)', transformOrigin: isEven ? 'bottom left' : 'top left' }}>
                                                     {renderMatchCard(match)}
 
                                                     {stage === 'Final' && matchIndex === 0 && thirdPlaceMatch && (
-                                                        <div className="mt-8 md:mt-8 md:absolute md:top-full md:left-0 md:right-0 relative z-10">
-                                                            <h3 className="text-center font-bold text-slate-300 mb-6">Third Place Match</h3>
+                                                        <div className="mt-8 relative z-10 w-[200px] sm:w-[220px]">
+                                                            <h3 className="text-[10px] sm:text-xs text-center font-bold text-slate-400 mb-2 uppercase tracking-wider">Third Place</h3>
                                                             {renderMatchCard(thirdPlaceMatch)}
                                                         </div>
                                                     )}
