@@ -307,7 +307,7 @@ const ScoreManagement = ({ tournament, userProfile, onBack, reportDirtyState }: 
                                                                                         value={match.team1ExtraTimeScore ?? ''} 
                                                                                         onChange={e => handleTiebreakerScoreChange(match.id, 'team1ExtraTimeScore', e.target.value)} 
                                                                                         className="w-12 text-center bg-slate-800 border border-slate-600 text-slate-300 p-1" 
-                                                                                        placeholder={match.team1Score?.toString() || "0"}
+                                                                                        placeholder="0"
                                                                                     />
                                                                                     <span className="text-slate-500 font-bold text-lg">-</span>
                                                                                     <input 
@@ -315,7 +315,7 @@ const ScoreManagement = ({ tournament, userProfile, onBack, reportDirtyState }: 
                                                                                         value={match.team2ExtraTimeScore ?? ''} 
                                                                                         onChange={e => handleTiebreakerScoreChange(match.id, 'team2ExtraTimeScore', e.target.value)} 
                                                                                         className="w-12 text-center bg-slate-800 border border-slate-600 text-slate-300 p-1" 
-                                                                                        placeholder={match.team2Score?.toString() || "0"}
+                                                                                        placeholder="0"
                                                                                     />
                                                                                     <span className="text-slate-300 text-xs w-16 text-left truncate">(ET) {match.team2.code}</span>
                                                                                 </div>

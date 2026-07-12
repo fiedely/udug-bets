@@ -10,6 +10,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { CellDef, UserOptions } from 'jspdf-autotable';
 import { useTouchScrollLock } from '../../hooks/useTouchScrollLock';
+import { getEffectiveScores } from '../../utils/scoreCalculator';
 
 interface AllPredictionsViewProps {
     tournament: Tournament;
@@ -44,14 +45,21 @@ const stageToRuleKeyMap: { [key in MatchStage]?: keyof PointRules } = {
 
 const formatActualScore = (match: Match) => {
     if (typeof match.team1Score !== 'number') return 'N/A';
-    let base = `${match.team1Score}-${match.team2Score}`;
-    if (match.tiebreakerType === 'Extra Time' && typeof match.team1TiebreakerScore === 'number' && typeof match.team2TiebreakerScore === 'number') {
-        return `${base} (ExtraTime ${match.team1Score + match.team1TiebreakerScore}-${match.team2Score! + match.team2TiebreakerScore})`;
+    let text = `${match.team1Score}-${match.team2Score}`;
+    if (match.tiebreakerType === 'Extra Time') {
+        const t1 = match.team1TiebreakerScore || 0;
+        const t2 = match.team2TiebreakerScore || 0;
+        text += `\n(ExtraTime ${t1}-${t2})`;
+    } else if (match.tiebreakerType === 'Penalty Shootout') {
+        const et1 = match.team1ExtraTimeScore || 0;
+        const et2 = match.team2ExtraTimeScore || 0;
+        text += `\n(ExtraTime ${et1}-${et2})`;
+        
+        const pen1 = match.team1TiebreakerScore || 0;
+        const pen2 = match.team2TiebreakerScore || 0;
+        text += `\n(Penalty ${pen1}-${pen2})`;
     }
-    if (match.tiebreakerType === 'Penalty Shootout' && typeof match.team1TiebreakerScore === 'number' && typeof match.team2TiebreakerScore === 'number') {
-        return `${base} (Penalty ${match.team1TiebreakerScore}-${match.team2TiebreakerScore})`;
-    }
-    return base;
+    return text;
 };
 
 const AllPredictionsView = ({ tournament, userProfile, onBack }: AllPredictionsViewProps) => {
@@ -103,13 +111,15 @@ const AllPredictionsView = ({ tournament, userProfile, onBack }: AllPredictionsV
                         let points = 0;
 
                         if (prediction && pointRules && typeof match.team1Score === 'number' && typeof match.team2Score === 'number') {
-                            const actualOutcome = Math.sign(match.team1Score - match.team2Score);
+                            const { team1: effTeam1, team2: effTeam2 } = getEffectiveScores(match, tournament);
+                            
+                            const actualOutcome = Math.sign(effTeam1 - effTeam2);
                             const predictedOutcome = Math.sign(prediction.team1Score - prediction.team2Score);
                             const stageKey = stageToRuleKeyMap[match.stage];
                             const rules = (stageKey && pointRules?.[stageKey]) ? (pointRules[stageKey] as PointRule) : pointRules.groupStage;
                             if (actualOutcome === predictedOutcome) {
                                 points += rules.correctOutcome;
-                                if (match.team1Score === prediction.team1Score && match.team2Score === prediction.team2Score) {
+                                if (effTeam1 === prediction.team1Score && effTeam2 === prediction.team2Score) {
                                     points += rules.correctScore;
                                 }
                             }
@@ -290,7 +300,9 @@ const AllPredictionsView = ({ tournament, userProfile, onBack }: AllPredictionsV
                             </tr>
                         </thead>
                         <tbody className="bg-slate-800">
-                            {enrichedMatches.map((match) => (
+                            {enrichedMatches.map((match) => {
+                                const { team1: effTeam1, team2: effTeam2 } = getEffectiveScores(match, tournament);
+                                return (
                                 <tr key={match.id} className="border-b border-slate-700">
                                     <td className="p-2 font-medium text-white sticky left-0 bg-slate-800 z-10 w-48 align-top">
                                         <div className="flex flex-col">
@@ -298,20 +310,20 @@ const AllPredictionsView = ({ tournament, userProfile, onBack }: AllPredictionsV
                                             <div className="text-xs text-slate-500 my-1 pl-6">vs</div>
                                             <div className="flex items-center gap-2"><span>{match.team2.flag}</span> {match.team2.name}</div>
                                         </div>
-                                        <div className="text-[10px] text-slate-400 mt-1">Actual: {formatActualScore(match)}</div>
+                                        <div className="text-[10px] text-slate-400 mt-1 whitespace-pre-line">Actual: {formatActualScore(match)}</div>
                                     </td>
                                     {match.participantPredictions.map(p => (
                                         <Fragment key={p.userId}>
                                             <td className="p-2 text-center font-mono border-l border-slate-700">
-                                                <PredictionCell actual={match.team1Score} prediction={p.prediction?.team1Score} />
+                                                <PredictionCell actual={effTeam1} prediction={p.prediction?.team1Score} />
                                                 {' - '}
-                                                <PredictionCell actual={match.team2Score} prediction={p.prediction?.team2Score} />
+                                                <PredictionCell actual={effTeam2} prediction={p.prediction?.team2Score} />
                                             </td>
                                             <td className="p-2 text-center font-mono text-blue-400 w-10">{p.points}</td>
                                         </Fragment>
                                     ))}
                                 </tr>
-                            ))}
+                            )})}
                             <tr className="border-t-2 border-blue-500 bg-slate-700">
                                 <td className="p-2 font-bold text-white sticky left-0 bg-slate-700 z-10 w-48">
                                     Champion

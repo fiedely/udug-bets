@@ -161,6 +161,7 @@ export interface Tournament {
     champion?: string;
     groupStandingsOverrides?: Record<string, string[]>;
     skipLeaderboardUpdate?: number;
+    knockoutPointCalculationRules?: Record<string, '90m' | '120m' | '120m_pen'>;
 }
 
 export interface MatchPrediction {

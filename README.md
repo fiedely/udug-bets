@@ -1,7 +1,7 @@
-# Udug Bets Documentation (v2.9)
+# Udug Bets Documentation (v3.1)
 
 > [!NOTE]
-> This documentation outlines the architecture, capabilities, features, and infrastructure for Udug Bets v2.9. It serves as a comprehensive reference and guidebook for developers, maintainers, and administrators.
+> This documentation outlines the architecture, capabilities, features, and infrastructure for Udug Bets v3.1. It serves as a comprehensive reference and guidebook for developers, maintainers, and administrators.
 
 ---
 
@@ -9,7 +9,7 @@
 
 **Udug Bets** is a modern, real-time prediction, leaderboard, and tournament management platform. Originally designed for private sports tournaments (e.g., FIFA World Cup, UEFA Euro, e-sports), it enables participants to predict match outcomes, tracks real-time points based on actual scores, and injects entertainment through an automated, personalized **AI-generated commentary engine**.
 
-The v2.9 update introduces massive overhauls to the frontend user experience, introducing custom touch-scrolling inertia engines, horizontal knockout bracket trees, complex tiebreaker handling (Extra Time & Penalties), and full Progressive Web App (PWA) support.
+The v3.1 update introduces massive overhauls to the frontend user experience, introducing custom touch-scrolling inertia engines, horizontal knockout bracket trees, complex tiebreaker handling (Extra Time & Penalties), and full Progressive Web App (PWA) support.
 
 ---
 

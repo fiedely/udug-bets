@@ -160,7 +160,7 @@ const KnockoutTreeWidget: React.FC<KnockoutTreeWidgetProps> = ({ tournament }) =
                 
                 let etScore: number | null | undefined = isTeam1 ? match.team1ExtraTimeScore : match.team2ExtraTimeScore;
                 if (etScore === undefined || etScore === null) {
-                    etScore = isTeam1 ? match.team1Score : match.team2Score;
+                    etScore = 0;
                 }
                 
                 const isWinner = isTeam1 ? team1IsWinner : team2IsWinner;

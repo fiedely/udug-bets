@@ -206,15 +206,40 @@ export async function recalculateLeaderboard(tournamentId: string) {
             const prediction = predictions.matchPredictions[match.id];
             if (!prediction || typeof prediction.team1Score !== 'number' || typeof prediction.team2Score !== 'number' || prediction.team1Score < 0 || prediction.team2Score < 0) continue;
 
-            const actualOutcome = Math.sign(match.team1Score! - match.team2Score!);
-            const predictedOutcome = Math.sign(prediction.team1Score - prediction.team2Score);
+            let effectiveTeam1Score = match.team1Score!;
+            let effectiveTeam2Score = match.team2Score!;
+            
             const stageKey = stageToRuleKeyMap[match.stage];
+
+            if (match.stage !== 'Group Stage' && tournamentData.knockoutPointCalculationRules && stageKey) {
+                const calcRule = tournamentData.knockoutPointCalculationRules[stageKey] || '90m';
+                if (match.tiebreakerType) {
+                    if (match.tiebreakerType === 'Extra Time') {
+                        if (calcRule === '120m' || calcRule === '120m_pen') {
+                            effectiveTeam1Score += (match.team1TiebreakerScore || 0);
+                            effectiveTeam2Score += (match.team2TiebreakerScore || 0);
+                        }
+                    } else if (match.tiebreakerType === 'Penalty Shootout') {
+                        if (calcRule === '120m' || calcRule === '120m_pen') {
+                            effectiveTeam1Score += (match.team1ExtraTimeScore || 0);
+                            effectiveTeam2Score += (match.team2ExtraTimeScore || 0);
+                        }
+                        if (calcRule === '120m_pen') {
+                            effectiveTeam1Score += (match.team1TiebreakerScore || 0);
+                            effectiveTeam2Score += (match.team2TiebreakerScore || 0);
+                        }
+                    }
+                }
+            }
+
+            const actualOutcome = Math.sign(effectiveTeam1Score - effectiveTeam2Score);
+            const predictedOutcome = Math.sign(prediction.team1Score - prediction.team2Score);
             const rules = ((stageKey && pointRules?.[stageKey]) ? pointRules[stageKey] : pointRules.groupStage) as PointRule;
             
             let matchPoints = 0;
             if (actualOutcome === predictedOutcome) {
                 matchPoints += rules.correctOutcome;
-                if (match.team1Score === prediction.team1Score && match.team2Score === prediction.team2Score) {
+                if (effectiveTeam1Score === prediction.team1Score && effectiveTeam2Score === prediction.team2Score) {
                     matchPoints += rules.correctScore;
                 }
             }

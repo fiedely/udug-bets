@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { db } from '../../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Tournament, UserPredictions, PointRules, MatchStage, PointRule } from '../../types';
+import { getEffectiveScores } from '../../utils/scoreCalculator';
 
 interface UserPointHistoryModalProps {
     tournament: Tournament;
@@ -55,15 +56,16 @@ const UserPointHistoryModal = ({ tournament, userId, userName, onClose }: UserPo
             let outcomePts = 0;
             let scorePts = 0;
 
+            const { team1: effTeam1, team2: effTeam2 } = getEffectiveScores(match, tournament);
             if (pred && pred.team1Score > -1) {
-                const actualOutcome = Math.sign(match.team1Score! - match.team2Score!);
+                const actualOutcome = Math.sign(effTeam1 - effTeam2);
                 const predictedOutcome = Math.sign(pred.team1Score - pred.team2Score);
                 const stageKey = stageToRuleKeyMap[match.stage];
                 const rules = (((stageKey && tournament.pointRules?.[stageKey]) ? tournament.pointRules[stageKey] : tournament.pointRules?.groupStage) as PointRule) || { correctOutcome: 0, correctScore: 0 };
 
                 if (actualOutcome === predictedOutcome) {
                     outcomePts = rules.correctOutcome;
-                    if (match.team1Score === pred.team1Score && match.team2Score === pred.team2Score) {
+                    if (effTeam1 === pred.team1Score && effTeam2 === pred.team2Score) {
                         scorePts = rules.correctScore;
                     }
                 }
@@ -77,7 +79,7 @@ const UserPointHistoryModal = ({ tournament, userId, userName, onClose }: UserPo
                 stage: match.stage,
                 matchLabel: `${match.team1.name} vs ${match.team2.name}`,
                 predicted: pred && pred.team1Score > -1 ? `${pred.team1Score} - ${pred.team2Score}` : 'N/A',
-                actual: `${match.team1Score} - ${match.team2Score}`,
+                actual: `${effTeam1} - ${effTeam2}`,
                 outcomePts,
                 scorePts,
                 matchTotal,

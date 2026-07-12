@@ -43,6 +43,12 @@ const Step1Details = ({ tournament, userProfile, onNext, setIsDirty }: Step1Deta
 
     const [pointRules, setPointRules] = useState<PointRules>(initialPointRules);
     const [championBonus, setChampionBonus] = useState(initialPointRules.championBonus || 10);
+    const [knockoutPointCalculationRules, setKnockoutPointCalculationRules] = useState<Record<string, '90m' | '120m' | '120m_pen'>>(tournament.knockoutPointCalculationRules || {});
+
+    const handleRuleChange = (stage: string, rule: '90m' | '120m' | '120m_pen') => {
+        setIsDirty(true);
+        setKnockoutPointCalculationRules(prev => ({ ...prev, [stage]: rule }));
+    };
 
     const [useSamePoints, setUseSamePoints] = useState(() => {
         if (!initialPointRules) return true;
@@ -100,6 +106,7 @@ const Step1Details = ({ tournament, userProfile, onNext, setIsDirty }: Step1Deta
                 description,
                 format,
                 pointRules: { ...pointRules, championBonus },
+                knockoutPointCalculationRules,
             };
 
             if (startDate) updatedData.startDate = new Date(startDate);
@@ -201,6 +208,27 @@ const Step1Details = ({ tournament, userProfile, onNext, setIsDirty }: Step1Deta
                                         disabled={useSamePoints}
                                         className={`mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400 ${useSamePoints ? 'opacity-50 cursor-not-allowed bg-slate-800' : ''}`}
                                     />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <h3 className="text-lg font-semibold text-slate-100 mt-6 pt-6 border-t border-slate-700">Knockout Point Calculation Method</h3>
+                    <p className="text-sm text-slate-400 mb-4">Choose how the backend calculates the final score for each knockout stage.</p>
+                    <div className="space-y-4">
+                        {KNOCKOUT_STAGES.map(stage => (
+                            <div key={`rule-${stage}`} className="flex flex-col sm:flex-row gap-4">
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-slate-300">{formatStageName(stage)}</label>
+                                    <select
+                                        value={knockoutPointCalculationRules[stage] || '90m'}
+                                        onChange={e => handleRuleChange(stage, e.target.value as '90m' | '120m' | '120m_pen')}
+                                        className="mt-1 w-full px-4 py-2 bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                                    >
+                                        <option value="90m">90 Minutes (Default)</option>
+                                        <option value="120m">120 Minutes (90m + Extra Time)</option>
+                                        <option value="120m_pen">120 Minutes + Penalties</option>
+                                    </select>
                                 </div>
                             </div>
                         ))}

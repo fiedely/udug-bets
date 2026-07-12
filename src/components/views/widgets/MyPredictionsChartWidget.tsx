@@ -5,6 +5,7 @@ import { db } from '../../../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Tournament, UserPredictions, UserProfile } from '../../../types';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { getEffectiveScores } from '../../../utils/scoreCalculator';
 
 interface MyPredictionsChartWidgetProps {
     userProfile: UserProfile;
@@ -200,7 +201,8 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
                     outcomeStats.wrong++;
                     scoreStats.wrong++;
                 } else {
-                    const actualOutcome = Math.sign(match.team1Score! - match.team2Score!);
+                    const { team1: effTeam1, team2: effTeam2 } = getEffectiveScores(match, tournament);
+                    const actualOutcome = Math.sign(effTeam1 - effTeam2);
                     const predictedOutcome = Math.sign(pred.team1Score - pred.team2Score);
                     
                     if (actualOutcome === predictedOutcome) {
@@ -209,7 +211,7 @@ const MyPredictionsChartWidget = ({ userProfile, tournamentId, selectedUserId, o
                         outcomeStats.wrong++;
                     }
 
-                    if (match.team1Score === pred.team1Score && match.team2Score === pred.team2Score) {
+                    if (effTeam1 === pred.team1Score && effTeam2 === pred.team2Score) {
                         scoreStats.correct++;
                     } else {
                         scoreStats.wrong++;

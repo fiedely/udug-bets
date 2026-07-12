@@ -36,9 +36,11 @@ export interface Match {
     tiebreakerType?: 'Extra Time' | 'Penalty Shootout';
     team1TiebreakerScore?: number;
     team2TiebreakerScore?: number;
+    team1ExtraTimeScore?: number;
+    team2ExtraTimeScore?: number;
     nextMatchId?: string;
 }
-export interface Tournament { id: string; name: string; pointRules?: PointRules; matches?: Match[]; knockoutMatches?: Match[]; participants?: string[]; champion?: string; teams?: Team[]; knockoutStartStage?: MatchStage; groups?: Record<string, Team[]>; skipLeaderboardUpdate?: number; }
+export interface Tournament { id: string; name: string; pointRules?: PointRules; matches?: Match[]; knockoutMatches?: Match[]; participants?: string[]; champion?: string; teams?: Team[]; knockoutStartStage?: MatchStage; groups?: Record<string, Team[]>; skipLeaderboardUpdate?: number; knockoutPointCalculationRules?: Record<string, '90m' | '120m' | '120m_pen'>; }
 export interface MatchPrediction { team1Score: number; team2Score: number; }
 export interface UserPredictions { tournamentId: string; userId: string; championPrediction?: string; matchPredictions: Record<string, MatchPrediction>; }
 export interface UserProfile { uid: string; name: string; email: string; role: 'user' | 'admin' | 'superadmin'; avatarUrl?: string; }

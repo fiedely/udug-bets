@@ -10,13 +10,19 @@ interface TournamentDetailsProps {
     onBack: () => void;
 }
 
-const PointRuleTableRow = ({ label, points }: { label: string, points?: { correctScore: number; correctOutcome: number; } }) => {
+const PointRuleTableRow = ({ label, points, calcRule }: { label: string, points?: { correctScore: number; correctOutcome: number; }, calcRule?: '90m' | '120m' | '120m_pen' }) => {
     if (!points) return null;
+    let calcText = '90 Min';
+    if (calcRule === '90m') calcText = '90 Min';
+    else if (calcRule === '120m') calcText = '120 Min';
+    else if (calcRule === '120m_pen') calcText = '120 Min + Pen';
+    
     return (
         <tr className="hover:bg-slate-800/50 transition-colors">
             <td className="py-2 text-slate-300">{label}</td>
             <td className="py-2 text-center text-emerald-400 font-mono">+{points.correctOutcome}</td>
             <td className="py-2 text-center text-blue-400 font-mono">+{points.correctScore}</td>
+            <td className="py-2 text-center text-slate-400 font-mono text-xs">{calcText}</td>
         </tr>
     );
 };
@@ -54,7 +60,7 @@ const MatchList = ({ title, matches, groupByStage = false }: { title: string, ma
     return (
         <div>
             <h4 className="font-semibold text-blue-400 mb-2">{title} ({t('tournamentDetails.matchesCount', '{{count}} Matches', { count: matches?.length || 0 })})</h4>
-            <div className="text-sm text-slate-300 max-h-64 overflow-y-auto pr-2 border border-slate-700 p-2 bg-slate-800 space-y-3">
+            <div className="text-sm text-slate-300 max-h-64 overflow-y-auto overflow-x-hidden custom-scrollbar pr-2 border border-slate-700 p-2 bg-slate-800 space-y-3">
                 {groupByStage ? (
                     sortedStageKeys.map(stageKey => (
                          <div key={stageKey}>
@@ -62,7 +68,7 @@ const MatchList = ({ title, matches, groupByStage = false }: { title: string, ma
                             {Object.keys(groupedMatches[stageKey]).sort().map(dateKey => (
                                 <div key={dateKey} className="pl-2 border-l-2 border-slate-600 ml-2">
                                     <h6 className="font-semibold text-slate-300 text-sm my-1">{new Date(dateKey).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</h6>
-                                    <table className="w-full text-left text-sm mt-1 mb-3 border-collapse bg-slate-900/30 rounded">
+                                    <table className="w-full table-fixed text-left text-sm mt-1 mb-3 border-collapse bg-slate-900/30 rounded">
                                         <tbody>
                                             {(groupedMatches[stageKey] as Record<string, Match[]>)[dateKey].map(match => (
                                                 <tr key={match.id} className="hover:bg-slate-700/50 border-b border-slate-700/50 last:border-0">
@@ -90,7 +96,7 @@ const MatchList = ({ title, matches, groupByStage = false }: { title: string, ma
                     Object.keys(groupedMatches).sort().map(dateKey => (
                         <div key={dateKey}>
                             <h5 className="font-bold text-slate-300 text-sm mb-1 bg-slate-700 p-1">{new Date(dateKey).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h5>
-                            <table className="w-full text-left text-sm border-collapse bg-slate-900/30 rounded mt-1 mb-2">
+                            <table className="w-full table-fixed text-left text-sm border-collapse bg-slate-900/30 rounded mt-1 mb-2">
                                 <tbody>
                                     {(groupedMatches[dateKey] as Match[]).map(match => (
                                         <tr key={match.id} className="hover:bg-slate-700/50 border-b border-slate-700/50 last:border-0">
@@ -192,16 +198,17 @@ const TournamentDetails = ({ tournament, onBack }: TournamentDetailsProps) => {
                                     <th className="pb-2 font-medium">{t('common.stage', 'Stage')}</th>
                                     <th className="pb-2 font-medium text-center">{t('common.outcome', 'Outcome')}</th>
                                     <th className="pb-2 font-medium text-center">{t('common.score', 'Score')}</th>
+                                    <th className="pb-2 font-medium text-center">{t('tournamentDetails.calcRule', 'Calculation')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800">
                                 <PointRuleTableRow label={t('stages.groupStage', 'Group Stage')} points={tournament.pointRules?.groupStage} />
-                                <PointRuleTableRow label={t('stages.round32', 'Round of 32')} points={tournament.pointRules?.round32} />
-                                <PointRuleTableRow label={t('stages.round16', 'Round of 16')} points={tournament.pointRules?.round16} />
-                                <PointRuleTableRow label={t('stages.quarterFinals', 'Quarter-finals')} points={tournament.pointRules?.quarterFinal} />
-                                <PointRuleTableRow label={t('stages.semiFinals', 'Semi-finals')} points={tournament.pointRules?.semiFinal} />
-                                {tournament.hasThirdPlaceMatch && <PointRuleTableRow label={t('stages.thirdPlaceMatch', 'Third Place Match')} points={tournament.pointRules?.thirdPlaceMatch} />}
-                                <PointRuleTableRow label={t('stages.finals', 'Final')} points={tournament.pointRules?.final} />
+                                <PointRuleTableRow label={t('stages.round32', 'Round of 32')} points={tournament.pointRules?.round32} calcRule={tournament.knockoutPointCalculationRules?.round32} />
+                                <PointRuleTableRow label={t('stages.round16', 'Round of 16')} points={tournament.pointRules?.round16} calcRule={tournament.knockoutPointCalculationRules?.round16} />
+                                <PointRuleTableRow label={t('stages.quarterFinals', 'Quarter-finals')} points={tournament.pointRules?.quarterFinal} calcRule={tournament.knockoutPointCalculationRules?.quarterFinal} />
+                                <PointRuleTableRow label={t('stages.semiFinals', 'Semi-finals')} points={tournament.pointRules?.semiFinal} calcRule={tournament.knockoutPointCalculationRules?.semiFinal} />
+                                {tournament.hasThirdPlaceMatch && <PointRuleTableRow label={t('stages.thirdPlaceMatch', 'Third Place Match')} points={tournament.pointRules?.thirdPlaceMatch} calcRule={tournament.knockoutPointCalculationRules?.thirdPlaceMatch} />}
+                                <PointRuleTableRow label={t('stages.finals', 'Final')} points={tournament.pointRules?.final} calcRule={tournament.knockoutPointCalculationRules?.final} />
                             </tbody>
                         </table>
                     </div>
